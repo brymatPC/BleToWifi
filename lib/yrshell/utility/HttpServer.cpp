@@ -131,7 +131,7 @@ void HttpServer::slice() {
       m_url[ 0] = '\0';
     break;
     case 1:
-      *m_client = m_server->available();
+      *m_client = m_server->accept();
       if( *m_client) {
         m_timer.setInterval( 100);
         if( m_log != NULL) {
@@ -230,7 +230,7 @@ void HttpServer::slice() {
         m_sendFile.close();
         changeState( 3);
       } else {
-        if( m_client != NULL && m_client->availableForWrite() >= sizeof(m_buf)) {
+        if( m_client != NULL && m_client->availableForWrite() >= (int) sizeof(m_buf)) {
           size_t br = readFile( m_buf, sizeof(m_buf)); 
           if( br > 0) {
             clientWrite( m_buf, br);

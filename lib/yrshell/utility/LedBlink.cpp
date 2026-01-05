@@ -43,7 +43,7 @@ void LedBlink::slice() {
 }
 
 void LedBlink::push() {
-    if( m_tos <= ((sizeof(m_stack)/sizeof(m_stack[0]))-2) ) {
+    if( m_tos <= (int8_t) ((sizeof(m_stack)/sizeof(m_stack[0]))-2) ) {
         m_stack[ m_tos++] = m_ledOnMs;
         m_stack[ m_tos++] = m_ledOffMs;
     }

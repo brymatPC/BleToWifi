@@ -123,7 +123,6 @@ NetworkParameters::NetworkParameters( DebugLog* log) : StringArray( log) {
 }
 
 void NetworkParameters::resetUint32(uint8_t index, uint32_t v ) {
-  const char* d = get( index);
   char buf[ 11];
   YRShellInterpreter::unsignedToStringX( v, 8, buf);
   resetString( index, buf);
@@ -194,7 +193,7 @@ bool WifiConnection::isNetworkConnected( void) {
 void WifiConnection::slice( ) {
   const char* p;
   const char* q;
-  int i, j, k, m;
+  int i, k, m;
   switch( m_state) {
     case 0:
       networkParameters.load();
@@ -368,7 +367,6 @@ void WifiConnection::slice( ) {
   }
 }
 void WifiConnection::hostConfig( ) {
-  const char* p;
   uint32_t v;
   uint32_t ip = 0;
   uint32_t gw = 0;

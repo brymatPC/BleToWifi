@@ -115,7 +115,7 @@ protected:
 
   virtual void executeFunction( uint16_t n);
   virtual const char* shellClass( void) { return "YRShell8266"; }
-  virtual const char* mainFileName( ) { return "examples/YRShell8266/YRShell8266.ino"; }
+  virtual const char* mainFileName( ) { return "main.cpp"; }
   void outUInt8( int8_t v);
 
 public:

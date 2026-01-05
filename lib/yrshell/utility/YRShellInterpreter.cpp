@@ -2382,7 +2382,7 @@ void YRShellInterpreter::popState() {
     }
 }
 void YRShellInterpreter::fillPadInternal( char c) {
-    uint16_t i, j;
+    uint16_t i;
     if( c == '\r' || c == '\n') {
         for( i = 0; i < m_padCount; i++ ) {
             if( m_Pad[ i] != ' ' && m_Pad[ i] != '\t') {

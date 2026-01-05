@@ -69,7 +69,7 @@ void TelnetServer::slice() {
     } else {
       switch( m_state) {
         case 0:
-          *m_client = m_server->available();
+          *m_client = m_server->accept();
           if( *m_client) {
             m_lastConnected = true;
             if( m_log != NULL) {
@@ -106,8 +106,8 @@ void TelnetServer::slice() {
             if( m_toTelnetQ) {
               const char* p = m_toTelnetQ->getLinearReadBuffer();
               size_t len = m_toTelnetQ->getLinearReadBufferSize();
-              if( len > 0 && m_client->availableForWrite() >= len) {
-                size_t bw = m_client->write((uint8_t*) p , len );    
+              if( len > 0 && m_client->availableForWrite() >= (int) len) {
+                size_t bw = m_client->write((uint8_t*) p , len );
                 if( bw > 0) {
                   m_toTelnetQ->drop( bw);
                 }
