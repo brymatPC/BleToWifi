@@ -153,7 +153,7 @@ void YRShell8266::init( unsigned httpPort, unsigned telnetPort, WifiConnection* 
   }
   if( telnetPort != 0) {
     m_telnetServer = new TelnetServer;
-    m_telnetServer->init( telnetPort, this, log);
+    m_telnetServer->init( telnetPort, &getInq(), &getOutq(), log);
   }
   if( telnetLogPort != 0) {
     m_telnetLogServer = new TelnetLogServer;

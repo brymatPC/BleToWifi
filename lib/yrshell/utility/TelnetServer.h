@@ -4,9 +4,6 @@
 #include <ESP8266WiFi.h>
 #include <LittleFS.h>
 #include "DebugLog.h"
-#include <YRShell8266.h>
-
-class YRShell8266;
 
 class TelnetServer : public Sliceable {
 protected:
@@ -28,7 +25,7 @@ public:
   TelnetServer(void);
   virtual ~TelnetServer();
   virtual const char* sliceName( ) { return "TelnetServer"; }
-  void init( unsigned port, YRShell8266* shell, DebugLog* log );
+  void init( unsigned port, CircularQBase<char> *in, CircularQBase<char>* out, DebugLog* log );
   void slice( void);
 };
 

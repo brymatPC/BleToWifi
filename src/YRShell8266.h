@@ -1,7 +1,7 @@
 #ifndef YRShell8266_h
 #define YRShell8266_h
 
-#include "YRShell.h"
+#include <YRShell.h>
 #include "WifiConnection.h"
 
 #include "utility/DebugLog.h"
