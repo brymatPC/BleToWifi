@@ -2333,7 +2333,7 @@ void YRShellInterpreter::reset( ) {
         m_PC = 0;
         //m_outputTimeoutInMilliseconds = 1000;
     
-        m_outputStr0 = "\r" YRSHELL_VERSION " Commit: " GIT_COMMIT_HASH " " GIT_COMMIT_SHORT_HASH "\rCompile Time: " __DATE__ " " __TIME__ " Main File: ";
+        m_outputStr0 = "\r" YRSHELL_VERSION "Compile Time: " __DATE__ " " __TIME__ " Main File: ";
         m_outputStr1 = mainFileName();
     }
 }
