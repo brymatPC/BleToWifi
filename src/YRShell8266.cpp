@@ -1,6 +1,6 @@
 #include "YRShell8266.h"
 
-#define INITIAL_LOAD_FILE "/start.macro"
+#define INITIAL_LOAD_FILE "/start.yr"
 
 void HServer::exec( const char *p) {
   m_shell->execString( p);
