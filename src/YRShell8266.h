@@ -2,7 +2,6 @@
 #define YRShell8266_h
 
 #include <YRShell.h>
-#include "HttpServer.h"
 
 #include <ESP8266WiFi.h>
 #include <LittleFS.h>
@@ -10,28 +9,11 @@
 #include <utility/DebugLog.h>
 
 class YRShell8266;
+class LedBlink;
 class WifiConnection;
+class HServer;
 class TelnetServer;
 class TelnetLogServer;
-
-class HServer : public HttpServer {
-protected:
-  YRShell8266* m_shell;
-  char m_auxBuf[ 128];
-  uint8_t m_auxBufIndex;
-
-  bool m_lastPromptEnable, m_lastCommandEcho;
-
-  virtual void exec( const char *p);
-  virtual void startExec( void);
-  virtual void endExec( void);
-  virtual bool sendExecReply( void);
-  
-public:
-  HServer( YRShell8266* s) { m_shell = s; } 
-  virtual ~HServer() {}
-  virtual const char* sliceName( ) { return "HServer"; }
-};
 
 typedef enum {
     SE_CC_first = YRSHELL_DICTIONARY_EXTENSION_FUNCTION,
@@ -116,11 +98,12 @@ protected:
 public:
   YRShell8266( );
   virtual ~YRShell8266( );
-  void init( unsigned httpPort, unsigned telnetPort, DebugLog* log, unsigned debugTelnetPort = 0);
+  void init( unsigned telnetPort, DebugLog* log, unsigned debugTelnetPort = 0);
 
   // Provide object instances to drive testing, can be nullptr
   void setLedBlink(LedBlink *led) { m_led = led; }
   void setWifiConnection(WifiConnection* wifiConnection) { m_wifiConnection = wifiConnection; }
+  void setHttpServer(HServer* httpServer) { m_httpServer = httpServer; }
 
   virtual void slice( void);
   void loadFile( const char* fname, bool exec = true);

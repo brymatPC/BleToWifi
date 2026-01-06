@@ -5,50 +5,6 @@
 
 #define INITIAL_LOAD_FILE "/start.yr"
 
-void HServer::exec( const char *p) {
-  m_shell->execString( p);
-  m_auxBufIndex = 0;
-}
-
-void HServer::startExec( ) {
-  m_shell->startExec();
-}
-void HServer::endExec( ) {
-  m_shell->endExec();
-}
-
-bool HServer::sendExecReply( void) {
-  bool rc = true;
-  if( m_shell->isAuxQueueInUse() && m_shell->isExec() ) {
-    rc = false;
-    CircularQBase<char>& q = m_shell->getAuxOutq();
-    while( q.valueAvailable()) {
-      char c = q.get();
-      if( c != '\r' && c != '\n' ) {
-        m_auxBuf[ m_auxBufIndex++] = c;    
-      }
-      if( c == '\r' || c == '\n' ||  m_auxBufIndex > (sizeof(m_auxBuf) - 2 ) ) {
-        m_auxBuf[ m_auxBufIndex] = '\0';
-        bool flag = true;
-        for( const char* p = m_auxBuf; flag && *p != '\0'; p++) {
-          if( *p != ' ' && *p != '\r' && *p != '\n' && *p != '\t') {
-            flag = false;
-          }
-        }
-        if( !flag && m_log != NULL) {
-          m_log->print( __FILE__, __LINE__, 4, m_auxBuf, "HServer_sendExecReply: auxBuf");
-        }
-        if( c == '\r' || c == '\n' ) {
-          m_auxBuf[ m_auxBufIndex++] = c;    
-        }
-        clientWrite( m_auxBuf, m_auxBufIndex);
-        m_auxBufIndex = 0;
-      }
-    }
-  }
-  return rc;
-}
-
 static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_setPinIn,             "setPinIn" },
     { SE_CC_setPinIn,             "spi" },
@@ -129,10 +85,6 @@ YRShell8266::YRShell8266() {
 }
 
 YRShell8266::~YRShell8266() {
-  if( m_httpServer != NULL) {
-    delete m_httpServer;
-    m_httpServer = NULL;
-  }
   if( m_telnetServer != NULL) {
     delete m_telnetServer;
     m_telnetServer = NULL;
@@ -143,15 +95,11 @@ YRShell8266::~YRShell8266() {
   }
 }
 
-void YRShell8266::init( unsigned httpPort, unsigned telnetPort, DebugLog* log, unsigned telnetLogPort) {
+void YRShell8266::init( unsigned telnetPort, DebugLog* log, unsigned telnetLogPort) {
   YRShellBase::init();
   m_dictionaryList[ YRSHELL_DICTIONARY_EXTENSION_COMPILED_INDEX] = &compiledExtensionDictionary;
   m_dictionaryList[ YRSHELL_DICTIONARY_EXTENSION_FUNCTION_INDEX] = &dictionaryExtensionFunction;
   m_log = log;
-  if( httpPort != 0) {
-    m_httpServer = new HServer( this);
-    m_httpServer->init( httpPort, m_log, m_led);
-  }
   if( telnetPort != 0) {
     m_telnetServer = new TelnetServer;
     m_telnetServer->init( telnetPort, &getInq(), &getOutq(), log);

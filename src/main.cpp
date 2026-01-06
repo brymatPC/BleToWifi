@@ -1,6 +1,6 @@
 #include "YRShell8266.h"
 #include "WifiConnection.h"
-
+#include "HttpServer.h"
 
 //  0x01 - setup log
 //  0x02 - errors
@@ -30,8 +30,12 @@ DebugLog dbg;
 YRShell8266 shell;
 LedBlink onBoardLed;
 WifiConnection wifiConnection(&onBoardLed, &dbg);
+HServer httpServer(&shell);
 
 void setup(){
+  unsigned httpPort = 80;
+  unsigned telnetPort = 23;
+  unsigned telnetLogPort = 2023;
   dbg.setMask( LOG_MASK);
 
   BSerial.begin( 500000);
@@ -66,9 +70,14 @@ void setup(){
   onBoardLed.setLedPin( LED_PIN); 
   wifiConnection.enable();
 
+  if( httpPort != 0) {
+    httpServer.init( httpPort, &dbg, &onBoardLed);
+  }
+
   shell.setLedBlink(&onBoardLed);
   shell.setWifiConnection(&wifiConnection);
-  shell.init( 80, 23, &dbg, 2023);
+  shell.setHttpServer(&httpServer);
+  shell.init( 23, &dbg, 2023);
   dbg.print( __FILE__, __LINE__, 1, "setup_done:");
 }
 
