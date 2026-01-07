@@ -1,7 +1,6 @@
 #ifndef HttpServer_h
 #define HttpServer_h
 
-#include <ESP8266WiFi.h>
 #include <LittleFS.h>
 
 #include <utility/Sliceable.h>
@@ -9,6 +8,8 @@
 
 class DebugLog;
 class LedBlink;
+class WiFiServer;
+class WiFiClient;
 
 class HttpServer : public Sliceable {
 protected:

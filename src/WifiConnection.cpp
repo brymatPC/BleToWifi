@@ -165,12 +165,28 @@ const char* NetworkParameters::getNetworkPassword( uint8_t index) {
 #define BLINK_SPEED_CONNECTING_MS 200
 #define BLINK_SPEED_SCANNING_MS 400
 
+typedef enum {
+  STATE_RESET             = 0,
+  STATE_INIT_CONNECT      = 1,
+  STATE_LOAD_NETWORK_NAME = 2,
+  STATE_WAIT_CONNECT      = 3,
+  STATE_NEXT_NETWORK      = 4,
+  STATE_CONNECTING        = 5,
+  STATE_CONNECTED         = 6,
+  STATE_INIT_AP           = 7,
+  STATE_NETWORK_SCAN      = 8,
+  STATE_PARSE_NETWORKS    = 9,
+  STATE_CONFIGURE_AP      = 10,
+  STATE_AP_READY          = 11,
+
+} wifiStates_t;
+
 WifiConnection::WifiConnection( LedBlink* led, DebugLog* log, uint32_t connectTimeout) : networkParameters(log) {
   m_led = led;
   m_log = log;
   m_connectTimeout = connectTimeout;
   m_currentAp = 0;
-  m_state = 0;
+  m_state = STATE_RESET;
   m_enable = false;
   m_maxRssi = -1024;
   m_hostActive = false;
@@ -196,26 +212,26 @@ void WifiConnection::slice( ) {
   const char* q;
   int i, k, m;
   switch( m_state) {
-    case 0:
+    case STATE_RESET:
       networkParameters.load();
       m_currentAp = 0;
       if( m_led) {
         m_led->off();
       }
-      changeState( 7);
+      changeState( STATE_INIT_AP);
     break;
 
-    case 1:
+    case STATE_INIT_CONNECT:
       if( m_led) {
         m_led->off();
       }
       if( m_enable && networkParameters.getNumberOfNetworks() >= 0) {
         m_timer.setInterval( m_connectTimeout);
-        changeState( 2);
+        changeState( STATE_LOAD_NETWORK_NAME);
       }
     break;
 
-    case 2:
+    case STATE_LOAD_NETWORK_NAME:
       if( m_led) {
         m_led->blink( BLINK_SPEED_CONNECTING_MS);
       }
@@ -224,61 +240,61 @@ void WifiConnection::slice( ) {
       m_log->print( __FILE__, __LINE__, 1, m_currentAp, "WifiConnection::slice_connecting: currentAp" );
       m_log->print( __FILE__, __LINE__, 1, p, q, "WifiConnection::slice_connecting: p, q" );
       if( *p == '\0' || *q == '\0') {
-        changeState( 3);
+        changeState( STATE_WAIT_CONNECT);
       } else {
         WiFi.begin( (char*)p,  q);
-        changeState( 3);
+        changeState( STATE_WAIT_CONNECT);
         if( m_log) {
           m_log->print( __FILE__, __LINE__, 1, p, "WifiConnection::slice_connecting: networkName" );
         }
       }
     break;
 
-    case 3:
+    case STATE_WAIT_CONNECT:
       if( WiFi.status() == WL_CONNECTED) {
         networkParameters.setNetworkIp((uint32_t) WiFi.localIP());
-        changeState( 5);
+        changeState( STATE_CONNECTING);
       } else if( m_timer.hasIntervalElapsed()) {
-        changeState( 4);
+        changeState( STATE_NEXT_NETWORK);
       } 
     break;
 
-    case 4:
+    case STATE_NEXT_NETWORK:
       m_currentAp++;
       if( m_currentAp >= networkParameters.getNumberOfNetworks() ) {
         m_currentAp = 0;
       }
-      changeState( 1);
+      changeState( STATE_INIT_CONNECT);
     break;
 
-    case 5:
+    case STATE_CONNECTING:
       p = networkParameters.getNetworkName( m_currentAp );
       if( m_log) {
         m_log->print( __FILE__, __LINE__, 1,  networkParameters.get( m_currentAp), "WifiConnection::slice_connected: networkName" );
       }
       m_timer.setInterval( 500);
-      changeState( 6);
+      changeState( STATE_CONNECTED);
       if( m_led) {
         m_led->on();
       }
     break;
 
-    case 6:
+    case STATE_CONNECTED:
       if( m_timer.isNextInterval() ) {
         if(WiFi.status() != WL_CONNECTED) {
             if( m_log) {
               m_log->print( __FILE__, __LINE__, 1,  networkParameters.getNetworkName( m_currentAp ), "WifiConnection::slice_disconnected: networkName" );
             }
-          changeState( 4);
+          changeState( STATE_NEXT_NETWORK);
         }
       }
     break;
 
-    case 7:
+    case STATE_INIT_AP:
       WiFi.mode(WIFI_STA);
       WiFi.disconnect(  );
       m_timer.setInterval( 100);
-      changeState( 8);
+      changeState( STATE_NETWORK_SCAN);
       m_maxRssi = -1024;
       m_maxRssiIndex = 0;
       if( m_led) {
@@ -287,18 +303,18 @@ void WifiConnection::slice( ) {
 
     break;
 
-    case 8:
+    case STATE_NETWORK_SCAN:
       if( m_timer.hasIntervalElapsed() ) {
         WiFi.scanNetworks( true);
         m_timer.setInterval( m_connectTimeout * 2);
         if( m_log) {
           m_log->print( __FILE__, __LINE__, 1, "WifiConnection_slice_scanStarted: " );
         }
-        changeState( 9);
+        changeState( STATE_PARSE_NETWORKS);
       }
     break;
 
-    case 9:
+    case STATE_PARSE_NETWORKS:
       i = WiFi.scanComplete();
       if( i > 0) {
         m = networkParameters.getNumberOfNetworks();
@@ -321,17 +337,17 @@ void WifiConnection::slice( ) {
           }
         }
         WiFi.scanDelete( );
-        changeState( 10);
+        changeState( STATE_CONFIGURE_AP);
       } else if( m_timer.hasIntervalElapsed()) {
         if( m_log) {
           m_log->print( __FILE__, __LINE__, 1, i, "WifiConnection::slice_scan_timeout:" );
         }
         WiFi.scanDelete( );
-        changeState( 10);
+        changeState( STATE_CONFIGURE_AP);
       }
     break;
 
-    case 10:
+    case STATE_CONFIGURE_AP:
       p = networkParameters.getHostName( );
       q = networkParameters.getHostPassword(  );
       m_log->print( __FILE__, __LINE__, 1, p, q, "WifiConnection::slice_host: p, q" );
@@ -354,13 +370,13 @@ void WifiConnection::slice( ) {
           }
         }
       }
-      changeState( 11);
+      changeState( STATE_AP_READY);
     break;
 
-    case 11:
+    case STATE_AP_READY:
       m_currentAp = m_maxRssiIndex == 0 ? 0 : m_maxRssiIndex;
       m_log->print( __FILE__, __LINE__, 1, m_enable,  m_currentAp, networkParameters.getNumberOfNetworks(), "WifiConnection::slice_scan_done: enable, m_currentAp, numberOfNetworks" );
-      changeState( 1);
+      changeState( STATE_INIT_CONNECT);
       if( m_led) {
         m_led->off();
       }

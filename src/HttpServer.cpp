@@ -3,6 +3,9 @@
 #include <utility/LedBlink.h>
 #include <utility/String.h>
 
+#include <WiFiServer.h>
+#include <WiFiClient.h>
+
 typedef enum {
   STATE_RESET            = 0,
   STATE_IDLE            = 1,
