@@ -3,11 +3,11 @@
 
 #include "HttpServer.h"
 
-class YRShell8266;
+class YRShellExec;
 
 class HttpExecServer : public HttpServer {
 protected:
-  YRShell8266* m_shell;
+  YRShellExec* m_shell;
   char m_auxBuf[ 128];
   uint8_t m_auxBufIndex;
 
@@ -19,7 +19,7 @@ protected:
   virtual bool sendExecReply( void);
 
 public:
-  HttpExecServer( YRShell8266* s) { m_shell = s; }
+  HttpExecServer( YRShellExec* s) { m_shell = s; }
   virtual ~HttpExecServer() {}
   virtual const char* sliceName( ) { return "HttpExecServer"; }
 };

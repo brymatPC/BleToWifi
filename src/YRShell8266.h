@@ -8,7 +8,8 @@
 
 #include <utility/DebugLog.h>
 
-class YRShell8266;
+#include "YRShellExec.h"
+
 class LedBlink;
 class WifiConnection;
 class TelnetLogServer;
@@ -73,7 +74,7 @@ typedef enum {
     SE_CC_last
 } SE_CC_functions;
 
-class YRShell8266 : public virtual YRShellBase<2048, 128, 128, 16, 16, 16, 8, 256, 512, 256, 512, 128> {
+class YRShell8266 : public YRShellExec, public virtual YRShellBase<2048, 128, 128, 16, 16, 16, 8, 256, 512, 256, 512, 128> {
 protected:
   bool m_exec, m_initialized;
   char m_auxBuf[ 128];
@@ -103,6 +104,9 @@ public:
 
   virtual void slice( void);
   void loadFile( const char* fname, bool exec = true);
+
+  inline bool isAuxQueueInUse( void) { return m_useAuxQueues; }
+  CircularQBase<char>& getAuxOutq(void) { return *m_AuxOutq; };
   void startExec( void);
   void endExec( void);
   void execString( const char* p);

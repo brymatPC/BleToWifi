@@ -1,5 +1,7 @@
 #include "HttpExecServer.h"
-#include "YRShell8266.h"
+#include "YRShellExec.h"
+
+#include <utility/DebugLog.h>
 
 void HttpExecServer::exec( const char *p) {
   m_shell->execString( p);
