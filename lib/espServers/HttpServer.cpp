@@ -3,10 +3,12 @@
 #include <utility/LedBlink.h>
 #include <utility/String.h>
 
+#include <Wifi.h>
 #include <WiFiServer.h>
 #include <WiFiClient.h>
 
 typedef enum {
+  STATE_STARTUP          = 30,
   STATE_RESET            = 0,
   STATE_IDLE            = 1,
   STATE_CONNECTING      = 20,
@@ -29,8 +31,9 @@ HttpServer::HttpServer( void) {
 
   m_log = NULL;
   m_led = NULL;
-  
-  m_state = 0;
+
+  m_port = 0;
+  m_state = STATE_STARTUP;
   m_urlIndex = 0;
 }
 
@@ -44,17 +47,16 @@ HttpServer::~HttpServer( void) {
     m_client = NULL;
   }
   m_log = NULL;
-  m_state = 0;
+  m_state = STATE_STARTUP;
   m_responseCode = 0;
   m_urlIndex = 0;
 }
 
 void HttpServer::init(unsigned port, DebugLog* log) {
-    m_server = new WiFiServer(port);
+    m_port = port;
     m_log = log;
-    m_server->begin();
     m_client = NULL;
-    m_state = STATE_RESET;
+    m_state = STATE_STARTUP;
     m_urlIndex = 0;
 }
 unsigned HttpServer::readFile( char* P, unsigned len) {
@@ -80,7 +82,10 @@ void HttpServer::clientWrite( const char* P){
 }
 void HttpServer::clientWrite( const char* P, unsigned len){
   uint32_t start = HW_getMicros();
-  m_client->write( P, len);
+  size_t numWritten = m_client->write( P, len);
+  if(numWritten != len) {
+    m_log->print( __FILE__, __LINE__, 0x010000, len, numWritten, "clientWrite: len, numWritten");
+  }
   unsigned et =  HW_getMicros() - start;
   if( m_log != NULL  && et > 900) {
     m_log->print( __FILE__, __LINE__, 0x010000, len, et, "clientWrite: len, time");
@@ -144,6 +149,14 @@ void HttpServer::slice() {
   uint32_t start = HW_getMicros();
   uint8_t startState = m_state;
   switch( m_state) {
+    case STATE_STARTUP:
+      // BAM - 20260107 - Need to wait for WiFi to be initialized before creating a server or client
+      if(WiFi.getMode() != WIFI_MODE_NULL) {
+        m_server = new WiFiServer(m_port);
+        m_server->begin();
+        changeState( STATE_RESET);
+      }
+    break;
     case STATE_RESET:
       m_client = new WiFiClient;
       changeState( STATE_IDLE);
@@ -251,7 +264,8 @@ void HttpServer::slice() {
         m_sendFile.close();
         changeState( STATE_DISCONNECTING);
       } else {
-        if( m_client != NULL && m_client->availableForWrite() >= (int) sizeof(m_buf)) {
+        //if( m_client != NULL && m_client->availableForWrite() >= (int) sizeof(m_buf)) {
+        if( m_client != NULL) {
           size_t br = readFile( m_buf, sizeof(m_buf)); 
           if( br > 0) {
             clientWrite( m_buf, br);

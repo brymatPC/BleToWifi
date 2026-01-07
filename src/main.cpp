@@ -29,22 +29,25 @@
 
 DebugLog dbg;
 YRShell8266 shell;
-LedBlink onBoardLed;
-WifiConnection wifiConnection(&onBoardLed, &dbg);
+// LedBlink onBoardLed;
+// WifiConnection wifiConnection(&onBoardLed, &dbg);
+WifiConnection wifiConnection(nullptr, &dbg);
 HttpExecServer httpServer;
-TelnetServer telnetServer;
-TelnetLogServer telnetLogServer;
+//TelnetServer telnetServer;
+// TelnetLogServer telnetLogServer;
 
- void setup(){
+void setup(){
   unsigned httpPort = 80;
   unsigned telnetPort = 23;
-  unsigned telnetLogPort = 2023;
+  unsigned telnetLogPort = 0;
   dbg.setMask( LOG_MASK);
 
-  BSerial.begin( 500000);
+  Serial.begin( 500000);
 
+ #ifndef ESP32
   analogWriteFreq( 100);
   analogWriteRange(1023);
+#endif
 
   dbg.print( __FILE__, __LINE__, 1, "\r\n\n");
 
@@ -55,7 +58,7 @@ TelnetLogServer telnetLogServer;
   }
 
   if( !LittleFS.exists( wifiConnection.networkParameters.fileName())) {
-    wifiConnection.networkParameters.setHost("esp8266", "esp8266password", "0x020AA8C0" , "0x010AA8C0", "0x00FFFFFF" );
+    wifiConnection.networkParameters.setHost("esp32", "esp8266password", "0x020AA8C0" , "0x010AA8C0", "0x00FFFFFF" );
     wifiConnection.networkParameters.addNetwork( "", "");
     wifiConnection.networkParameters.addNetwork( "", "");
     wifiConnection.networkParameters.addNetwork( "", "");
@@ -70,7 +73,7 @@ TelnetLogServer telnetLogServer;
     dbg.print( __FILE__, __LINE__, 1, "Network parameters have been re-initialized");
  }
   
-  onBoardLed.setLedPin( LED_PIN); 
+  //onBoardLed.setLedPin( LED_PIN); 
   wifiConnection.enable();
 
   if( httpPort != 0) {
@@ -78,27 +81,29 @@ TelnetLogServer telnetLogServer;
     httpServer.setYRShell(&shell);
     //httpServer.setLedBlink(&onBoardLed);
   }
-  if( telnetPort != 0) {
-    telnetServer.init( telnetPort, &shell.getInq(), &shell.getOutq(), &dbg);
-  }
-  if( telnetLogPort != 0) {
-    telnetLogServer.init( telnetLogPort);
-  }
+  // if( telnetPort != 0) {
+  //   telnetServer.init( telnetPort, &shell.getInq(), &shell.getOutq(), &dbg);
+  // }
+  // if( telnetLogPort != 0) {
+  //   telnetLogServer.init( telnetLogPort);
+  // }
 
-  shell.setLedBlink(&onBoardLed);
+  // shell.setLedBlink(&onBoardLed);
   shell.setWifiConnection(&wifiConnection);
-  shell.setTelnetLogServer(&telnetLogServer);
+  // //shell.setTelnetLogServer(&telnetLogServer);
   shell.init( &dbg);
   dbg.print( __FILE__, __LINE__, 1, "setup_done:");
 }
 
 void loop() {
   Sliceable::sliceAll( );
-  if( dbg.valueAvailable() && telnetLogServer.spaceAvailable( 32) && Serial.availableForWrite() > 32) {
+  //if( dbg.valueAvailable() && telnetLogServer.spaceAvailable( 32) && Serial.availableForWrite() > 32) {
+  if( dbg.valueAvailable() && Serial.availableForWrite() > 32) {
+  //if( dbg.valueAvailable()) {
     char c;
     for( uint8_t i = 0; i < 32 && dbg.valueAvailable(); i++) {
       c = dbg.get();
-      telnetLogServer.put( c);
+      //telnetLogServer.put( c);
       Serial.print( c );
     }
   }

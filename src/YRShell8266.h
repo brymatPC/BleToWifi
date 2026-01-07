@@ -3,7 +3,11 @@
 
 #include <YRShell.h>
 
-#include <ESP8266WiFi.h>
+#ifdef ESP32
+  //#include <ESP32WiFi.h>
+#else
+  #include <ESP8266WiFi.h>
+#endif
 #include <LittleFS.h>
 
 #include <utility/DebugLog.h>

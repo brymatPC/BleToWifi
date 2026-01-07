@@ -1,8 +1,11 @@
 #ifndef WifiConnection_h
 #define WifiConnection_h
 
-#include <ESP8266WiFi.h>
-
+#ifdef ESP32
+  #include <Wifi.h>
+#else
+  #include <ESP8266WiFi.h>
+#endif
 #include <utility/Sliceable.h>
 #include <utility/IntervalTimer.h>
 #include <utility/DebugLog.h>

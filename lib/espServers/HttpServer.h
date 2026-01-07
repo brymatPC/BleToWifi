@@ -13,6 +13,7 @@ class WiFiClient;
 
 class HttpServer : public Sliceable {
 protected:
+  int m_port;
   uint8_t m_state;
   uint16_t m_responseCode;
   uint32_t m_requestStart;

@@ -36,7 +36,11 @@ void BufferedSerial::setBaud( uint32_t baud) {
 	m_hs->begin( baud);
 }
 
-BufferedSerial BSerial( &Serial);  
+#ifdef ESP32
+BufferedSerial BSerial( &Serial0);
+#else
+BufferedSerial BSerial( &Serial);
+#endif
 #ifdef ENABLE_SERIAL1
 BufferedSerial BSerial1( &Serial1);  
 #endif
