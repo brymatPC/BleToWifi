@@ -60,7 +60,5 @@
 : ledOff 1 0xFFFFFFF setLedOnOffMs
 : ledBlink dup setLedOnOffMs
 
-0x200000 setLogMask
-
 mainIO
 
