@@ -1,6 +1,12 @@
 #include "TelnetServer.h"
 
-#include <Wifi.h>
+#if defined (ESP32)
+  #include <Wifi.h>
+#elif defined (ESP8266)
+  #include <ESP8266WiFi.h>
+#else
+  #warning "WiFi is not supported on the selected target"
+#endif
 #include <WiFiServer.h>
 #include <WiFiClient.h>
 

@@ -2,15 +2,8 @@
 #define YRShell8266_h
 
 #include <YRShell.h>
-
-#ifdef ESP32
-  //#include <ESP32WiFi.h>
-#else
-  #include <ESP8266WiFi.h>
-#endif
-#include <LittleFS.h>
-
 #include <utility/DebugLog.h>
+#include <LittleFS.h>
 
 #include "YRShellExec.h"
 

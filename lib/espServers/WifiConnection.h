@@ -1,10 +1,12 @@
 #ifndef WifiConnection_h
 #define WifiConnection_h
 
-#ifdef ESP32
+#if defined (ESP32)
   #include <Wifi.h>
-#else
+#elif defined (ESP8266)
   #include <ESP8266WiFi.h>
+#else
+  #warning "WiFi is not supported on the selected target"
 #endif
 #include <utility/Sliceable.h>
 #include <utility/IntervalTimer.h>

@@ -27,11 +27,19 @@
 
 #define LED_PIN 16
 
+#if defined (ESP32)
+  static const char * s_NETWORK_NAME = "esp32";
+#elif defined (ESP8266)
+  static const char * s_NETWORK_NAME = "esp8266";
+#else
+  static const char * s_NETWORK_NAME = "yrshell";
+#endif
+
+
 DebugLog dbg;
 YRShell8266 shell;
-// LedBlink onBoardLed;
-// WifiConnection wifiConnection(&onBoardLed, &dbg);
-WifiConnection wifiConnection(nullptr, &dbg);
+LedBlink onBoardLed;
+WifiConnection wifiConnection(&onBoardLed, &dbg);
 HttpExecServer httpServer;
 TelnetServer telnetServer;
 TelnetLogServer telnetLogServer;
@@ -44,7 +52,7 @@ void setup(){
 
   Serial.begin( 500000);
 
- #ifndef ESP32
+#ifdef ESP8266
   analogWriteFreq( 100);
   analogWriteRange(1023);
 #endif
@@ -58,7 +66,7 @@ void setup(){
   }
 
   if( !LittleFS.exists( wifiConnection.networkParameters.fileName())) {
-    wifiConnection.networkParameters.setHost("esp32", "esp8266password", "0x020AA8C0" , "0x010AA8C0", "0x00FFFFFF" );
+    wifiConnection.networkParameters.setHost(s_NETWORK_NAME, "espPassword", "0x020AA8C0" , "0x010AA8C0", "0x00FFFFFF" );
     wifiConnection.networkParameters.addNetwork( "", "");
     wifiConnection.networkParameters.addNetwork( "", "");
     wifiConnection.networkParameters.addNetwork( "", "");
@@ -73,13 +81,13 @@ void setup(){
     dbg.print( __FILE__, __LINE__, 1, "Network parameters have been re-initialized");
  }
   
-  //onBoardLed.setLedPin( LED_PIN); 
+  onBoardLed.setLedPin( LED_PIN); 
   wifiConnection.enable();
 
   if( httpPort != 0) {
     httpServer.init( httpPort, &dbg);
     httpServer.setYRShell(&shell);
-    //httpServer.setLedBlink(&onBoardLed);
+    httpServer.setLedBlink(&onBoardLed);
   }
   if( telnetPort != 0) {
     telnetServer.init( telnetPort, &shell.getInq(), &shell.getOutq(), &dbg);
@@ -88,7 +96,7 @@ void setup(){
     telnetLogServer.init( telnetLogPort);
   }
 
-  // shell.setLedBlink(&onBoardLed);
+  shell.setLedBlink(&onBoardLed);
   shell.setWifiConnection(&wifiConnection);
   shell.setTelnetLogServer(&telnetLogServer);
   shell.init( &dbg);
