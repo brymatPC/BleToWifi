@@ -3,7 +3,6 @@
 #ifdef PLATFORM_ARDUINO
 BufferedSerial::BufferedSerial( HardwareSerial* hs) {
 	m_hs = hs;
-	m_hwcdc = nullptr;
 }
 #ifdef ESP32
 BufferedSerial::BufferedSerial( HWCDC* hwcdc) {
@@ -32,6 +31,7 @@ void BufferedSerial::slice( void) {
 		}
 	}
 }
+#ifdef ESP32
 void BufferedSerial::begin( uint32_t baud) {
 	if(m_hs) {
 		m_hs->begin( baud);
@@ -55,7 +55,18 @@ void BufferedSerial::setBaud( uint32_t baud) {
 		m_hwcdc->begin( baud);
 	}
 }
-
+#else
+void BufferedSerial::begin( uint32_t baud) {
+	m_hs->begin( baud);
+}
+void BufferedSerial::end( void) {
+	m_hs->end( );
+}
+void BufferedSerial::setBaud( uint32_t baud) {
+	m_hs->end( );
+	m_hs->begin( baud);
+}
+#endif
 BufferedSerial BSerial( &Serial);
 #ifdef ENABLE_SERIAL1
 BufferedSerial BSerial1( &Serial1);  
