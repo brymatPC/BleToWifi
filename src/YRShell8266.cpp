@@ -226,7 +226,11 @@ void YRShell8266::executeFunction( uint16_t n) {
               pushParameterStack( digitalRead(popParameterStack()));
               break;
           case SE_CC_getAnalogPin:
+#ifdef ESP8266
               pushParameterStack( analogRead(A0));
+#else
+              pushParameterStack( 0);
+#endif
               break;
           case SE_CC_ledPush:
               if( m_led) {
