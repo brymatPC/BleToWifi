@@ -27,6 +27,8 @@
 
 #define LED_PIN 16
 
+#define YRSHELL_ON_TELNET
+
 #if defined (ESP32)
   static const char * s_NETWORK_NAME = "esp32";
 #elif defined (ESP8266)
@@ -94,12 +96,18 @@ void setup(){
     httpServer.setYRShell(&shell);
     //httpServer.setLedBlink(&onBoardLed);
   }
+#ifdef YRSHELL_ON_TELNET
   if( telnetPort != 0) {
     telnetServer.init( telnetPort, &shell.getInq(), &shell.getOutq(), &dbg);
   }
+#endif
   if( telnetLogPort != 0) {
     telnetLogServer.init( telnetLogPort);
   }
+
+#ifndef YRSHELL_ON_TELNET
+  BSerial.init(shell.getInq(), shell.getOutq());
+#endif
 
   shell.setLedBlink(&onBoardLed);
   shell.setWifiConnection(&wifiConnection);
@@ -119,9 +127,11 @@ void loop() {
       if(telnetSpaceAvailable) {
         telnetLogServer.put( c);
       }
+#ifndef YRSHELL_ON_TELNET
       if(serialSpaceAvailable) {
         Serial.print( c );
       }
+#endif
     }
   }
 }
