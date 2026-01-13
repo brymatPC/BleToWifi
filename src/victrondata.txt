@@ -1,0 +1,53 @@
+"0xE102100281A302A201BEC166B1A149E08BAC861953269021D3"
+
+E102 - Company Identifier
+10 - Data Record Type
+0281 - Model ID
+A3 - Read Out Type
+
+02A201BE
+
+02 - Record Type
+A201 - Nonce/Counter
+BE - First byte of Key
+
+C166B1A149E08BAC861953269021D3
+
+TTG - 2 bytes
+Volt - 2 bytes
+Alarm - 2 bytes
+Aux - 2 bytes
+Aux - 2 bits
+Current - 22 bits
+
+
+
+MAC: df3e15b9429e
+Key: be1edba771640faec91d683c70efe5f1
+
+
+E102
+10
+0281
+A3
+
+02
+BA9B
+BE
+
+7C297C36A0FC16EA7EA4FD25D06A6B
+
+// Output Data
+0x40382805000015016CFDFF000080FE
+
+4038
+2805
+0000
+1501
+6CFDFF
+00000
+80FE
+
+0x3840 = TTG
+0x0528 = Battery Voltage
+0x0115 = Aux Voltage

@@ -10,6 +10,7 @@
 class LedBlink;
 class WifiConnection;
 class TelnetLogServer;
+class BleConnection;
 
 typedef enum {
     SE_CC_first = YRSHELL_DICTIONARY_EXTENSION_FUNCTION,
@@ -67,6 +68,8 @@ typedef enum {
 
     SE_CC_dotUb,
     SE_CC_strToInt,
+
+    SE_CC_bleScan,
     
     SE_CC_last
 } SE_CC_functions;
@@ -80,6 +83,7 @@ protected:
   TelnetLogServer* m_telnetLogServer;
   LedBlink* m_led;
   WifiConnection* m_wifiConnection;
+  BleConnection* m_bleConnection;
   IntervalTimer m_execTimer;
   bool m_fileOpen, m_initialFileLoaded, m_lastPromptEnable, m_lastCommandEcho;
   File m_file;
@@ -97,6 +101,7 @@ public:
   // Provide object instances to drive testing, can be nullptr
   void setLedBlink(LedBlink *led) { m_led = led; }
   void setWifiConnection(WifiConnection* wifiConnection) { m_wifiConnection = wifiConnection; }
+  void setBleConnection(BleConnection* bleConnection) { m_bleConnection = bleConnection; }
   void setTelnetLogServer(TelnetLogServer* telnetLogServer) { m_telnetLogServer = telnetLogServer; }
 
   virtual void slice( void);

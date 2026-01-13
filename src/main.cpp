@@ -2,7 +2,10 @@
 #include "WifiConnection.h"
 #include "HttpExecServer.h"
 #include "TelnetServer.h"
-
+#ifdef ESP32
+  #include <BleConnection.h>
+  #include "VictronDevice.h"
+#endif
 //  0x01 - setup log
 //  0x02 - errors
 //  0x04 - exec output
@@ -23,9 +26,14 @@
 
 // 0x80000000 - YRShellInterpreter debug
 
-#define LOG_MASK 0x80331303
+//#define LOG_MASK 0x80331303
+#define LOG_MASK 0x80000003
 
+#ifdef ESP8266
 #define LED_PIN 16
+#else
+#define LED_PIN 21
+#endif
 
 #define YRSHELL_ON_TELNET
 
@@ -45,6 +53,11 @@ WifiConnection wifiConnection(&onBoardLed, &dbg);
 HttpExecServer httpServer;
 TelnetServer telnetServer;
 TelnetLogServer telnetLogServer;
+
+#ifdef ESP32
+BleConnection bleConnection(&dbg);
+VictronDevice victronParser;
+#endif
 
 void setup(){
   unsigned httpPort = 80;
@@ -112,6 +125,11 @@ void setup(){
   shell.setLedBlink(&onBoardLed);
   shell.setWifiConnection(&wifiConnection);
   shell.setTelnetLogServer(&telnetLogServer);
+#ifdef ESP32
+  shell.setBleConnection(&bleConnection);
+  bleConnection.setParser(&victronParser);
+  victronParser.init(&dbg);
+#endif
   shell.init( &dbg);
   dbg.print( __FILE__, __LINE__, 1, "setup_done:");
 }
@@ -127,7 +145,7 @@ void loop() {
       if(telnetSpaceAvailable) {
         telnetLogServer.put( c);
       }
-#ifndef YRSHELL_ON_TELNET
+#ifdef YRSHELL_ON_TELNET
       if(serialSpaceAvailable) {
         Serial.print( c );
       }

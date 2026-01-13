@@ -3,6 +3,10 @@
 #include "WifiConnection.h"
 #include <utility/String.h>
 
+#ifdef ESP32
+#include <BleConnection.h>
+#endif
+
 #define INITIAL_LOAD_FILE "/start.yr"
 
 static const FunctionEntry yr8266ShellExtensionFunctions[] = {
@@ -64,6 +68,8 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
 
     { SE_CC_dotUb,                ".ub" },
     { SE_CC_strToInt,             "strToInt"},
+
+    { SE_CC_bleScan,              "bscan"},
   
     { 0, NULL}
 };
@@ -469,7 +475,11 @@ void YRShell8266::executeFunction( uint16_t n) {
               }
               pushParameterStack( t1);
               break;
-
+          case SE_CC_bleScan:
+              if( m_bleConnection ) {
+                m_bleConnection->requestScan();
+              }
+            break;
           default:
               shellERROR(__FILE__, __LINE__);
               break;
