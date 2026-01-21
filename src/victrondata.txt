@@ -27,6 +27,9 @@ Key: be1edba771640faec91d683c70efe5f1
 
 s' be1edba771640faec91d683c70efe5f1 ' svk
 
+s' df:3e:15:b9:42:9e' sba
+
+s' df:3e:15:b9:42:9f ' sba
 
 E102
 10

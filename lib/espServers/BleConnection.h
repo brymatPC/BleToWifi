@@ -15,14 +15,23 @@
 
 #define MAX_BLE_DEVICE_DATA 1
 
+typedef enum {
+  BLE_LOG_NONE,
+  BLE_LOG_ADDRESSES,
+  BLE_LOG_ALL
+} bleLogState;
+
 class BleConnection : public Sliceable, public BLEAdvertisedDeviceCallbacks {
 private:
     uint8_t m_state;
     bool m_requestScan;
+    bleLogState m_bleLogState;
+
     DebugLog* m_log;
     BLEScan* m_pBleScan;
     bleDeviceData_t m_devices[MAX_BLE_DEVICE_DATA];
     BleParser *m_parser;
+    char m_addrToParse[20];
     void changeState( uint8_t state);
 protected:
 public:
@@ -34,7 +43,9 @@ public:
     void requestScan() { m_requestScan = true; }
     bleDeviceData_t *deviceData(uint8_t index);
 
+    void setLogState(bleLogState state) {m_bleLogState = state; }
     void setParser(BleParser *parser) {m_parser = parser;}
+    void setAddressToParse(const char *addr);
 
     // BLEAdvertisedDeviceCallbacks
     virtual void onResult(BLEAdvertisedDevice advertisedDevice);

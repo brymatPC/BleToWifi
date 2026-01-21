@@ -71,6 +71,8 @@ typedef enum {
     SE_CC_strToInt,
 
     SE_CC_bleScan,
+    SE_CC_setBleLogState,
+    SE_CC_setBleAddr,
     SE_CC_setVicKey,
     
     SE_CC_last

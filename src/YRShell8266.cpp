@@ -71,6 +71,8 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_strToInt,             "strToInt"},
 
     { SE_CC_bleScan,              "bscan"},
+    { SE_CC_setBleLogState,       "sbls"},
+    { SE_CC_setBleAddr,           "sba"},
     { SE_CC_setVicKey,            "svk"},
   
     { 0, NULL}
@@ -482,6 +484,18 @@ void YRShell8266::executeFunction( uint16_t n) {
                 m_bleConnection->requestScan();
               }
             break;
+          case SE_CC_setBleLogState:
+              t1 = popParameterStack();
+              if( m_bleConnection ) {
+                m_bleConnection->setLogState((bleLogState)t1);
+              }
+              break;
+          case SE_CC_setBleAddr:
+              t1 = popParameterStack();
+              if( m_bleConnection) {
+                  m_bleConnection->setAddressToParse( getAddressFromToken( t1));
+              }
+              break;
           case SE_CC_setVicKey:
               t1 = popParameterStack();
               if( m_victronDevice) {
