@@ -11,6 +11,7 @@ class LedBlink;
 class WifiConnection;
 class TelnetLogServer;
 class BleConnection;
+class VictronDevice;
 
 typedef enum {
     SE_CC_first = YRSHELL_DICTIONARY_EXTENSION_FUNCTION,
@@ -70,6 +71,7 @@ typedef enum {
     SE_CC_strToInt,
 
     SE_CC_bleScan,
+    SE_CC_setVicKey,
     
     SE_CC_last
 } SE_CC_functions;
@@ -84,6 +86,7 @@ protected:
   LedBlink* m_led;
   WifiConnection* m_wifiConnection;
   BleConnection* m_bleConnection;
+  VictronDevice* m_victronDevice;
   IntervalTimer m_execTimer;
   bool m_fileOpen, m_initialFileLoaded, m_lastPromptEnable, m_lastCommandEcho;
   File m_file;
@@ -103,6 +106,7 @@ public:
   void setWifiConnection(WifiConnection* wifiConnection) { m_wifiConnection = wifiConnection; }
   void setBleConnection(BleConnection* bleConnection) { m_bleConnection = bleConnection; }
   void setTelnetLogServer(TelnetLogServer* telnetLogServer) { m_telnetLogServer = telnetLogServer; }
+  void setVictronDevice(VictronDevice *device) { m_victronDevice = device; }
 
   virtual void slice( void);
   void loadFile( const char* fname, bool exec = true);

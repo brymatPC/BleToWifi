@@ -1,6 +1,7 @@
 #include "VictronDevice.h"
 
 #include <utility/DebugLog.h>
+#include <utility/String.h>
 
 #include <aes/esp_aes.h>
 
@@ -29,6 +30,27 @@ static uint8_t s_DEFAULT_KEY[] = {0xBE, 0x1E, 0xDB, 0xA7, 0x71, 0x64, 0x0F, 0xAE
 VictronDevice::VictronDevice() {
     m_key = s_DEFAULT_KEY;
     m_data = bleDeviceData_t{};
+}
+void VictronDevice::setKey(const char *key) {
+    uint8_t tempKey[VICTRON_KEY_LEN];
+    uint8_t num = 0;
+    bool keyValid = true;
+    for(uint8_t i=0; i < VICTRON_KEY_LEN*2; i+=2) {
+        if(key[i] == '\0' || key[i+1] == '\0') {
+            keyValid = false;
+            break;
+        } else {
+            tempKey[num] = charToHex(key[i]) << 4;
+            tempKey[num] |= charToHex(key[i+1]);
+            num++;
+        }
+    }
+    if(keyValid) {
+        memcpy(m_key, tempKey, VICTRON_KEY_LEN);
+        m_log->printX( __FILE__, __LINE__, 1, m_key[0], m_key[1], "VictronDevice: key updated: key_0, key_1");
+    } else {
+        m_log->print( __FILE__, __LINE__, 1, num, "VictronDevice: key invalid, ignoring: num");
+    }
 }
 void VictronDevice::parse() {
     if(m_data.payloadLen == 0 || m_data.payload == nullptr) return;

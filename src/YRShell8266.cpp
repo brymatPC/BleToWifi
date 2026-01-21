@@ -1,6 +1,7 @@
 #include "YRShell8266.h"
 #include "TelnetServer.h"
 #include "WifiConnection.h"
+#include "VictronDevice.h"
 #include <utility/String.h>
 
 #ifdef ESP32
@@ -70,6 +71,7 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_strToInt,             "strToInt"},
 
     { SE_CC_bleScan,              "bscan"},
+    { SE_CC_setVicKey,            "svk"},
   
     { 0, NULL}
 };
@@ -478,6 +480,12 @@ void YRShell8266::executeFunction( uint16_t n) {
           case SE_CC_bleScan:
               if( m_bleConnection ) {
                 m_bleConnection->requestScan();
+              }
+            break;
+          case SE_CC_setVicKey:
+              t1 = popParameterStack();
+              if( m_victronDevice) {
+                  m_victronDevice->setKey( getAddressFromToken( t1));
               }
             break;
           default:

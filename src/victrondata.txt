@@ -25,6 +25,8 @@ Current - 22 bits
 MAC: df3e15b9429e
 Key: be1edba771640faec91d683c70efe5f1
 
+s' be1edba771640faec91d683c70efe5f1 ' svk
+
 
 E102
 10

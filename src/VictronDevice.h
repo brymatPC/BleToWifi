@@ -19,7 +19,7 @@ public:
 
     void init(DebugLog *log) {m_log = log;}
 
-
+    void setKey(const char *key);
     virtual void setData(bleDeviceData_t &data) {m_data = data;}
     virtual void parse();
 };

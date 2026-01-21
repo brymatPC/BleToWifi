@@ -127,6 +127,7 @@ void setup(){
   shell.setTelnetLogServer(&telnetLogServer);
 #ifdef ESP32
   shell.setBleConnection(&bleConnection);
+  shell.setVictronDevice(&victronParser);
   bleConnection.setParser(&victronParser);
   victronParser.init(&dbg);
 #endif
