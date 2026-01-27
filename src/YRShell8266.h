@@ -74,6 +74,8 @@ typedef enum {
     SE_CC_setBleLogState,
     SE_CC_setBleAddr,
     SE_CC_setVicKey,
+
+    SE_CC_flashSize,
     
     SE_CC_last
 } SE_CC_functions;

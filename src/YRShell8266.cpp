@@ -74,7 +74,9 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_setBleLogState,       "sbls"},
     { SE_CC_setBleAddr,           "sba"},
     { SE_CC_setVicKey,            "svk"},
-  
+
+    { SE_CC_flashSize,            "flashSize"},
+
     { 0, NULL}
 };
 
@@ -501,6 +503,12 @@ void YRShell8266::executeFunction( uint16_t n) {
               if( m_victronDevice) {
                   m_victronDevice->setKey( getAddressFromToken( t1));
               }
+            break;
+          case SE_CC_flashSize:
+              t1 = LittleFS.totalBytes();
+              t2 = LittleFS.usedBytes();
+              pushParameterStack( t1);
+              pushParameterStack( t2);
             break;
           default:
               shellERROR(__FILE__, __LINE__);
