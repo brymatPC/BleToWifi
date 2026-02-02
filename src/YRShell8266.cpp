@@ -6,6 +6,7 @@
 
 #ifdef ESP32
 #include <BleConnection.h>
+#include <time.h>
 #endif
 
 #define INITIAL_LOAD_FILE "/start.yr"
@@ -76,6 +77,8 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_setVicKey,            "svk"},
 
     { SE_CC_flashSize,            "flashSize"},
+    { SE_CC_curTime,              "curTime"},
+		{ SE_CC_setTime,              "setTime"},
 
     { 0, NULL}
 };
@@ -208,6 +211,8 @@ void YRShell8266::slice() {
       loadFile( INITIAL_LOAD_FILE);
   }
 } 
+
+
 
 void YRShell8266::executeFunction( uint16_t n) {
   uint32_t t1, t2;
@@ -510,6 +515,24 @@ void YRShell8266::executeFunction( uint16_t n) {
               pushParameterStack( t1);
               pushParameterStack( t2);
             break;
+          case SE_CC_curTime:
+              logTime();
+            break;
+          case SE_CC_setTime:
+            {
+              struct tm t = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+              struct timeval tv;
+              t.tm_sec = popParameterStack( );
+              t.tm_min = popParameterStack( );
+              t.tm_hour = popParameterStack( );
+              t.tm_mday = popParameterStack( );
+              t.tm_mon = popParameterStack( ) - 1;
+              t.tm_year = popParameterStack( ) - 1900;
+              tv.tv_sec = mktime(&t);
+              tv.tv_usec = 0;
+              settimeofday(&tv, NULL);
+            }
+            break;
           default:
               shellERROR(__FILE__, __LINE__);
               break;
@@ -521,4 +544,16 @@ void YRShell8266::outUInt8( int8_t v) {
     char buf[ 5];
     unsignedToString(v, 3, buf);
     outString( buf);
+}
+
+void YRShell8266::logTime() {
+    char s[51];
+    struct tm timeinfo;
+    time_t now;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    //time_t tt = mktime (&timeinfo);
+
+    strftime(s, 50, "%FT%H:%M:%SZ", &timeinfo);
+    m_log->print( __FILE__, __LINE__, 1, s, "logTime: rtc");
 }

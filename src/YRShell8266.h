@@ -76,6 +76,8 @@ typedef enum {
     SE_CC_setVicKey,
 
     SE_CC_flashSize,
+    SE_CC_curTime,
+    SE_CC_setTime,
     
     SE_CC_last
 } SE_CC_functions;
@@ -99,6 +101,8 @@ protected:
   virtual const char* shellClass( void) { return "YRShell8266"; }
   virtual const char* mainFileName( ) { return "main.cpp"; }
   void outUInt8( int8_t v);
+
+  void logTime();
 
 public:
   YRShell8266( );
