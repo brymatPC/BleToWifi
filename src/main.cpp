@@ -4,6 +4,7 @@
 #include "TelnetServer.h"
 #ifdef ESP32
   #include <BleConnection.h>
+  #include "TempHumiditySensor.h"
   #include "VictronDevice.h"
 #endif
 //  0x01 - setup log
@@ -57,6 +58,7 @@ TelnetLogServer telnetLogServer;
 #ifdef ESP32
 BleConnection bleConnection(&dbg);
 VictronDevice victronParser;
+TempHumiditySensor tempHumParser;
 #endif
 
 void setup(){
@@ -128,8 +130,10 @@ void setup(){
 #ifdef ESP32
   shell.setBleConnection(&bleConnection);
   shell.setVictronDevice(&victronParser);
-  bleConnection.setParser(&victronParser);
+  //bleConnection.setParser(&victronParser);
+  bleConnection.setParser(&tempHumParser);
   victronParser.init(&dbg);
+  tempHumParser.init(&dbg);
 #endif
   shell.init( &dbg);
   dbg.print( __FILE__, __LINE__, 1, "setup_done:");
