@@ -1,4 +1,5 @@
 #include "TempHumiditySensor.h"
+#include "UploadDataClient.h"
 
 #include <utility/DebugLog.h>
 #include <utility/String.h>
@@ -22,6 +23,7 @@ void TempHumiditySensor::parse() {
     // Sensor has two advertising packets, one with length 20 and one with length 22
     if(m_data.payloadLen == 20) {
         
+        char macAddr[7];
         uint16_t batteryVoltageRaw = (m_data.payload[11] << 8) | (m_data.payload[10]);
         int16_t temperature    = (m_data.payload[13] << 8) | (m_data.payload[12]);
         int16_t humidity       = (m_data.payload[15] << 8) | (m_data.payload[14]);
@@ -42,6 +44,14 @@ void TempHumiditySensor::parse() {
             // m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: outputData");
             m_log->print( __FILE__, __LINE__, 1, batteryVoltage, temperature, humidity, "TempHumiditySensor: batteryVoltage, temperature, humidity");
             m_log->print( __FILE__, __LINE__, 1, upTime, "TempHumiditySensor: upTime");
+        }
+
+        // Upload to server (If available)
+        if(m_uploadClient) {
+            snprintf(m_sendBuf, MAX_SEND_BUF_SIZE, "{\"sn\":\"%02X%02X%02X%02X%02X%02X\",\"v\":%d,\"t\":%d,\"h\":%d,\"ut\":%d}",
+                m_data.payload[4], m_data.payload[5], m_data.payload[6], m_data.payload[7], m_data.payload[8], m_data.payload[9],
+                batteryVoltage, temperature, humidity, upTime);
+            m_uploadClient->sendFile(m_sendBuf, strlen(m_sendBuf));
         }
     } else if(m_data.payloadLen == 22) {
         //uint32_t upTime        = (m_data.payload[21] << 24) | (m_data.payload[20] << 16) | (m_data.payload[19] << 8) | (m_data.payload[18]);

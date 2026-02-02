@@ -142,6 +142,7 @@ void setup(){
   bleConnection.setParser(&tempHumParser);
   victronParser.init(&dbg);
   tempHumParser.init(&dbg);
+  tempHumParser.setUploadClient(&uploadClient);
 #endif
   shell.init( &dbg);
   dbg.print( __FILE__, __LINE__, 1, "setup_done:");
