@@ -33,27 +33,27 @@ void TempHumiditySensor::parse() {
         humidity = (humidity * 10) / 16;
 
         if(m_log) {
-            char outStr[128];
-            outStr[0] = '0';
-            outStr[1] = 'x';
-            for(int i=0; i < 10; i++) {
-                sprintf(&outStr[2+i*2], "%02X", m_data.payload[i+10]);
-            }
-            m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: outputData");
-            // m_log->print( __FILE__, __LINE__, 1, batteryVoltage, temperature, humidity, "TempHumiditySensor: batteryVoltage, temperature, humidity");
-            // m_log->print( __FILE__, __LINE__, 1, upTime, "TempHumiditySensor: upTime");
+            // char outStr[128];
+            // outStr[0] = '0';
+            // outStr[1] = 'x';
+            // for(int i=0; i < 10; i++) {
+            //     sprintf(&outStr[2+i*2], "%02X", m_data.payload[i+10]);
+            // }
+            // m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: outputData");
+            m_log->print( __FILE__, __LINE__, 1, batteryVoltage, temperature, humidity, "TempHumiditySensor: batteryVoltage, temperature, humidity");
+            m_log->print( __FILE__, __LINE__, 1, upTime, "TempHumiditySensor: upTime");
         }
     } else if(m_data.payloadLen == 22) {
         //uint32_t upTime        = (m_data.payload[21] << 24) | (m_data.payload[20] << 16) | (m_data.payload[19] << 8) | (m_data.payload[18]);
         if(m_log) {
-            char outStr[128];
-            outStr[0] = '0';
-            outStr[1] = 'x';
-            for(int i=0; i < 12; i++) {
-                sprintf(&outStr[2+i*2], "%02X", m_data.payload[i+10]);
-            }
-            //m_log->print( __FILE__, __LINE__, 1, m_data.payloadLen, "TempHumiditySensor - Expected, but unknown packet: payloadLen");
-            m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: outputData22");
+            // char outStr[128];
+            // outStr[0] = '0';
+            // outStr[1] = 'x';
+            // for(int i=0; i < 12; i++) {
+            //     sprintf(&outStr[2+i*2], "%02X", m_data.payload[i+10]);
+            // }
+            //m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: outputData22");
+            m_log->print( __FILE__, __LINE__, 1, m_data.payloadLen, "TempHumiditySensor - Expected, but unknown packet: payloadLen");            
             //m_log->print( __FILE__, __LINE__, 1, upTime, "TempHumiditySensor: upTime");
         }
     } else {
