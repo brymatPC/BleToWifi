@@ -86,7 +86,7 @@ void StringArray::load(const char* fname) {
     if( i  == sizeof(m_s)) {
       if( m_log) {
         m_log->print( __FILE__, __LINE__, 1, fname, "StringArray_load: fname" );
-        dump();
+        //dump();
       }
     } else {
       if( m_log) {
