@@ -2,6 +2,7 @@
 #include "WifiConnection.h"
 #include "HttpExecServer.h"
 #include "TelnetServer.h"
+#include "UploadDataClient.h"
 #ifdef ESP32
   #include <BleConnection.h>
   #include "TempHumiditySensor.h"
@@ -54,12 +55,16 @@ WifiConnection wifiConnection(&onBoardLed, &dbg);
 HttpExecServer httpServer;
 TelnetServer telnetServer;
 TelnetLogServer telnetLogServer;
+UploadDataClient uploadClient;
 
 #ifdef ESP32
 BleConnection bleConnection(&dbg);
 VictronDevice victronParser;
 TempHumiditySensor tempHumParser;
 #endif
+
+static const char *s_serverIp = "192.168.86.155";
+static unsigned s_serverPort = 9050;
 
 void setup(){
   unsigned httpPort = 80;
@@ -120,6 +125,8 @@ void setup(){
     telnetLogServer.init( telnetLogPort);
   }
 
+  uploadClient.init(s_serverIp, s_serverPort, &dbg);
+
 #ifndef YRSHELL_ON_TELNET
   BSerial.init(shell.getInq(), shell.getOutq());
 #endif
@@ -127,6 +134,7 @@ void setup(){
   shell.setLedBlink(&onBoardLed);
   shell.setWifiConnection(&wifiConnection);
   shell.setTelnetLogServer(&telnetLogServer);
+  shell.setUploadClient(&uploadClient);
 #ifdef ESP32
   shell.setBleConnection(&bleConnection);
   shell.setVictronDevice(&victronParser);

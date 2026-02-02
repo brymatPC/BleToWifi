@@ -2,6 +2,7 @@
 #include "TelnetServer.h"
 #include "WifiConnection.h"
 #include "VictronDevice.h"
+#include "UploadDataClient.h"
 #include <utility/String.h>
 
 #ifdef ESP32
@@ -80,6 +81,8 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_curTime,              "curTime"},
 		{ SE_CC_setTime,              "setTime"},
 
+    { SE_CC_upload,               "upload"},
+
     { 0, NULL}
 };
 
@@ -87,6 +90,8 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
 static FunctionDictionary dictionaryExtensionFunction( yr8266ShellExtensionFunctions, YRSHELL_DICTIONARY_EXTENSION_FUNCTION );
 
 CompiledDictionary compiledExtensionDictionary( NULL, 0xFFFF , 0x0000 , YRSHELL_DICTIONARY_EXTENSION_COMPILED);
+
+static char *s_uploadData = "{\"data\":32}";
 
 YRShell8266::YRShell8266() {
   m_telnetLogServer = NULL;
@@ -531,6 +536,11 @@ void YRShell8266::executeFunction( uint16_t n) {
               tv.tv_sec = mktime(&t);
               tv.tv_usec = 0;
               settimeofday(&tv, NULL);
+            }
+            break;
+          case SE_CC_upload:
+            if(m_uploadClient) {
+              m_uploadClient->sendFile(s_uploadData, strlen(s_uploadData));
             }
             break;
           default:

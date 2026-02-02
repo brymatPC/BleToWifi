@@ -10,6 +10,7 @@
 class LedBlink;
 class WifiConnection;
 class TelnetLogServer;
+class UploadDataClient;
 class BleConnection;
 class VictronDevice;
 
@@ -78,6 +79,8 @@ typedef enum {
     SE_CC_flashSize,
     SE_CC_curTime,
     SE_CC_setTime,
+
+    SE_CC_upload,
     
     SE_CC_last
 } SE_CC_functions;
@@ -93,6 +96,7 @@ protected:
   WifiConnection* m_wifiConnection;
   BleConnection* m_bleConnection;
   VictronDevice* m_victronDevice;
+  UploadDataClient* m_uploadClient;
   IntervalTimer m_execTimer;
   bool m_fileOpen, m_initialFileLoaded, m_lastPromptEnable, m_lastCommandEcho;
   File m_file;
@@ -115,6 +119,7 @@ public:
   void setBleConnection(BleConnection* bleConnection) { m_bleConnection = bleConnection; }
   void setTelnetLogServer(TelnetLogServer* telnetLogServer) { m_telnetLogServer = telnetLogServer; }
   void setVictronDevice(VictronDevice *device) { m_victronDevice = device; }
+  void setUploadClient(UploadDataClient *client) { m_uploadClient = client; }
 
   virtual void slice( void);
   void loadFile( const char* fname, bool exec = true);
