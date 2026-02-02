@@ -1,15 +1,16 @@
 #include "BleConnection.h"
 #include <utility/String.h>
 
-#define SCAN_INTERVAL_MILLIS 625
-#define SCAN_WINDOW_MILLIS 625
-#define SCAN_DURATION_SECS 20
-#define SCAN_ACTIVELY true
+#define SCAN_INTERVAL_MILLIS 1000
+#define SCAN_WINDOW_MILLIS 1000
+#define SCAN_DURATION_SECS 10
+#define SCAN_ACTIVELY false
 
 static bool m_resultsReceived = false;
 static BLEScanResults m_results;
 
-static char m_defaultAddress[] = "df:3e:15:b9:42:9e";
+//static char m_defaultAddress[] = "df:3e:15:b9:42:9e";
+static char m_defaultAddress[] = "cd:05:00:00:0B:E3";
 
 typedef enum {
   STATE_RESET      = 0,
@@ -25,7 +26,7 @@ BleConnection::BleConnection( DebugLog* log)
     m_state = STATE_RESET;
     m_requestScan = false;
     m_parser = nullptr;
-    m_bleLogState = BLE_LOG_ADDRESSES;
+    m_bleLogState = BLE_LOG_NONE;
     strncpy(m_addrToParse, m_defaultAddress, 18);
 }
 
