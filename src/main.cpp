@@ -64,7 +64,7 @@ TempHumiditySensor tempHumParser;
 #endif
 
 static const char *s_serverIp = "192.168.86.155";
-static unsigned s_serverPort = 9050;
+static unsigned s_serverPort = 9100;
 
 void setup(){
   unsigned httpPort = 80;

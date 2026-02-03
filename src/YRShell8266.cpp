@@ -91,7 +91,7 @@ static FunctionDictionary dictionaryExtensionFunction( yr8266ShellExtensionFunct
 
 CompiledDictionary compiledExtensionDictionary( NULL, 0xFFFF , 0x0000 , YRSHELL_DICTIONARY_EXTENSION_COMPILED);
 
-static char *s_uploadData = "{\"data\":32}";
+static char s_uploadData[] = "{\"data\":32}";
 
 YRShell8266::YRShell8266() {
   m_telnetLogServer = NULL;

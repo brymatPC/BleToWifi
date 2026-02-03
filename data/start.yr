@@ -54,11 +54,12 @@
 : dumpFile loadFile dm? hex { auxKey? [ dfe dfb 0 ][ drop -1 ] } hm!
 
 1 setPromptEnable
-0 setTelnetLogEnable
+1 setTelnetLogEnable
 
 : ledOn 0xFFFFFFF 1 setLedOnOffMs
 : ledOff 1 0xFFFFFFF setLedOnOffMs
 : ledBlink dup setLedOnOffMs
 
-mainIO
+: mon 1 { bscan 10000 delay 10000 delay 10000 delay esc? } drop
 
+mainIO
