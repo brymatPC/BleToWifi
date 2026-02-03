@@ -16,6 +16,7 @@ private:
     uint8_t m_state;
     bool m_sendRequest;
     char m_headerBuf[MAX_HEADER_BUF_SIZE];
+    char *m_routeToSend;
     char *m_fileToSend;
     unsigned m_fileLength;
 
@@ -30,7 +31,7 @@ public:
     virtual const char* sliceName( ) { return "UploadDataClient"; }
     void init( const char *ip, unsigned port, DebugLog* log = NULL);
     virtual void slice( void);
-    void sendFile(char *file, unsigned len);
+    void sendFile(char *route, char *file, unsigned len);
     bool busy();
 };
 

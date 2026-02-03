@@ -17,6 +17,7 @@ typedef enum {
 } tempHumStates_t;
 
 const unsigned int TempHumidityParser::s_UPLOAD_TIME_MS = 60000;
+char TempHumidityParser::s_ROUTE[] = "/sensor";
 
 TempHumidityParser::TempHumidityParser() {
     m_bleData = bleDeviceData_t{};
@@ -178,7 +179,7 @@ void TempHumidityParser::slice( void) {
                     m_data[m_uploadIndex].macAddr[0], m_data[m_uploadIndex].macAddr[1], m_data[m_uploadIndex].macAddr[2], m_data[m_uploadIndex].macAddr[3],
                     m_data[m_uploadIndex].macAddr[4], m_data[m_uploadIndex].macAddr[5],
                     m_data[m_uploadIndex].batteryVoltage, m_data[m_uploadIndex].temperature, m_data[m_uploadIndex].humidity, m_data[m_uploadIndex].upTime);
-                m_uploadClient->sendFile(m_sendBuf, strlen(m_sendBuf));
+                m_uploadClient->sendFile(s_ROUTE, m_sendBuf, strlen(m_sendBuf));
                 m_dataFresh[m_uploadIndex] = false;
                 m_state = STATE_SEND_WAIT;
             }

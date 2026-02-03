@@ -3,24 +3,49 @@
 
 #include <stdint.h>
 #include <BleParser.h>
+#include <utility/Sliceable.h>
+#include <utility/IntervalTimer.h>
+
+#define MAX_VIC_SEND_BUF_SIZE 128
 
 class DebugLog;
+class UploadDataClient;
 
-class VictronDevice : public BleParser {
+typedef struct {
+    uint16_t timeToGo;
+    uint16_t batteryVoltage;
+    uint32_t stateOfCharge;
+    int32_t batteryCurrent;
+} victronData_t;
+
+class VictronDevice : public Sliceable, public BleParser {
 private:
+    static const unsigned int s_UPLOAD_TIME_MS;
+    static const unsigned int s_STARTUP_OFFSET_MS;
+    static char s_ROUTE[];
+    
     uint8_t *m_key;
     DebugLog* m_log;
-    bleDeviceData_t m_data;
+    IntervalTimer m_timer;
+    UploadDataClient* m_uploadClient;
+    bleDeviceData_t m_bleData;
+    victronData_t m_data;
+    bool m_dataFresh;
+    uint8_t m_state;
+    char m_sendBuf[MAX_VIC_SEND_BUF_SIZE];
 
     void decrypt();
 public:
     VictronDevice();
     virtual ~VictronDevice() { }
+    virtual const char* sliceName( ) { return "VictronDevice"; }
 
     void init(DebugLog *log) {m_log = log;}
+    void setUploadClient(UploadDataClient *client) { m_uploadClient = client; }
+    virtual void slice( void);
 
     void setKey(const char *key);
-    virtual void setData(bleDeviceData_t &data) {m_data = data;}
+    virtual void setData(bleDeviceData_t &data) {m_bleData = data;}
     virtual void parse();
 };
 

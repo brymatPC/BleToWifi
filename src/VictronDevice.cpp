@@ -1,4 +1,5 @@
 #include "VictronDevice.h"
+#include "UploadDataClient.h"
 
 #include <utility/DebugLog.h>
 #include <utility/String.h>
@@ -6,6 +7,15 @@
 #include <aes/esp_aes.h>
 
 #define VICTRON_KEY_LEN (16)
+
+typedef enum {
+  STATE_RESET       = 0,
+  STATE_IDLE        = 1,
+  STATE_UPLOAD      = 2,
+  STATE_UPLOAD_WAIT = 3,
+  STATE_SEND_WAIT   = 4,
+
+} victronStates_t;
 
 // be
 // 1e
@@ -27,9 +37,16 @@
 //static uint8_t s_DEFAULT_KEY[] = {0xF1, 0xE5, 0xEF, 0x70, 0x3C, 0x68, 0x1D, 0xC9, 0xAE, 0x0F, 0x64, 0x71, 0xA7, 0xDB, 0x1E, 0xBE};
 static uint8_t s_DEFAULT_KEY[] = {0xBE, 0x1E, 0xDB, 0xA7, 0x71, 0x64, 0x0F, 0xAE, 0xC9, 0x1D, 0x68, 0x3C, 0x70, 0xEF, 0xE5, 0xF1};
 
+const unsigned int VictronDevice::s_UPLOAD_TIME_MS = 60000;
+const unsigned int VictronDevice::s_STARTUP_OFFSET_MS = 5000;
+char VictronDevice::s_ROUTE[] = "/victron";
+
 VictronDevice::VictronDevice() {
     m_key = s_DEFAULT_KEY;
-    m_data = bleDeviceData_t{};
+    m_bleData = bleDeviceData_t{};
+    m_dataFresh = false;
+    m_state = STATE_RESET;
+    m_timer.setInterval(s_STARTUP_OFFSET_MS);
 }
 void VictronDevice::setKey(const char *key) {
     uint8_t tempKey[VICTRON_KEY_LEN];
@@ -53,14 +70,14 @@ void VictronDevice::setKey(const char *key) {
     }
 }
 void VictronDevice::parse() {
-    if(m_data.payloadLen == 0 || m_data.payload == nullptr) return;
+    if(m_bleData.payloadLen == 0 || m_bleData.payload == nullptr) return;
 
-    if(m_data.payloadLen > 7) {
-        uint16_t companyId = (m_data.payload[0] << 8) | (m_data.payload[1]);
-        uint8_t dataRecordType = m_data.payload[2];
-        uint16_t modelId = (m_data.payload[3] << 8) | (m_data.payload[4]);
-        uint8_t readOutType = m_data.payload[5];
-        uint8_t recordType = m_data.payload[6];
+    if(m_bleData.payloadLen > 7) {
+        uint16_t companyId = (m_bleData.payload[0] << 8) | (m_bleData.payload[1]);
+        uint8_t dataRecordType = m_bleData.payload[2];
+        uint16_t modelId = (m_bleData.payload[3] << 8) | (m_bleData.payload[4]);
+        uint8_t readOutType = m_bleData.payload[5];
+        uint8_t recordType = m_bleData.payload[6];
 
         if(m_log) {
             m_log->printX( __FILE__, __LINE__, 1, companyId, modelId, "VictronDevice: companyId, modelId");
@@ -68,16 +85,16 @@ void VictronDevice::parse() {
         }
     }
 
-    if(m_data.payloadLen >= 25) {
-        uint16_t nonce = (m_data.payload[7] << 8) | (m_data.payload[8]);
-        uint8_t keyStart = m_data.payload[9];
+    if(m_bleData.payloadLen >= 25) {
+        uint16_t nonce = (m_bleData.payload[7] << 8) | (m_bleData.payload[8]);
+        uint8_t keyStart = m_bleData.payload[9];
 
         // payload 10-25 are the encrypted bytes
         decrypt();
 
     } else {
         if(m_log) {
-            m_log->print( __FILE__, __LINE__, 1, m_data.payloadLen, "VictronDevice - insufficient bytes to parse: payloadLen");
+            m_log->print( __FILE__, __LINE__, 1, m_bleData.payloadLen, "VictronDevice - insufficient bytes to parse: payloadLen");
         }
     }
 }
@@ -86,7 +103,7 @@ void VictronDevice::decrypt() {
     uint8_t nonce_counter[32] = {0};
     uint8_t stream_block[32] = {0};
     uint8_t outputData[32];
-    size_t dataLen = m_data.payloadLen - 10;
+    size_t dataLen = m_bleData.payloadLen - 10;
     esp_aes_context ctx;
     esp_aes_init(&ctx);
     int status = esp_aes_setkey(&ctx, m_key, 128);
@@ -97,10 +114,10 @@ void VictronDevice::decrypt() {
         return;
     }
     // construct the 16-byte nonce counter array by piecing it together byte-by-byte.
-    nonce_counter[0] = m_data.payload[7];
-    nonce_counter[1] = m_data.payload[8];
+    nonce_counter[0] = m_bleData.payload[7];
+    nonce_counter[1] = m_bleData.payload[8];
     
-    status = esp_aes_crypt_ctr(&ctx, dataLen, &nonce_offset, nonce_counter, stream_block, &m_data.payload[10], outputData);
+    status = esp_aes_crypt_ctr(&ctx, dataLen, &nonce_offset, nonce_counter, stream_block, &m_bleData.payload[10], outputData);
     esp_aes_free(&ctx);
 
     if (status != 0) {
@@ -140,6 +157,12 @@ void VictronDevice::decrypt() {
             m_log->print( __FILE__, __LINE__, 1, timeToGo, consumed, stateOfCharge, "VictronDevice: timeToGo, consumed, stateOfCharge");
         }
 
+        m_data.timeToGo = timeToGo;
+        m_data.batteryVoltage = batteryVoltage;
+        m_data.batteryCurrent = batteryCurrent * -1;
+        m_data.stateOfCharge = stateOfCharge;
+        m_dataFresh = true;
+
         #ifdef LOG_OUTPUT_DATA
             if(m_log) {
                 char outStr[128];
@@ -151,5 +174,48 @@ void VictronDevice::decrypt() {
                 m_log->print( __FILE__, __LINE__, 1, outStr, "VictronDevice: outputData");
             }
         #endif
+    }
+}
+
+void VictronDevice::slice( void) {
+    switch(m_state) {
+        case STATE_RESET:
+            if(m_timer.hasIntervalElapsed()) {
+                m_timer.setInterval(s_UPLOAD_TIME_MS);
+                m_state = STATE_IDLE;
+            }
+        break;
+        case STATE_IDLE:
+            if(m_timer.isNextInterval() && m_uploadClient) {
+                if(m_log) {
+                    m_log->print( __FILE__, __LINE__, 1, "VictronDevice::slice: uploading data");
+                }
+                m_state = STATE_UPLOAD;
+            }
+        break;
+        case STATE_UPLOAD:
+            if(m_dataFresh) {
+                m_state = STATE_UPLOAD_WAIT;
+            } else {
+                m_state = STATE_IDLE;
+            }
+        break;
+        case STATE_UPLOAD_WAIT:
+            if(!m_uploadClient->busy()) {
+                snprintf(m_sendBuf, MAX_VIC_SEND_BUF_SIZE, "{\"ttg\":%d,\"v\":%d,\"i\":%d,\"soc\":%d}",
+                    m_data.timeToGo, m_data.batteryVoltage, m_data.batteryCurrent, m_data.stateOfCharge);
+                m_uploadClient->sendFile(s_ROUTE, m_sendBuf, strlen(m_sendBuf));
+                m_dataFresh = false;
+                m_state = STATE_SEND_WAIT;
+            }
+        break;
+        case STATE_SEND_WAIT:
+            if(!m_uploadClient->busy()) {
+                m_state = STATE_IDLE;
+            }
+        break;
+        default:
+            m_state = STATE_RESET;
+        break;
     }
 }

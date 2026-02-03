@@ -9,6 +9,7 @@
 #define TEMP_HUMIDITY_MAC_LEN 6
 #define MAX_TEMP_HUM_SENSORS 8
 #define MAX_SEND_BUF_SIZE 128
+#define MAX_ROUTE_LEN     32
 
 class DebugLog;
 class UploadDataClient;
@@ -24,6 +25,7 @@ typedef struct {
 class TempHumidityParser : public Sliceable, public BleParser {
 private:
     static const unsigned int s_UPLOAD_TIME_MS;
+    static char s_ROUTE[];
 
     DebugLog* m_log;
     IntervalTimer m_timer;

@@ -56,16 +56,17 @@ void UploadDataClient::changeState( uint8_t newState) {
 }
 void UploadDataClient::sendHeader() {
     if(m_client) {
-        snprintf(m_headerBuf, MAX_HEADER_BUF_SIZE, "POST /sensor HTTP/1.1\r\nHost: %s:%d\r\nContent-type: application/json\r\nContent-Length: %d\r\n\r\n",
-                WiFi.localIP().toString().c_str(), m_port, m_fileLength);
+        snprintf(m_headerBuf, MAX_HEADER_BUF_SIZE, "POST %s HTTP/1.1\r\nHost: %s:%d\r\nContent-type: application/json\r\nContent-Length: %d\r\n\r\n",
+                m_routeToSend, WiFi.localIP().toString().c_str(), m_port, m_fileLength);
         m_client->write(m_headerBuf, strlen(m_headerBuf));
     }
 }
-void UploadDataClient::sendFile(char *file, unsigned len) {
+void UploadDataClient::sendFile(char *route, char *file, unsigned len) {
     if( m_log != NULL) {
         m_log->print( __FILE__, __LINE__, 0x100001, (uint32_t) len, "UploadDataClient_sendFile: len");
     }
-    if(file != nullptr && len > 0) {
+    if(route != nullptr && file != nullptr && len > 0) {
+        m_routeToSend = route;
         m_fileToSend = file;
         m_fileLength = len;
         m_sendRequest = true;

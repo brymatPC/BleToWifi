@@ -540,7 +540,7 @@ void YRShell8266::executeFunction( uint16_t n) {
             break;
           case SE_CC_upload:
             if(m_uploadClient) {
-              m_uploadClient->sendFile(s_uploadData, strlen(s_uploadData));
+              m_uploadClient->sendFile("/yrshell", s_uploadData, strlen(s_uploadData));
             }
             break;
           default:
