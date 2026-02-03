@@ -45,6 +45,9 @@ void UploadDataClient::init(const char *ip, unsigned port, DebugLog* log) {
     m_port = port;
     m_log = log;
 }
+bool UploadDataClient::busy() {
+    return m_state != STATE_IDLE && !m_sendRequest;
+}
 void UploadDataClient::changeState( uint8_t newState) {
     if( m_log != NULL) {
         m_log->print( __FILE__, __LINE__, 0x100001, (uint32_t) m_state, (uint32_t) newState, "UploadDataClient_changeState: state, newState");

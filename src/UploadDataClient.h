@@ -31,6 +31,7 @@ public:
     void init( const char *ip, unsigned port, DebugLog* log = NULL);
     virtual void slice( void);
     void sendFile(char *file, unsigned len);
+    bool busy();
 };
 
 #endif // #ifndef UPLOAD_DATA_CLIENT_H_
