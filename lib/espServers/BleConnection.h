@@ -14,12 +14,20 @@
 #include <utility/DebugLog.h>
 
 #define MAX_BLE_DEVICE_DATA 1
+#define MAX_BLE_DEVICES     4
+#define BLE_ADDR_LEN        20
 
 typedef enum {
   BLE_LOG_NONE,
   BLE_LOG_ADDRESSES,
   BLE_LOG_ALL
 } bleLogState;
+
+typedef struct {
+  bool enabled;
+  char addr[BLE_ADDR_LEN];
+  BleParser *parser;
+} bleDeviceParser_t;
 
 class BleConnection : public Sliceable, public BLEAdvertisedDeviceCallbacks {
 private:
@@ -30,8 +38,7 @@ private:
     DebugLog* m_log;
     BLEScan* m_pBleScan;
     bleDeviceData_t m_devices[MAX_BLE_DEVICE_DATA];
-    BleParser *m_parser;
-    char m_addrToParse[20];
+    bleDeviceParser_t m_deviceParsers[MAX_BLE_DEVICES];
     void changeState( uint8_t state);
 protected:
 public:
@@ -44,8 +51,8 @@ public:
     bleDeviceData_t *deviceData(uint8_t index);
 
     void setLogState(bleLogState state) {m_bleLogState = state; }
-    void setParser(BleParser *parser) {m_parser = parser;}
-    void setAddressToParse(const char *addr);
+    void enableBleAddress(uint8_t index, const char *addr, BleParser *parser);
+    void disableBleAddress(uint8_t index);
 
     // BLEAdvertisedDeviceCallbacks
     virtual void onResult(BLEAdvertisedDevice advertisedDevice);

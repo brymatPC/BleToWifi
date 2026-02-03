@@ -25,15 +25,23 @@ BleConnection::BleConnection( DebugLog* log)
     m_log = log;
     m_state = STATE_RESET;
     m_requestScan = false;
-    m_parser = nullptr;
     m_bleLogState = BLE_LOG_NONE;
-    strncpy(m_addrToParse, m_defaultAddress, 18);
+
+    for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
+        m_deviceParsers[i].enabled = false;
+    }
 }
 
-void BleConnection::setAddressToParse(const char *addr) {
-    strncpy(m_addrToParse, addr, 18);
+void BleConnection::enableBleAddress(uint8_t index, const char *addr, BleParser *parser) {
+    if(index >= MAX_BLE_DEVICES) return;
+    strncpy(m_deviceParsers[index].addr, addr, BLE_ADDR_LEN);
+    m_deviceParsers[index].parser = parser;
+    m_deviceParsers[index].enabled = true;
 }
-
+void BleConnection::disableBleAddress(uint8_t index) {
+    if(index >= MAX_BLE_DEVICES) return;
+    m_deviceParsers[index].enabled = false;
+}
 void BleConnection::changeState( uint8_t state) {
     if( m_log) {
         m_log->print( __FILE__, __LINE__, 1, m_state, state, "BleConnection::changeState: m_state, state" );
@@ -80,21 +88,24 @@ void BleConnection::slice( void) {
 }
 
 void BleConnection::onResult(BLEAdvertisedDevice advertisedDevice) {
-    BLEAddress addrToParse(m_addrToParse);
     BLEAddress address = advertisedDevice.getAddress();
-    if(address == addrToParse) {
-        m_devices[0].payloadLen = 0;
-        strcpy(m_devices[0].addr, address.toString().c_str());
-        if (advertisedDevice.haveManufacturerData()) {
-            int len = advertisedDevice.getManufacturerData().length();
-            const char* data = advertisedDevice.getManufacturerData().c_str();
-            memcpy(m_devices[0].payload, data, len);
-            m_devices[0].payloadLen = (uint8_t) len;
-            m_devices[0].valid = true;
+    for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
+        if(!m_deviceParsers[i].enabled) continue;
+        BLEAddress addrToParse(m_deviceParsers[i].addr);
+        if(address == addrToParse) {
+            m_devices[0].payloadLen = 0;
+            strcpy(m_devices[0].addr, address.toString().c_str());
+            if (advertisedDevice.haveManufacturerData()) {
+                int len = advertisedDevice.getManufacturerData().length();
+                const char* data = advertisedDevice.getManufacturerData().c_str();
+                memcpy(m_devices[0].payload, data, len);
+                m_devices[0].payloadLen = (uint8_t) len;
+                m_devices[0].valid = true;
 
-            if(m_parser) {
-                m_parser->setData(m_devices[0]);
-                m_parser->parse();
+                if(m_deviceParsers[i].parser) {
+                    m_deviceParsers[i].parser->setData(m_devices[0]);
+                    m_deviceParsers[i].parser->parse();
+                }
             }
         }
     }
