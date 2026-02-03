@@ -5,7 +5,7 @@
 #include "UploadDataClient.h"
 #ifdef ESP32
   #include <BleConnection.h>
-  #include "TempHumiditySensor.h"
+  #include "TempHumidityParser.h"
   #include "VictronDevice.h"
 #endif
 //  0x01 - setup log
@@ -60,7 +60,7 @@ UploadDataClient uploadClient;
 #ifdef ESP32
 BleConnection bleConnection(&dbg);
 VictronDevice victronParser;
-TempHumiditySensor tempHumParser;
+TempHumidityParser tempHumParser;
 #endif
 
 static const char *s_serverIp = "192.168.86.155";

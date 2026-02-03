@@ -1,5 +1,5 @@
-#ifndef TEMP_HUMIDITY_SENSOR_H
-#define TEMP_HUMIDITY_SENSOR_H
+#ifndef TEMP_HUMIDITY_PARSER_H_
+#define TEMP_HUMIDITY_PARSER_H_
 
 #include <stdint.h>
 #include <BleParser.h>
@@ -9,7 +9,7 @@
 class DebugLog;
 class UploadDataClient;
 
-class TempHumiditySensor : public BleParser {
+class TempHumidityParser : public BleParser {
 private:
     DebugLog* m_log;
     UploadDataClient* m_uploadClient;
@@ -20,8 +20,8 @@ private:
     uint8_t processBatteryVoltage(uint16_t raw);
 
 public:
-    TempHumiditySensor();
-    virtual ~TempHumiditySensor() { }
+    TempHumidityParser();
+    virtual ~TempHumidityParser() { }
 
     void init(DebugLog *log) {m_log = log;}
     void setUploadClient(UploadDataClient *client) { m_uploadClient = client; }
@@ -30,4 +30,4 @@ public:
     virtual void parse();
 };
 
-#endif // TEMP_HUMIDITY_SENSOR_H
+#endif // TEMP_HUMIDITY_PARSER_H_

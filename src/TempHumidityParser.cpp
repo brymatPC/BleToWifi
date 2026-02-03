@@ -1,4 +1,4 @@
-#include "TempHumiditySensor.h"
+#include "TempHumidityParser.h"
 #include "UploadDataClient.h"
 
 #include <utility/DebugLog.h>
@@ -6,10 +6,10 @@
 
 // Credit to: https://github.com/Bluetooth-Devices/thermobeacon-ble/blob/main/src/thermobeacon_ble/parser.py
 
-TempHumiditySensor::TempHumiditySensor() {
+TempHumidityParser::TempHumidityParser() {
     m_data = bleDeviceData_t{};
 }
-void TempHumiditySensor::parse() {
+void TempHumidityParser::parse() {
     if(m_data.payloadLen == 0 || m_data.payload == nullptr) return;
 
     if(m_data.payloadLen > 7) {
@@ -42,8 +42,8 @@ void TempHumiditySensor::parse() {
             //     sprintf(&outStr[2+i*2], "%02X", m_data.payload[i+10]);
             // }
             // m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: outputData");
-            m_log->print( __FILE__, __LINE__, 1, batteryVoltage, temperature, humidity, "TempHumiditySensor: batteryVoltage, temperature, humidity");
-            m_log->print( __FILE__, __LINE__, 1, upTime, "TempHumiditySensor: upTime");
+            m_log->print( __FILE__, __LINE__, 1, batteryVoltage, temperature, humidity, "TempHumidityParser: batteryVoltage, temperature, humidity");
+            m_log->print( __FILE__, __LINE__, 1, upTime, "TempHumidityParser: upTime");
         }
 
         // Upload to server (If available)
@@ -63,17 +63,17 @@ void TempHumiditySensor::parse() {
             //     sprintf(&outStr[2+i*2], "%02X", m_data.payload[i+10]);
             // }
             //m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: outputData22");
-            m_log->print( __FILE__, __LINE__, 1, m_data.payloadLen, "TempHumiditySensor - Expected, but unknown packet: payloadLen");            
+            m_log->print( __FILE__, __LINE__, 1, m_data.payloadLen, "TempHumidityParser - Expected, but unknown packet: payloadLen");            
             //m_log->print( __FILE__, __LINE__, 1, upTime, "TempHumiditySensor: upTime");
         }
     } else {
         if(m_log) {
-            m_log->print( __FILE__, __LINE__, 1, m_data.payloadLen, "TempHumiditySensor - insufficient bytes to parse: payloadLen");
+            m_log->print( __FILE__, __LINE__, 1, m_data.payloadLen, "TempHumidityParser - insufficient bytes to parse: payloadLen");
         }
     }
 }
 
-uint8_t TempHumiditySensor::processBatteryVoltage(uint16_t raw) {
+uint8_t TempHumidityParser::processBatteryVoltage(uint16_t raw) {
     uint8_t ret = 0;
 
     if(raw >= 3000) {
