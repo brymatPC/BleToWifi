@@ -504,9 +504,9 @@ void YRShell8266::executeFunction( uint16_t n) {
               break;
           case SE_CC_setBleAddr:
               t1 = popParameterStack();
-              if( m_bleConnection) {
-                  m_bleConnection->setAddressToParse( getAddressFromToken( t1));
-              }
+              // if( m_bleConnection) {
+              //     m_bleConnection->setAddressToParse( getAddressFromToken( t1));
+              // }
               break;
           case SE_CC_setVicKey:
               t1 = popParameterStack();
