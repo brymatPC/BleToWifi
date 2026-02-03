@@ -6,6 +6,8 @@
 class DebugLog;
 class WiFiClient;
 
+#define MAX_HEADER_BUF_SIZE 128
+
 class UploadDataClient : public Sliceable {
 private:
     bool m_connected;
@@ -13,6 +15,7 @@ private:
     unsigned m_port;
     uint8_t m_state;
     bool m_sendRequest;
+    char m_headerBuf[MAX_HEADER_BUF_SIZE];
     char *m_fileToSend;
     unsigned m_fileLength;
 
@@ -20,6 +23,7 @@ private:
     WiFiClient* m_client;
 
   void changeState( uint8_t newState);
+  void sendHeader();
 public:
     UploadDataClient();
     virtual ~UploadDataClient();

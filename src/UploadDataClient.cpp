@@ -15,24 +15,19 @@
 #include <WiFiClient.h>
 
 typedef enum {
-  STATE_STARTUP         = 30,
-  STATE_RESET           = 0,
-  STATE_IDLE            = 1,
-  STATE_CONNECTING      = 20,
-  STATE_CONNECTED       = 21,
-  STATE_DISCONNECTING   = 3,
-  STATE_PROCESS_REQUEST = 2,
-  STATE_LOG_DISCONNECT  = 4,
-  STATE_DISCONNECT_WAIT = 5,
+  STATE_STARTUP         = 0,
+  STATE_RESET           = 1,
+  STATE_IDLE            = 2,
+  STATE_CONNECTING      = 3,
+  STATE_CONNECTED       = 4,
+  STATE_DISCONNECTING   = 5,
   STATE_SEND_FILE       = 6,
-  STATE_PROCESS_EXEC    = 7,
-  STATE_FINISH_EXEC     = 8,
-  STATE_PROCESS_CMD     = 9,
-  STATE_FINISH_CMD      = 10,
 
 } ClientStates_t;
 
 static WiFiClient s_client;
+
+static const char* s_POST_HEADER = "POST /sensor HTTP/1.1\r\nContent-type: application/json\r\n\r\n";
 
 UploadDataClient::UploadDataClient() {
     m_connected = false;
@@ -55,6 +50,13 @@ void UploadDataClient::changeState( uint8_t newState) {
         m_log->print( __FILE__, __LINE__, 0x100001, (uint32_t) m_state, (uint32_t) newState, "UploadDataClient_changeState: state, newState");
     }
     m_state = newState;
+}
+void UploadDataClient::sendHeader() {
+    if(m_client) {
+        snprintf(m_headerBuf, MAX_HEADER_BUF_SIZE, "POST /sensor HTTP/1.1\r\nHost: %s:%d\r\nContent-type: application/json\r\nContent-Length: %d\r\n\r\n",
+                WiFi.localIP().toString().c_str(), m_port, m_fileLength);
+        m_client->write(m_headerBuf, strlen(m_headerBuf));
+    }
 }
 void UploadDataClient::sendFile(char *file, unsigned len) {
     if( m_log != NULL) {
@@ -93,13 +95,14 @@ void UploadDataClient::slice() {
         }
         break;
         case STATE_CONNECTED:
-        {
-            size_t numWritten = m_client->write(m_fileToSend, m_fileLength);
-            if(m_log) {
-                m_log->print( __FILE__, __LINE__, 0x100001, (uint32_t) numWritten, "UploadDataClient: numWritten");
-            }
+            sendHeader();
+            changeState( STATE_SEND_FILE);
+        break;
+        case STATE_SEND_FILE:
+            m_client->write(m_fileToSend, m_fileLength);
+            m_client->write("\r\n", 2);
             changeState( STATE_DISCONNECTING);
-        }
+        break;
         case STATE_DISCONNECTING:
             m_client->stop();
             if(m_log) {
