@@ -13,6 +13,7 @@ class TelnetLogServer;
 class UploadDataClient;
 class BleConnection;
 class VictronDevice;
+class TempHumidityParser;
 
 typedef enum {
     SE_CC_first = YRSHELL_DICTIONARY_EXTENSION_FUNCTION,
@@ -75,6 +76,7 @@ typedef enum {
     SE_CC_setBleLogState,
     SE_CC_setBleAddr,
     SE_CC_setVicKey,
+    SE_CC_setTempHumidityLogging,
 
     SE_CC_flashSize,
     SE_CC_curTime,
@@ -96,6 +98,7 @@ protected:
   WifiConnection* m_wifiConnection;
   BleConnection* m_bleConnection;
   VictronDevice* m_victronDevice;
+  TempHumidityParser *m_tempHumParser;
   UploadDataClient* m_uploadClient;
   IntervalTimer m_execTimer;
   bool m_fileOpen, m_initialFileLoaded, m_lastPromptEnable, m_lastCommandEcho;
@@ -119,6 +122,7 @@ public:
   void setBleConnection(BleConnection* bleConnection) { m_bleConnection = bleConnection; }
   void setTelnetLogServer(TelnetLogServer* telnetLogServer) { m_telnetLogServer = telnetLogServer; }
   void setVictronDevice(VictronDevice *device) { m_victronDevice = device; }
+  void setTempHumParser(TempHumidityParser *parser) { m_tempHumParser = parser; }
   void setUploadClient(UploadDataClient *client) { m_uploadClient = client; }
 
   virtual void slice( void);

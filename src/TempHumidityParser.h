@@ -32,6 +32,7 @@ private:
     UploadDataClient* m_uploadClient;
     bleDeviceData_t m_bleData;
     uint8_t m_state;
+    bool m_additionalLogging;
 
     tempHumidityData_t m_data[MAX_TEMP_HUM_SENSORS];
     bool m_dataFresh[MAX_TEMP_HUM_SENSORS];
@@ -50,6 +51,7 @@ public:
     void init(DebugLog *log) {m_log = log;}
     void setUploadClient(UploadDataClient *client) { m_uploadClient = client; }
     virtual void slice( void);
+    void enableAdditionalLogging(bool enable) { m_additionalLogging = enable; }
 
     virtual void setData(bleDeviceData_t &data) {m_bleData = data;}
     virtual void parse();

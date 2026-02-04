@@ -141,7 +141,7 @@ void setup(){
 #ifdef ESP32
   shell.setBleConnection(&bleConnection);
   shell.setVictronDevice(&victronParser);
-  //bleConnection.setParser(&victronParser);
+  shell.setTempHumParser(&tempHumParser);
   bleConnection.enableBleAddress(0, s_bleDefaultAddress, &tempHumParser);
   bleConnection.enableBleAddress(1, s_bleDefaultAddress2, &tempHumParser);
   bleConnection.enableBleAddress(2, s_bleVictronAddress, &victronParser);

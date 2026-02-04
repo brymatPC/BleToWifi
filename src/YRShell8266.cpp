@@ -1,5 +1,6 @@
 #include "YRShell8266.h"
 #include "TelnetServer.h"
+#include "TempHumidityParser.h"
 #include "WifiConnection.h"
 #include "VictronDevice.h"
 #include "UploadDataClient.h"
@@ -76,6 +77,7 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_setBleLogState,       "sbls"},
     { SE_CC_setBleAddr,           "sba"},
     { SE_CC_setVicKey,            "svk"},
+    { SE_CC_setTempHumidityLogging, "setTHLogging"},
 
     { SE_CC_flashSize,            "flashSize"},
     { SE_CC_curTime,              "curTime"},
@@ -514,6 +516,12 @@ void YRShell8266::executeFunction( uint16_t n) {
                   m_victronDevice->setKey( getAddressFromToken( t1));
               }
             break;
+          case SE_CC_setTempHumidityLogging:
+              t1 = popParameterStack();
+              if( m_tempHumParser) {
+                m_tempHumParser->enableAdditionalLogging(t1);
+              }
+              break;
           case SE_CC_flashSize:
               t1 = LittleFS.totalBytes();
               t2 = LittleFS.usedBytes();

@@ -26,6 +26,7 @@ TempHumidityParser::TempHumidityParser() {
         memset(m_data[i].macAddr, 0, TEMP_HUMIDITY_MAC_LEN);
     }
     m_state = STATE_RESET;
+    m_additionalLogging = false;
     m_timer.setInterval(s_UPLOAD_TIME_MS);
 }
 void TempHumidityParser::parse() {
@@ -34,9 +35,16 @@ void TempHumidityParser::parse() {
     if(m_bleData.payloadLen > 7) {
         uint16_t companyId = (m_bleData.payload[1] << 8) | (m_bleData.payload[0]);
 
-        // if(m_log) {
-        //     m_log->printX( __FILE__, __LINE__, 1, companyId, m_data.payloadLen, "TempHumiditySensor: companyId, payloadLen");
-        // }
+        if(m_log && m_additionalLogging) {
+            char outStr[20];
+            outStr[0] = '0';
+            outStr[1] = 'x';
+            for(int i=0; i < TEMP_HUMIDITY_MAC_LEN; i++) {
+                sprintf(&outStr[2+i*2], "%02X", m_bleData.payload[i+4]);
+            }
+            m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: macAddr");
+            m_log->printX( __FILE__, __LINE__, 1, companyId, m_bleData.payloadLen, "TempHumiditySensor: companyId, payloadLen");
+        }
     }
 
     // Sensor has two advertising packets, one with length 20 and one with length 22
@@ -54,38 +62,33 @@ void TempHumidityParser::parse() {
         temp.humidity = (temp.humidity * 10) / 16;
 
         if(m_log) {
-            // char outStr[128];
-            // outStr[0] = '0';
-            // outStr[1] = 'x';
-            // for(int i=0; i < 10; i++) {
-            //     sprintf(&outStr[2+i*2], "%02X", m_data.payload[i+10]);
-            // }
-            // m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: outputData");
+            if(m_additionalLogging) {
+                char outStr[128];
+                outStr[0] = '0';
+                outStr[1] = 'x';
+                for(int i=0; i < 10; i++) {
+                    sprintf(&outStr[2+i*2], "%02X", m_bleData.payload[i+10]);
+                }
+                m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: outputData");
+            }
             m_log->print( __FILE__, __LINE__, 1, temp.batteryVoltage, temp.temperature, temp.humidity, "TempHumidityParser: batteryVoltage, temperature, humidity");
             m_log->print( __FILE__, __LINE__, 1, temp.upTime, "TempHumidityParser: upTime");
         }
 
         addData(temp);
 
-        // // Upload to server (If available)
-        // if(m_uploadClient) {
-        //     snprintf(m_sendBuf, MAX_SEND_BUF_SIZE, "{\"sn\":\"%02X%02X%02X%02X%02X%02X\",\"v\":%d,\"t\":%d,\"h\":%d,\"ut\":%d}",
-        //         m_bleData.payload[4], m_bleData.payload[5], m_bleData.payload[6], m_bleData.payload[7], m_bleData.payload[8], m_bleData.payload[9],
-        //         temp.batteryVoltage, temp.temperature, temp.humidity, temp.upTime);
-        //     m_uploadClient->sendFile(m_sendBuf, strlen(m_sendBuf));
-        // }
     } else if(m_bleData.payloadLen == 22) {
-        //uint32_t upTime        = (m_data.payload[21] << 24) | (m_data.payload[20] << 16) | (m_data.payload[19] << 8) | (m_data.payload[18]);
         if(m_log) {
-            // char outStr[128];
-            // outStr[0] = '0';
-            // outStr[1] = 'x';
-            // for(int i=0; i < 12; i++) {
-            //     sprintf(&outStr[2+i*2], "%02X", m_data.payload[i+10]);
-            // }
-            //m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: outputData22");
+            if(m_additionalLogging) {
+                char outStr[128];
+                outStr[0] = '0';
+                outStr[1] = 'x';
+                for(int i=0; i < 12; i++) {
+                    sprintf(&outStr[2+i*2], "%02X", m_bleData.payload[i+10]);
+                }
+                m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: outputData22");
+            }
             m_log->print( __FILE__, __LINE__, 1, m_bleData.payloadLen, "TempHumidityParser - Expected, but unknown packet: payloadLen");
-            //m_log->print( __FILE__, __LINE__, 1, upTime, "TempHumiditySensor: upTime");
         }
     } else {
         if(m_log) {
