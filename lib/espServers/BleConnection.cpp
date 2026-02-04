@@ -132,7 +132,7 @@ void BleConnection::logParsers() {
 }
 void BleConnection::changeState( uint8_t state) {
     if( m_log) {
-        m_log->print( __FILE__, __LINE__, 1, m_state, state, "BleConnection::changeState: m_state, state" );
+        m_log->print( __FILE__, __LINE__, 0x100000, m_state, state, "BleConnection::changeState: m_state, state" );
     }
     m_state = state;
 }

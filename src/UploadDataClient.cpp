@@ -50,7 +50,7 @@ bool UploadDataClient::busy() {
 }
 void UploadDataClient::changeState( uint8_t newState) {
     if( m_log != NULL) {
-        m_log->print( __FILE__, __LINE__, 0x100001, (uint32_t) m_state, (uint32_t) newState, "UploadDataClient_changeState: state, newState");
+        m_log->print( __FILE__, __LINE__, 0x100000, (uint32_t) m_state, (uint32_t) newState, "UploadDataClient_changeState: state, newState");
     }
     m_state = newState;
 }
@@ -110,7 +110,7 @@ void UploadDataClient::slice() {
         case STATE_DISCONNECTING:
             m_client->stop();
             if(m_log) {
-                m_log->print( __FILE__, __LINE__, 0x100001, "UploadDataClient: stopped");
+                m_log->print( __FILE__, __LINE__, 0x100001, "UploadDataClient: done");
             }
             changeState( STATE_IDLE);
         break;
