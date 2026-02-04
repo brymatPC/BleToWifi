@@ -3,10 +3,12 @@
 
 #include <stdint.h>
 #include <BleParser.h>
+#include <Preferences.h>
 #include <utility/Sliceable.h>
 #include <utility/IntervalTimer.h>
 
 #define MAX_VIC_SEND_BUF_SIZE 128
+#define VICTRON_KEY_LEN 16
 
 class DebugLog;
 class UploadDataClient;
@@ -20,11 +22,12 @@ typedef struct {
 
 class VictronDevice : public Sliceable, public BleParser {
 private:
+    static const char s_PREF_NAMESPACE[];
     static const unsigned int s_UPLOAD_TIME_MS;
     static const unsigned int s_STARTUP_OFFSET_MS;
     static char s_ROUTE[];
     
-    uint8_t *m_key;
+    uint8_t m_key[VICTRON_KEY_LEN];
     DebugLog* m_log;
     IntervalTimer m_timer;
     UploadDataClient* m_uploadClient;
@@ -39,6 +42,9 @@ public:
     VictronDevice();
     virtual ~VictronDevice() { }
     virtual const char* sliceName( ) { return "VictronDevice"; }
+
+    void setup(Preferences &pref);
+    void save(Preferences &pref);
 
     void init(DebugLog *log) {m_log = log;}
     void setUploadClient(UploadDataClient *client) { m_uploadClient = client; }

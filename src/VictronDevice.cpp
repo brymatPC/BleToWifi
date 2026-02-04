@@ -6,8 +6,6 @@
 
 #include <aes/esp_aes.h>
 
-#define VICTRON_KEY_LEN (16)
-
 typedef enum {
   STATE_RESET       = 0,
   STATE_IDLE        = 1,
@@ -17,36 +15,31 @@ typedef enum {
 
 } victronStates_t;
 
-// be
-// 1e
-// db
-// a7
-// 71
-// 64
-// 0f
-// ae
-// c9
-// 1d
-// 68
-// 3c
-// 70
-// ef
-// e5
-// f1
-// F1 E5 EF 70 3C 68 1D C9 AE 0F 64 71 A7 DB 1E BE
-//static uint8_t s_DEFAULT_KEY[] = {0xF1, 0xE5, 0xEF, 0x70, 0x3C, 0x68, 0x1D, 0xC9, 0xAE, 0x0F, 0x64, 0x71, 0xA7, 0xDB, 0x1E, 0xBE};
-static uint8_t s_DEFAULT_KEY[] = {0xBE, 0x1E, 0xDB, 0xA7, 0x71, 0x64, 0x0F, 0xAE, 0xC9, 0x1D, 0x68, 0x3C, 0x70, 0xEF, 0xE5, 0xF1};
-
+const char VictronDevice::s_PREF_NAMESPACE[] = "vic";
 const unsigned int VictronDevice::s_UPLOAD_TIME_MS = 60000;
 const unsigned int VictronDevice::s_STARTUP_OFFSET_MS = 5000;
 char VictronDevice::s_ROUTE[] = "/victron";
 
 VictronDevice::VictronDevice() {
-    m_key = s_DEFAULT_KEY;
+    memset(m_key, 0, VICTRON_KEY_LEN);
     m_bleData = bleDeviceData_t{};
     m_dataFresh = false;
     m_state = STATE_RESET;
     m_timer.setInterval(s_STARTUP_OFFSET_MS);
+}
+void VictronDevice::setup(Preferences &pref) {
+    pref.begin(s_PREF_NAMESPACE, true);
+    pref.getBytes("key", m_key, VICTRON_KEY_LEN);
+    pref.end();
+}
+void VictronDevice::save(Preferences &pref) {
+    char parserKey[16];
+    pref.begin(s_PREF_NAMESPACE, false);
+    pref.putBytes("key", m_key, VICTRON_KEY_LEN);
+    pref.end();
+    if( m_log) {
+        m_log->print( __FILE__, __LINE__, 1, "VictronDevice::save: pref updated" );
+    }
 }
 void VictronDevice::setKey(const char *key) {
     uint8_t tempKey[VICTRON_KEY_LEN];
@@ -86,11 +79,21 @@ void VictronDevice::parse() {
     }
 
     if(m_bleData.payloadLen >= 25) {
-        uint16_t nonce = (m_bleData.payload[7] << 8) | (m_bleData.payload[8]);
-        uint8_t keyStart = m_bleData.payload[9];
-
-        // payload 10-25 are the encrypted bytes
-        decrypt();
+        bool keyValid = false;
+        for(uint8_t i=0; i < VICTRON_KEY_LEN; i++) {
+            if(m_key[i] != 0) {
+                keyValid = true;
+                break;
+            }
+        }
+        if(keyValid) {
+            // payload 10-25 are the encrypted bytes
+            decrypt();
+        } else {
+            if(m_log) {
+                m_log->print( __FILE__, __LINE__, 1, "VictronDevice - key not valid, can't decrypt");
+            }
+        }
 
     } else {
         if(m_log) {
@@ -147,8 +150,7 @@ void VictronDevice::decrypt() {
             batteryCurrent = (int32_t) batteryCurrent_u;
         } else {
             batteryCurrent = (int32_t) (0x3FFFFF - batteryCurrent_u + 1);
-            // TODO: Add this in once logging of signed values is fixed
-            //batteryCurrent *= -1;
+            batteryCurrent *= -1;
         }
 
         if(m_log) {
@@ -159,7 +161,7 @@ void VictronDevice::decrypt() {
 
         m_data.timeToGo = timeToGo;
         m_data.batteryVoltage = batteryVoltage;
-        m_data.batteryCurrent = batteryCurrent * -1;
+        m_data.batteryCurrent = batteryCurrent;
         m_data.stateOfCharge = stateOfCharge;
         m_dataFresh = true;
 

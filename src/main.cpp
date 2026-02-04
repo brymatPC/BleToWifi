@@ -147,6 +147,7 @@ void setup(){
   shell.setBleConnection(&bleConnection);
   shell.setVictronDevice(&victronParser);
   shell.setTempHumParser(&tempHumParser);
+  victronParser.setup(pref);
   victronParser.init(&dbg);
   victronParser.setUploadClient(&uploadClient);
   tempHumParser.init(&dbg);

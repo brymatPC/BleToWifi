@@ -520,6 +520,9 @@ void YRShell8266::executeFunction( uint16_t n) {
                 if( m_bleConnection ) {
                   m_bleConnection->save(*m_pref);
                 }
+                if(m_victronDevice) {
+                  m_victronDevice->save(*m_pref);
+                }
               }
               break;
           case SE_CC_bleScan:
