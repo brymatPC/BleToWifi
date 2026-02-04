@@ -4,11 +4,16 @@
 static bool m_resultsReceived = false;
 static BLEScanResults m_results;
 
+const char BleConnection::s_PREF_NAMESPACE[] = "ble";
 const uint16_t BleConnection::s_DEFAULT_SCAN_INTERVAL_MS = 1000;
 const uint16_t BleConnection::s_DEFAULT_SCAN_WINDOW_MS = 1000;
 const uint32_t BleConnection::s_DEFAULT_SCAN_DURATION_SEC = 10;
 const bool BleConnection::s_DEFAULT_SCAN_ACTIVE = false;
 const uint32_t BleConnection::s_DEFAULT_SCAN_TIME_MS = 0;
+
+const char BleConnection::parserKeyEnPrefix[] = "parEn";
+const char BleConnection::parserKeyAddrPrefix[] = "parAddr";
+const char BleConnection::parserKeyParserPrefix[] = "parPar";
 
 typedef enum {
   STATE_RESET      = 0,
@@ -18,7 +23,7 @@ typedef enum {
 
 } bleStates_t;
 
-BleConnection::BleConnection( DebugLog* log)
+BleConnection::BleConnection(DebugLog* log)
 {
     m_log = log;
     m_state = STATE_RESET;
@@ -34,30 +39,96 @@ BleConnection::BleConnection( DebugLog* log)
 
     for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
         m_deviceParsers[i].enabled = false;
+        m_parserTypes[i] = BleParserTypes::none;
+        m_parsers[i] = nullptr;
+    }
+    m_nextParser = 0;
+}
+void BleConnection::setup(Preferences &pref) {
+    char parserKey[16];
+    pref.begin(s_PREF_NAMESPACE, true);
+    m_scanIntervalMs    = pref.getUShort("scanInt", s_DEFAULT_SCAN_INTERVAL_MS);
+    m_scanWindowMs      = pref.getUShort("scanWin", s_DEFAULT_SCAN_WINDOW_MS);
+    m_scanDuration      = pref.getULong("scanDur", s_DEFAULT_SCAN_DURATION_SEC);
+    m_scanActively      = pref.getBool("scanAct", s_DEFAULT_SCAN_ACTIVE);
+    m_scanStartInterval = pref.getULong("scanSInt", s_DEFAULT_SCAN_TIME_MS);
+    for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
+        snprintf(parserKey, 16, "%s%d", parserKeyEnPrefix, i);
+        m_deviceParsers[i].enabled = pref.getBool(parserKey, false);
+        snprintf(parserKey, 16, "%s%d", parserKeyAddrPrefix, i);
+        m_deviceParsers[i].addr[0] = '\0';
+        pref.getString(parserKey, m_deviceParsers[i].addr, BLE_ADDR_LEN);
+        snprintf(parserKey, 16, "%s%d", parserKeyParserPrefix, i);
+        m_deviceParsers[i].parserType = static_cast<BleParserTypes>(pref.getUShort(parserKey, static_cast<uint16_t>(BleParserTypes::none)));
+    }
+    pref.end();
+
+    m_scanTimer.setInterval(m_scanStartInterval);
+}
+void BleConnection::save(Preferences &pref) {
+    char parserKey[16];
+    pref.begin(s_PREF_NAMESPACE, false);
+    pref.putUShort("scanInt", m_scanIntervalMs);
+    pref.putUShort("scanWin", m_scanWindowMs);
+    pref.putULong("scanDur", m_scanDuration);
+    pref.putBool("scanAct", m_scanActively);
+    pref.putULong("scanSInt", m_scanStartInterval);
+    for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
+        snprintf(parserKey, 16, "%s%d", parserKeyEnPrefix, i);
+        pref.putBool(parserKey, m_deviceParsers[i].enabled);
+        snprintf(parserKey, 16, "%s%d", parserKeyAddrPrefix, i);
+        pref.putString(parserKey, m_deviceParsers[i].addr);
+        snprintf(parserKey, 16, "%s%d", parserKeyParserPrefix, i);
+        pref.putUShort(parserKey, static_cast<uint16_t>(m_deviceParsers[i].parserType));
+    }
+    pref.end();
+    if( m_log) {
+        m_log->print( __FILE__, __LINE__, 1, "BleConnection::save: pref updated" );
     }
 }
-
-void BleConnection::enableBleAddress(uint8_t index, const char *addr, BleParser *parser) {
-    if(index >= MAX_BLE_DEVICES) return;
-    strncpy(m_deviceParsers[index].addr, addr, BLE_ADDR_LEN);
-    m_deviceParsers[index].parser = parser;
-    m_deviceParsers[index].enabled = true;
+void BleConnection::addParser(BleParserTypes type, BleParser *parser) {
+    bool found = false;
+    for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
+        if(m_parserTypes[i] == type) {
+            m_parsers[i] = parser;
+            found = true;
+            break;
+        }
+    }
+    if(!found && m_nextParser < MAX_BLE_DEVICES) {
+        m_parserTypes[m_nextParser] = type;
+        m_parsers[m_nextParser] = parser;
+        m_nextParser++;
+    }
 }
-void BleConnection::disableBleAddress(uint8_t index) {
-    if(index >= MAX_BLE_DEVICES) return;
-    m_deviceParsers[index].enabled = false;
+BleParser* BleConnection::getParser(BleParserTypes type) {
+    if(type == BleParserTypes::none) return nullptr;
+    for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
+        if(m_parserTypes[i] == type) {
+            return m_parsers[i];
+        }
+    }
+    return nullptr;
 }
 void BleConnection::setBleAddress(uint8_t index, const char *addr) {
     if(index >= MAX_BLE_DEVICES) return;
     strncpy(m_deviceParsers[index].addr, addr, BLE_ADDR_LEN);
 }
-void BleConnection::setBleParser(uint8_t index, BleParser *parser) {
+void BleConnection::setBleParser(uint8_t index, BleParserTypes type) {
     if(index >= MAX_BLE_DEVICES) return;
-    m_deviceParsers[index].parser = parser;
+    m_deviceParsers[index].parserType = type;
 }
 void BleConnection::setBleEnable(uint8_t index, bool enable) {
     if(index >= MAX_BLE_DEVICES) return;
     m_deviceParsers[index].enabled = enable;
+}
+void BleConnection::logParsers() {
+    if(!m_log) return;
+    for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
+        if(m_deviceParsers[i].enabled) {
+            m_log->print( __FILE__, __LINE__, 1, i, static_cast<uint32_t>(m_deviceParsers[i].parserType), m_deviceParsers[i].addr, "BleConnection::logParsers: i, type, addr" );
+        }
+    }
 }
 void BleConnection::changeState( uint8_t state) {
     if( m_log) {
@@ -114,6 +185,7 @@ void BleConnection::onResult(BLEAdvertisedDevice advertisedDevice) {
     BLEAddress address = advertisedDevice.getAddress();
     for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
         if(!m_deviceParsers[i].enabled) continue;
+        BleParser* parser = getParser(m_deviceParsers[i].parserType);
         BLEAddress addrToParse(m_deviceParsers[i].addr);
         if(address == addrToParse) {
             m_devices[0].payloadLen = 0;
@@ -125,9 +197,9 @@ void BleConnection::onResult(BLEAdvertisedDevice advertisedDevice) {
                 m_devices[0].payloadLen = (uint8_t) len;
                 m_devices[0].valid = true;
 
-                if(m_deviceParsers[i].parser) {
-                    m_deviceParsers[i].parser->setData(m_devices[0]);
-                    m_deviceParsers[i].parser->parse();
+                if(parser) {
+                    parser->setData(m_devices[0]);
+                    parser->parse();
                 }
             }
         }

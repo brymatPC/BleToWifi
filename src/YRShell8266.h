@@ -7,6 +7,7 @@
 
 #include "YRShellExec.h"
 
+class Preferences;
 class LedBlink;
 class WifiConnection;
 class TelnetLogServer;
@@ -72,6 +73,9 @@ typedef enum {
     SE_CC_dotUb,
     SE_CC_strToInt,
 
+    SE_CC_checkPreferences,
+    SE_CC_storePreferences,
+
     SE_CC_bleScan,
     SE_CC_setBleLogState,
     SE_CC_setBleScanInterval,
@@ -82,6 +86,7 @@ typedef enum {
     SE_CC_setBleAddr,
     SE_CC_setBleParser,
     SE_CC_setBleEnable,
+    SE_CC_logBleParsers,
     SE_CC_setVicKey,
     SE_CC_setTempHumidityLogging,
 
@@ -100,6 +105,7 @@ protected:
   char m_auxBuf[ 128];
   uint8_t m_auxBufIndex;
 
+  Preferences* m_pref;
   TelnetLogServer* m_telnetLogServer;
   LedBlink* m_led;
   WifiConnection* m_wifiConnection;
@@ -124,6 +130,7 @@ public:
   void init( DebugLog* log);
 
   // Provide object instances to drive testing, can be nullptr
+  void setPreferences(Preferences *pref) { m_pref = pref; }
   void setLedBlink(LedBlink *led) { m_led = led; }
   void setWifiConnection(WifiConnection* wifiConnection) { m_wifiConnection = wifiConnection; }
   void setBleConnection(BleConnection* bleConnection) { m_bleConnection = bleConnection; }

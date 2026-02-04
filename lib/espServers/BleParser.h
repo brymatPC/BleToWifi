@@ -3,6 +3,12 @@
 
 #include <stdint.h>
 
+enum class BleParserTypes: uint16_t {
+  none = 0x0000,
+  victron = 0x02E1,
+  tempHumidity = 0x0010
+};
+
 typedef struct {
   bool valid = false;
   char addr[20];

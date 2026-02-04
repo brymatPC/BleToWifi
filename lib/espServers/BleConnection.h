@@ -3,6 +3,7 @@
 
 #if defined (ESP32)
   #include <BleDevice.h>
+  #include <Preferences.h>
 #else
   #warning "BLE is not supported on the selected target"
 #endif
@@ -26,16 +27,21 @@ typedef enum {
 typedef struct {
   bool enabled;
   char addr[BLE_ADDR_LEN];
-  BleParser *parser;
+  BleParserTypes parserType;
 } bleDeviceParser_t;
 
 class BleConnection : public Sliceable, public BLEAdvertisedDeviceCallbacks {
 private:
+    static const char s_PREF_NAMESPACE[];
     static const uint16_t s_DEFAULT_SCAN_INTERVAL_MS;
     static const uint16_t s_DEFAULT_SCAN_WINDOW_MS;
     static const uint32_t s_DEFAULT_SCAN_DURATION_SEC;
     static const bool s_DEFAULT_SCAN_ACTIVE;
     static const uint32_t s_DEFAULT_SCAN_TIME_MS;
+
+    static const char parserKeyEnPrefix[];
+    static const char parserKeyAddrPrefix[];
+    static const char parserKeyParserPrefix[];
 
     uint8_t m_state;
     bool m_requestScan;
@@ -46,6 +52,9 @@ private:
     BLEScan* m_pBleScan;
     bleDeviceData_t m_devices[MAX_BLE_DEVICE_DATA];
     bleDeviceParser_t m_deviceParsers[MAX_BLE_DEVICES];
+    BleParserTypes m_parserTypes[MAX_BLE_DEVICES];
+    BleParser* m_parsers[MAX_BLE_DEVICES];
+    uint8_t m_nextParser;
 
     // Scan Configuration
     uint16_t m_scanIntervalMs;
@@ -55,12 +64,18 @@ private:
     uint32_t m_scanStartInterval;
 
     void changeState( uint8_t state);
+    BleParser* getParser(BleParserTypes type);
 protected:
 public:
-    BleConnection( DebugLog* log = nullptr);
+    BleConnection(DebugLog* log = nullptr);
     virtual ~BleConnection() { }
     virtual const char* sliceName( void) { return "BleConnection"; }
     virtual void slice( void);
+
+    void setup(Preferences &pref);
+    void save(Preferences &pref);
+
+    void addParser(BleParserTypes type, BleParser *parser);
 
     // Scan Configuration
     void setScanInterval(uint16_t interval) { m_scanIntervalMs = interval; }
@@ -73,11 +88,10 @@ public:
     bleDeviceData_t *deviceData(uint8_t index);
 
     void setLogState(bleLogState state) {m_bleLogState = state; }
-    void enableBleAddress(uint8_t index, const char *addr, BleParser *parser);
-    void disableBleAddress(uint8_t index);
     void setBleAddress(uint8_t index, const char *addr);
-    void setBleParser(uint8_t index, BleParser *parser);
+    void setBleParser(uint8_t index, BleParserTypes type);
     void setBleEnable(uint8_t index, bool enable);
+    void logParsers();
 
     // BLEAdvertisedDeviceCallbacks
     virtual void onResult(BLEAdvertisedDevice advertisedDevice);

@@ -4,6 +4,7 @@
 #include "TelnetServer.h"
 #include "UploadDataClient.h"
 #ifdef ESP32
+  #include <Preferences.h>
   #include <BleConnection.h>
   #include "TempHumidityParser.h"
   #include "VictronDevice.h"
@@ -47,7 +48,7 @@
   static const char * s_NETWORK_NAME = "yrshell";
 #endif
 
-
+Preferences pref;
 DebugLog dbg;
 YRShell8266 shell;
 LedBlink onBoardLed;
@@ -139,6 +140,10 @@ void setup(){
   shell.setTelnetLogServer(&telnetLogServer);
   shell.setUploadClient(&uploadClient);
 #ifdef ESP32
+  bleConnection.setup(pref);
+  bleConnection.addParser(BleParserTypes::victron, &victronParser);
+  bleConnection.addParser(BleParserTypes::tempHumidity, &tempHumParser);
+  shell.setPreferences(&pref);
   shell.setBleConnection(&bleConnection);
   shell.setVictronDevice(&victronParser);
   shell.setTempHumParser(&tempHumParser);

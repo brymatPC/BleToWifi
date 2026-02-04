@@ -8,6 +8,7 @@
 
 #ifdef ESP32
 #include <BleConnection.h>
+#include <Preferences.h>
 #include <time.h>
 #endif
 
@@ -75,6 +76,9 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_dotUb,                ".ub" },
     { SE_CC_strToInt,             "strToInt"},
 
+    { SE_CC_checkPreferences,     "checkPref"},
+    { SE_CC_storePreferences,     "storePref"},
+
     { SE_CC_bleScan,                 "bscan"},
     { SE_CC_setBleLogState,          "sbls"},
     { SE_CC_setBleScanInterval,      "setBleScanInterval"},
@@ -85,6 +89,7 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_setBleAddr,              "setBleAddr"},
     { SE_CC_setBleParser,            "setBleParser"},
     { SE_CC_setBleEnable,            "setBleEnable"},
+    { SE_CC_logBleParsers,           "logBleParsers"},
 
     { SE_CC_setVicKey,               "svk"},
     { SE_CC_setTempHumidityLogging,  "setTHLogging"},
@@ -503,6 +508,20 @@ void YRShell8266::executeFunction( uint16_t n) {
               }
               pushParameterStack( t1);
               break;
+          case SE_CC_checkPreferences:
+              if(m_pref) {
+                pushParameterStack(m_pref->freeEntries());
+              } else {
+                pushParameterStack(0);
+              }
+              break;
+          case SE_CC_storePreferences:
+              if(m_pref) {
+                if( m_bleConnection ) {
+                  m_bleConnection->save(*m_pref);
+                }
+              }
+              break;
           case SE_CC_bleScan:
               if( m_bleConnection ) {
                 m_bleConnection->requestScan();
@@ -555,12 +574,12 @@ void YRShell8266::executeFunction( uint16_t n) {
               t1 = popParameterStack();
               t2 = popParameterStack();
               if( m_bleConnection) {
-                  if(t1 == 0) {
-                    m_bleConnection->setBleParser(t2, m_tempHumParser);
-                  } else if(t1 == 1) {
-                    m_bleConnection->setBleParser(t2, m_victronDevice);
+                  if(t1 == static_cast<uint32_t>(BleParserTypes::tempHumidity)) {
+                    m_bleConnection->setBleParser(t2, BleParserTypes::tempHumidity);
+                  } else if(t1 == static_cast<uint32_t>(BleParserTypes::victron)) {
+                    m_bleConnection->setBleParser(t2, BleParserTypes::victron);
                   } else {
-                    m_bleConnection->setBleParser(t2, nullptr);
+                    m_bleConnection->setBleParser(t2, BleParserTypes::none);
                   }
               }
               break;
@@ -569,6 +588,11 @@ void YRShell8266::executeFunction( uint16_t n) {
               t2 = popParameterStack();
               if( m_bleConnection) {
                   m_bleConnection->setBleEnable(t2, t1);
+              }
+              break;
+          case SE_CC_logBleParsers:
+              if(m_bleConnection) {
+                m_bleConnection->logParsers();
               }
               break;
           case SE_CC_setVicKey:
