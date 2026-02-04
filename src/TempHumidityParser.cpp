@@ -78,6 +78,14 @@ void TempHumidityParser::parse() {
         addData(temp);
 
     } else if(m_bleData.payloadLen == 22) {
+        int16_t highestTemp = (m_bleData.payload[11] << 8) | (m_bleData.payload[10]);
+        uint32_t highestTempRuntime = (m_bleData.payload[15] << 24) | (m_bleData.payload[14] << 16) | (m_bleData.payload[13] << 8) | (m_bleData.payload[12]);
+        int16_t lowestTemp = (m_bleData.payload[17] << 8) | (m_bleData.payload[16]);
+        uint32_t lowestTempRuntime = (m_bleData.payload[21] << 24) | (m_bleData.payload[20] << 16) | (m_bleData.payload[19] << 8) | (m_bleData.payload[18]);
+
+        highestTemp = (highestTemp * 10) / 16;
+        lowestTemp = (lowestTemp * 10) / 16;
+
         if(m_log) {
             if(m_additionalLogging) {
                 char outStr[128];
@@ -88,7 +96,8 @@ void TempHumidityParser::parse() {
                 }
                 m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: outputData22");
             }
-            m_log->print( __FILE__, __LINE__, 1, m_bleData.payloadLen, "TempHumidityParser - Expected, but unknown packet: payloadLen");
+            m_log->print( __FILE__, __LINE__, 1, highestTemp, highestTempRuntime, "TempHumidityParser: highestTemp, highestTempRuntime");
+            m_log->print( __FILE__, __LINE__, 1, lowestTemp, lowestTempRuntime, "TempHumidityParser: lowestTemp, lowestTempRuntime");
         }
     } else {
         if(m_log) {
@@ -151,7 +160,6 @@ void TempHumidityParser::addData(tempHumidityData_t &data) {
         }
     }
 }
-
 
 void TempHumidityParser::slice( void) {
     switch(m_state) {

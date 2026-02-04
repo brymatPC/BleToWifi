@@ -66,9 +66,6 @@ TempHumidityParser tempHumParser;
 
 static const char *s_serverIp = "192.168.86.155";
 static unsigned s_serverPort = 9100;
-static const char s_bleDefaultAddress[]  = "cd:05:00:00:0B:E3";
-static const char s_bleDefaultAddress2[] = "cd:38:00:00:0b:fc";
-static const char s_bleVictronAddress[]  = "df:3e:15:b9:42:9e";
 
 void setup(){
   unsigned httpPort = 80;
