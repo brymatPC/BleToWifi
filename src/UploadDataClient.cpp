@@ -27,7 +27,7 @@ typedef enum {
 
 static WiFiClient s_client;
 
-static const char* s_POST_HEADER = "POST /sensor HTTP/1.1\r\nContent-type: application/json\r\n\r\n";
+const char UploadDataClient::s_PREF_NAMESPACE[] = "udc";
 
 UploadDataClient::UploadDataClient() {
     m_connected = false;
@@ -40,10 +40,29 @@ UploadDataClient::UploadDataClient() {
 UploadDataClient::~UploadDataClient( void) {
 }
 
-void UploadDataClient::init(const char *ip, unsigned port, DebugLog* log) {
-    strncpy(m_ip, ip, 16);
-    m_port = port;
+void UploadDataClient::init(DebugLog* log) {
     m_log = log;
+}
+void UploadDataClient::setup(Preferences &pref) {
+    pref.begin(s_PREF_NAMESPACE, true);
+    pref.getString("ip", m_ip, UDC_IP_LEN);
+    m_port = pref.getULong("port", 0);
+    pref.end();
+}
+void UploadDataClient::save(Preferences &pref) {
+    pref.begin(s_PREF_NAMESPACE, false);
+    pref.putString("ip", m_ip);
+    pref.putULong("port", m_port);
+    pref.end();
+    if( m_log) {
+        m_log->print( __FILE__, __LINE__, 1, "UploadDataClient::save: pref updated" );
+    }
+}
+void UploadDataClient::setHostIp(const char *ip) {
+    strncpy(m_ip, ip, UDC_IP_LEN);
+}
+void UploadDataClient::setHostPort(unsigned port) {
+    m_port = port;
 }
 bool UploadDataClient::busy() {
     return m_state != STATE_IDLE && !m_sendRequest;

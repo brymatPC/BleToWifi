@@ -94,6 +94,9 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_setVicKey,               "svk"},
     { SE_CC_setTempHumidityLogging,  "setTHLogging"},
 
+    { SE_CC_setUploadIp,            "setUploadIp"},
+    { SE_CC_setUploadPort,          "setUploadPort"},
+
     { SE_CC_flashSize,            "flashSize"},
     { SE_CC_curTime,              "curTime"},
 		{ SE_CC_setTime,              "setTime"},
@@ -523,6 +526,9 @@ void YRShell8266::executeFunction( uint16_t n) {
                 if(m_victronDevice) {
                   m_victronDevice->save(*m_pref);
                 }
+                if(m_uploadClient) {
+                  m_uploadClient->save(*m_pref);
+                }
               }
               break;
           case SE_CC_bleScan:
@@ -608,6 +614,18 @@ void YRShell8266::executeFunction( uint16_t n) {
               t1 = popParameterStack();
               if( m_tempHumParser) {
                 m_tempHumParser->enableAdditionalLogging(t1);
+              }
+              break;
+          case SE_CC_setUploadIp:
+              t1 = popParameterStack();
+              if( m_uploadClient) {
+                  m_uploadClient->setHostIp( getAddressFromToken( t1));
+              }
+              break;
+          case SE_CC_setUploadPort:
+              t1 = popParameterStack();
+              if( m_uploadClient) {
+                  m_uploadClient->setHostPort(t1);
               }
               break;
           case SE_CC_flashSize:

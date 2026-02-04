@@ -90,6 +90,9 @@ typedef enum {
     SE_CC_setVicKey,
     SE_CC_setTempHumidityLogging,
 
+    SE_CC_setUploadIp,
+    SE_CC_setUploadPort,
+
     SE_CC_flashSize,
     SE_CC_curTime,
     SE_CC_setTime,

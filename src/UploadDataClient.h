@@ -2,16 +2,20 @@
 #define UPLOAD_DATA_CLIENT_H_
 
 #include <utility/Sliceable.h>
+#include <Preferences.h>
 
 class DebugLog;
 class WiFiClient;
 
 #define MAX_HEADER_BUF_SIZE 128
+#define UDC_IP_LEN 16
 
 class UploadDataClient : public Sliceable {
 private:
+    static const char s_PREF_NAMESPACE[];
+
     bool m_connected;
-    char m_ip[16];
+    char m_ip[UDC_IP_LEN];
     unsigned m_port;
     uint8_t m_state;
     bool m_sendRequest;
@@ -29,8 +33,12 @@ public:
     UploadDataClient();
     virtual ~UploadDataClient();
     virtual const char* sliceName( ) { return "UploadDataClient"; }
-    void init( const char *ip, unsigned port, DebugLog* log = NULL);
+    void init(DebugLog* log = NULL);
     virtual void slice( void);
+    void setup(Preferences &pref);
+    void save(Preferences &pref);
+    void setHostIp(const char *ip);
+    void setHostPort(unsigned port);
     void sendFile(char *route, char *file, unsigned len);
     bool busy();
 };
