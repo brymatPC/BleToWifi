@@ -1,16 +1,14 @@
 #include "BleConnection.h"
 #include <utility/String.h>
 
-#define SCAN_INTERVAL_MILLIS 1000
-#define SCAN_WINDOW_MILLIS 1000
-#define SCAN_DURATION_SECS 10
-#define SCAN_ACTIVELY false
-
 static bool m_resultsReceived = false;
 static BLEScanResults m_results;
 
-//static char m_defaultAddress[] = "df:3e:15:b9:42:9e";
-static char m_defaultAddress[] = "cd:05:00:00:0B:E3";
+const uint16_t BleConnection::s_DEFAULT_SCAN_INTERVAL_MS = 1000;
+const uint16_t BleConnection::s_DEFAULT_SCAN_WINDOW_MS = 1000;
+const uint32_t BleConnection::s_DEFAULT_SCAN_DURATION_SEC = 10;
+const bool BleConnection::s_DEFAULT_SCAN_ACTIVE = false;
+const uint32_t BleConnection::s_DEFAULT_SCAN_TIME_MS = 0;
 
 typedef enum {
   STATE_RESET      = 0,
@@ -26,6 +24,13 @@ BleConnection::BleConnection( DebugLog* log)
     m_state = STATE_RESET;
     m_requestScan = false;
     m_bleLogState = BLE_LOG_NONE;
+
+    m_scanIntervalMs = s_DEFAULT_SCAN_INTERVAL_MS;
+    m_scanWindowMs = s_DEFAULT_SCAN_WINDOW_MS;
+    m_scanDuration = s_DEFAULT_SCAN_DURATION_SEC;
+    m_scanActively = s_DEFAULT_SCAN_ACTIVE;
+    m_scanStartInterval = s_DEFAULT_SCAN_TIME_MS;
+    m_scanTimer.setInterval(s_DEFAULT_SCAN_TIME_MS);
 
     for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
         m_deviceParsers[i].enabled = false;
@@ -56,10 +61,7 @@ void BleConnection::slice( void) {
             BLEDevice::init("ble_esp32");
             m_pBleScan = BLEDevice::getScan();
             m_pBleScan->setAdvertisedDeviceCallbacks(this, false);
-            m_pBleScan->setInterval(SCAN_INTERVAL_MILLIS);
-            m_pBleScan->setWindow(SCAN_WINDOW_MILLIS);
-            m_pBleScan->setActiveScan(SCAN_ACTIVELY);
-            changeState( STATE_START_SCAN);
+            changeState( STATE_IDLE);
         break;
         case STATE_IDLE:
             if( m_requestScan) {
@@ -68,11 +70,20 @@ void BleConnection::slice( void) {
                     m_log->print( __FILE__, __LINE__, 1, "BleConnection: scan requested");
                 }
                 changeState( STATE_START_SCAN);
+            } else if(m_scanStartInterval != 0 && m_scanTimer.hasIntervalElapsed()) {
+                m_scanTimer.setInterval(m_scanStartInterval);
+                if( m_log) {
+                    m_log->print( __FILE__, __LINE__, 1, "BleConnection: scan start interval");
+                }
+                changeState( STATE_START_SCAN);
             }
         break;
         case STATE_START_SCAN:
             m_resultsReceived = false;
-            m_pBleScan->start(SCAN_DURATION_SECS, scanComplete);
+            m_pBleScan->setInterval(m_scanIntervalMs);
+            m_pBleScan->setWindow(m_scanWindowMs);
+            m_pBleScan->setActiveScan(m_scanActively);
+            m_pBleScan->start(m_scanDuration, scanComplete);
             changeState( STATE_SCANNING);
         break;
         case STATE_SCANNING:

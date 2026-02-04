@@ -31,14 +31,29 @@ typedef struct {
 
 class BleConnection : public Sliceable, public BLEAdvertisedDeviceCallbacks {
 private:
+    static const uint16_t s_DEFAULT_SCAN_INTERVAL_MS;
+    static const uint16_t s_DEFAULT_SCAN_WINDOW_MS;
+    static const uint32_t s_DEFAULT_SCAN_DURATION_SEC;
+    static const bool s_DEFAULT_SCAN_ACTIVE;
+    static const uint32_t s_DEFAULT_SCAN_TIME_MS;
+
     uint8_t m_state;
     bool m_requestScan;
     bleLogState m_bleLogState;
 
     DebugLog* m_log;
+    IntervalTimer m_scanTimer;
     BLEScan* m_pBleScan;
     bleDeviceData_t m_devices[MAX_BLE_DEVICE_DATA];
     bleDeviceParser_t m_deviceParsers[MAX_BLE_DEVICES];
+
+    // Scan Configuration
+    uint16_t m_scanIntervalMs;
+    uint16_t m_scanWindowMs;
+    uint32_t m_scanDuration;
+    bool m_scanActively;
+    uint32_t m_scanStartInterval;
+
     void changeState( uint8_t state);
 protected:
 public:
@@ -46,6 +61,13 @@ public:
     virtual ~BleConnection() { }
     virtual const char* sliceName( void) { return "BleConnection"; }
     virtual void slice( void);
+
+    // Scan Configuration
+    void setScanInterval(uint16_t interval) { m_scanIntervalMs = interval; }
+    void setScanWindow(uint16_t window) { m_scanWindowMs = window; }
+    void setScanDuration(uint32_t duration) { m_scanDuration = duration; }
+    void setScanActively(bool actively) { m_scanActively = actively; }
+    void setScanStartInterval(uint32_t interval) { m_scanStartInterval = interval; }
 
     void requestScan() { m_requestScan = true; }
     bleDeviceData_t *deviceData(uint8_t index);

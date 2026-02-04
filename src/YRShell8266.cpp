@@ -13,6 +13,8 @@
 
 #define INITIAL_LOAD_FILE "/start.yr"
 
+static char s_testRoute[] = "/yrshell";
+
 static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_setPinIn,             "setPinIn" },
     { SE_CC_setPinIn,             "spi" },
@@ -73,11 +75,16 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_dotUb,                ".ub" },
     { SE_CC_strToInt,             "strToInt"},
 
-    { SE_CC_bleScan,              "bscan"},
-    { SE_CC_setBleLogState,       "sbls"},
-    { SE_CC_setBleAddr,           "sba"},
-    { SE_CC_setVicKey,            "svk"},
-    { SE_CC_setTempHumidityLogging, "setTHLogging"},
+    { SE_CC_bleScan,                 "bscan"},
+    { SE_CC_setBleLogState,          "sbls"},
+    { SE_CC_setBleScanInterval,      "setBleScanInterval"},
+    { SE_CC_setBleScanWindow,        "setBleScanWindow"},
+    { SE_CC_setBleDuration,          "setBleDuration"},
+    { SE_CC_setBleScanActively,      "setBleScanActively"},
+    { SE_CC_setBleScanStartInterval, "setBleScanStartInterval"},
+    { SE_CC_setBleAddr,              "sba"},
+    { SE_CC_setVicKey,               "svk"},
+    { SE_CC_setTempHumidityLogging,  "setTHLogging"},
 
     { SE_CC_flashSize,            "flashSize"},
     { SE_CC_curTime,              "curTime"},
@@ -504,6 +511,36 @@ void YRShell8266::executeFunction( uint16_t n) {
                 m_bleConnection->setLogState((bleLogState)t1);
               }
               break;
+          case SE_CC_setBleScanInterval:
+              t1 = popParameterStack();
+              if( m_bleConnection ) {
+                m_bleConnection->setScanInterval((uint16_t)t1);
+              }
+              break;
+          case SE_CC_setBleScanWindow:
+              t1 = popParameterStack();
+              if( m_bleConnection ) {
+                m_bleConnection->setScanWindow((uint16_t)t1);
+              }
+              break;
+          case SE_CC_setBleDuration:
+              t1 = popParameterStack();
+              if( m_bleConnection ) {
+                m_bleConnection->setScanDuration(t1);
+              }
+              break;
+          case SE_CC_setBleScanActively:
+              t1 = popParameterStack();
+              if( m_bleConnection ) {
+                m_bleConnection->setScanActively(t1);
+              }
+              break;
+          case SE_CC_setBleScanStartInterval:
+              t1 = popParameterStack();
+              if( m_bleConnection ) {
+                m_bleConnection->setScanStartInterval(t1);
+              }
+              break;
           case SE_CC_setBleAddr:
               t1 = popParameterStack();
               // if( m_bleConnection) {
@@ -548,7 +585,7 @@ void YRShell8266::executeFunction( uint16_t n) {
             break;
           case SE_CC_upload:
             if(m_uploadClient) {
-              m_uploadClient->sendFile("/yrshell", s_uploadData, strlen(s_uploadData));
+              m_uploadClient->sendFile(s_testRoute, s_uploadData, strlen(s_uploadData));
             }
             break;
           default:

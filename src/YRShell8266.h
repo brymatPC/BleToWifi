@@ -49,15 +49,15 @@ typedef enum {
     SE_CC_getNetworkName,
     SE_CC_getNetworkPassword,
 
-    SE_CC_setHostName,        
-    SE_CC_setHostPassword,        
-    SE_CC_setHostIp,          
-    SE_CC_setHostGateway,     
-    SE_CC_setHostMask,        
-    SE_CC_setNetworkName,     
+    SE_CC_setHostName,
+    SE_CC_setHostPassword,
+    SE_CC_setHostIp,
+    SE_CC_setHostGateway,
+    SE_CC_setHostMask,
+    SE_CC_setNetworkName,
     SE_CC_setNetworkPassword,
 
-    SE_CC_saveNetworkParameters, 
+    SE_CC_saveNetworkParameters,
 
     SE_CC_loadFile,
 
@@ -74,6 +74,11 @@ typedef enum {
 
     SE_CC_bleScan,
     SE_CC_setBleLogState,
+    SE_CC_setBleScanInterval,
+    SE_CC_setBleScanWindow,
+    SE_CC_setBleDuration,
+    SE_CC_setBleScanActively,
+    SE_CC_setBleScanStartInterval,
     SE_CC_setBleAddr,
     SE_CC_setVicKey,
     SE_CC_setTempHumidityLogging,
