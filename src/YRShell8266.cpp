@@ -82,7 +82,10 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_setBleDuration,          "setBleDuration"},
     { SE_CC_setBleScanActively,      "setBleScanActively"},
     { SE_CC_setBleScanStartInterval, "setBleScanStartInterval"},
-    { SE_CC_setBleAddr,              "sba"},
+    { SE_CC_setBleAddr,              "setBleAddr"},
+    { SE_CC_setBleParser,            "setBleParser"},
+    { SE_CC_setBleEnable,            "setBleEnable"},
+
     { SE_CC_setVicKey,               "svk"},
     { SE_CC_setTempHumidityLogging,  "setTHLogging"},
 
@@ -543,9 +546,30 @@ void YRShell8266::executeFunction( uint16_t n) {
               break;
           case SE_CC_setBleAddr:
               t1 = popParameterStack();
-              // if( m_bleConnection) {
-              //     m_bleConnection->setAddressToParse( getAddressFromToken( t1));
-              // }
+              t2 = popParameterStack();
+              if( m_bleConnection) {
+                  m_bleConnection->setBleAddress(t2, getAddressFromToken( t1));
+              }
+              break;
+          case SE_CC_setBleParser:
+              t1 = popParameterStack();
+              t2 = popParameterStack();
+              if( m_bleConnection) {
+                  if(t1 == 0) {
+                    m_bleConnection->setBleParser(t2, m_tempHumParser);
+                  } else if(t1 == 1) {
+                    m_bleConnection->setBleParser(t2, m_victronDevice);
+                  } else {
+                    m_bleConnection->setBleParser(t2, nullptr);
+                  }
+              }
+              break;
+          case SE_CC_setBleEnable:
+              t1 = popParameterStack();
+              t2 = popParameterStack();
+              if( m_bleConnection) {
+                  m_bleConnection->setBleEnable(t2, t1);
+              }
               break;
           case SE_CC_setVicKey:
               t1 = popParameterStack();

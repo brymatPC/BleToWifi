@@ -75,6 +75,9 @@ public:
     void setLogState(bleLogState state) {m_bleLogState = state; }
     void enableBleAddress(uint8_t index, const char *addr, BleParser *parser);
     void disableBleAddress(uint8_t index);
+    void setBleAddress(uint8_t index, const char *addr);
+    void setBleParser(uint8_t index, BleParser *parser);
+    void setBleEnable(uint8_t index, bool enable);
 
     // BLEAdvertisedDeviceCallbacks
     virtual void onResult(BLEAdvertisedDevice advertisedDevice);

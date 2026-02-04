@@ -80,6 +80,8 @@ typedef enum {
     SE_CC_setBleScanActively,
     SE_CC_setBleScanStartInterval,
     SE_CC_setBleAddr,
+    SE_CC_setBleParser,
+    SE_CC_setBleEnable,
     SE_CC_setVicKey,
     SE_CC_setTempHumidityLogging,
 

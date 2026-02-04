@@ -47,6 +47,18 @@ void BleConnection::disableBleAddress(uint8_t index) {
     if(index >= MAX_BLE_DEVICES) return;
     m_deviceParsers[index].enabled = false;
 }
+void BleConnection::setBleAddress(uint8_t index, const char *addr) {
+    if(index >= MAX_BLE_DEVICES) return;
+    strncpy(m_deviceParsers[index].addr, addr, BLE_ADDR_LEN);
+}
+void BleConnection::setBleParser(uint8_t index, BleParser *parser) {
+    if(index >= MAX_BLE_DEVICES) return;
+    m_deviceParsers[index].parser = parser;
+}
+void BleConnection::setBleEnable(uint8_t index, bool enable) {
+    if(index >= MAX_BLE_DEVICES) return;
+    m_deviceParsers[index].enabled = enable;
+}
 void BleConnection::changeState( uint8_t state) {
     if( m_log) {
         m_log->print( __FILE__, __LINE__, 1, m_state, state, "BleConnection::changeState: m_state, state" );
