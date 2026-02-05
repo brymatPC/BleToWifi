@@ -1,4 +1,5 @@
 #include "YRShell8266.h"
+#include "LedStripDriver.h"
 #include "TelnetServer.h"
 #include "TempHumidityParser.h"
 #include "WifiConnection.h"
@@ -102,6 +103,7 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
 		{ SE_CC_setTime,              "setTime"},
 
     { SE_CC_upload,               "upload"},
+    { SE_CC_setLedStrip,          "setLedStrip"},
 
     { 0, NULL}
 };
@@ -656,6 +658,12 @@ void YRShell8266::executeFunction( uint16_t n) {
             if(m_uploadClient) {
               m_uploadClient->sendFile(s_testRoute, s_uploadData, strlen(s_uploadData));
             }
+            break;
+          case SE_CC_setLedStrip:
+              t1 = popParameterStack();
+              if( m_ledStrip) {
+                  m_ledStrip->setLed(t1);
+              }
             break;
           default:
               shellERROR(__FILE__, __LINE__);

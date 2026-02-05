@@ -1,6 +1,7 @@
 #include "YRShell8266.h"
 #include "WifiConnection.h"
 #include "HttpExecServer.h"
+#include "LedStripDriver.h"
 #include "TelnetServer.h"
 #include "UploadDataClient.h"
 #ifdef ESP32
@@ -52,6 +53,7 @@ Preferences pref;
 DebugLog dbg;
 YRShell8266 shell;
 LedBlink onBoardLed;
+LedStripDriver ledStrip;
 WifiConnection wifiConnection(&onBoardLed, &dbg);
 HttpExecServer httpServer;
 TelnetServer telnetServer;
@@ -106,7 +108,8 @@ void setup(){
     dbg.print( __FILE__, __LINE__, 1, "Network parameters have been re-initialized");
  }
   
-  onBoardLed.setLedPin( LED_PIN); 
+  onBoardLed.setLedPin( LED_PIN);
+  ledStrip.setup(&dbg);
   wifiConnection.enable();
 
   if( httpPort != 0) {
@@ -142,6 +145,7 @@ void setup(){
   shell.setBleConnection(&bleConnection);
   shell.setVictronDevice(&victronParser);
   shell.setTempHumParser(&tempHumParser);
+  shell.setLedStrip(&ledStrip);
   victronParser.setup(pref);
   victronParser.init(&dbg);
   victronParser.setUploadClient(&uploadClient);

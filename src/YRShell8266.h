@@ -9,6 +9,7 @@
 
 class Preferences;
 class LedBlink;
+class LedStripDriver;
 class WifiConnection;
 class TelnetLogServer;
 class UploadDataClient;
@@ -98,6 +99,7 @@ typedef enum {
     SE_CC_setTime,
 
     SE_CC_upload,
+    SE_CC_setLedStrip,
     
     SE_CC_last
 } SE_CC_functions;
@@ -111,6 +113,7 @@ protected:
   Preferences* m_pref;
   TelnetLogServer* m_telnetLogServer;
   LedBlink* m_led;
+  LedStripDriver* m_ledStrip;
   WifiConnection* m_wifiConnection;
   BleConnection* m_bleConnection;
   VictronDevice* m_victronDevice;
@@ -135,6 +138,7 @@ public:
   // Provide object instances to drive testing, can be nullptr
   void setPreferences(Preferences *pref) { m_pref = pref; }
   void setLedBlink(LedBlink *led) { m_led = led; }
+  void setLedStrip(LedStripDriver *strip) { m_ledStrip = strip; }
   void setWifiConnection(WifiConnection* wifiConnection) { m_wifiConnection = wifiConnection; }
   void setBleConnection(BleConnection* bleConnection) { m_bleConnection = bleConnection; }
   void setTelnetLogServer(TelnetLogServer* telnetLogServer) { m_telnetLogServer = telnetLogServer; }
