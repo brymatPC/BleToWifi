@@ -3,9 +3,6 @@
 #if defined (ESP32)
   #include <Wifi.h>
   #define WIFI_MODE_UNAVAILABLE (WIFI_MODE_NULL)
-#elif defined (ESP8266)
-  #include <ESP8266WiFi.h>
-  #define WIFI_MODE_UNAVAILABLE (WIFI_OFF)
 #else
   #warning "WiFi is not supported on the selected target"
 #endif

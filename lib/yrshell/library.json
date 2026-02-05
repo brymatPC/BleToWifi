@@ -1,7 +1,7 @@
 {
   "name": "yrshell",
   "version": "0.9.0",
-  "keywords": "ESP8266, ESP32",
+  "keywords": "ESP32",
   "description": "A simple shell for development",
   "repository":
   {
@@ -17,6 +17,6 @@
     }
   ],
   "frameworks": "arduino",
-  "platforms": "espressif8266, espressif32",
+  "platforms": "espressif32",
   "headers": "YRShell.h"
 }

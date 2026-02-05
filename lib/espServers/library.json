@@ -1,7 +1,7 @@
 {
   "name": "espServers",
   "version": "0.A.0",
-  "keywords": "ESP8266, ESP32",
+  "keywords": "ESP32",
   "description": "A collection of Server classes for the ESP platform",
   "repository":
   {

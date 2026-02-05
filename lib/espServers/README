@@ -11,7 +11,7 @@ It provides 4 classes:
 * HttpExecServer - An extension of HttpServer that provides an means to interact with YRShell via Http commands
 
 # Setup Hardware
-This library has been tested on the ESP8266.
+This library has been tested on the ESP32.
 
 # Setup PC Software
 This library is configured for use with platform.io within vscode.

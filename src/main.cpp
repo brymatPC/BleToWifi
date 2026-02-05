@@ -4,12 +4,10 @@
 #include <utility/LedBlink.h>
 #include "TelnetServer.h"
 #include "UploadDataClient.h"
-#ifdef ESP32
-  #include <Preferences.h>
-  #include <BleConnection.h>
-  #include "TempHumidityParser.h"
-  #include "VictronDevice.h"
-#endif
+#include <Preferences.h>
+#include <BleConnection.h>
+#include "TempHumidityParser.h"
+#include "VictronDevice.h"
 
 #ifdef HAS_LED_STRIP
   #include "LedStripDriver.h"
@@ -38,21 +36,11 @@
 //#define LOG_MASK 0x80331303
 #define LOG_MASK 0x80000003
 
-#ifdef ESP8266
-#define LED_PIN 16
-#else
 #define LED_PIN 21
-#endif
 
 #define YRSHELL_ON_TELNET
 
-#if defined (ESP32)
-  static const char * s_NETWORK_NAME = "esp32";
-#elif defined (ESP8266)
-  static const char * s_NETWORK_NAME = "esp8266";
-#else
-  static const char * s_NETWORK_NAME = "yrshell";
-#endif
+static const char * s_NETWORK_NAME = "esp32";
 
 Preferences pref;
 DebugLog dbg;
@@ -69,12 +57,9 @@ HttpExecServer httpServer;
 TelnetServer telnetServer;
 TelnetLogServer telnetLogServer;
 UploadDataClient uploadClient;
-
-#ifdef ESP32
 BleConnection bleConnection(&dbg);
 VictronDevice victronParser;
 TempHumidityParser tempHumParser;
-#endif
 
 void setup(){
   unsigned httpPort = 80;
@@ -82,17 +67,8 @@ void setup(){
   unsigned telnetLogPort = 2023;
   dbg.setMask( LOG_MASK);
 
-#ifdef ESP8266
-  BSerial.begin( 500000);
-#else
   // BAM - 20260108 - ESP32 uses a USB interface and doesn't support different baud rates
   BSerial.begin( 115200);
-#endif
-
-#ifdef ESP8266
-  analogWriteFreq( 100);
-  analogWriteRange(1023);
-#endif
 
   dbg.print( __FILE__, __LINE__, 1, "\r\n\n");
 
@@ -149,7 +125,6 @@ void setup(){
   shell.setWifiConnection(&wifiConnection);
   shell.setTelnetLogServer(&telnetLogServer);
   shell.setUploadClient(&uploadClient);
-#ifdef ESP32
   bleConnection.setup(pref);
   bleConnection.addParser(BleParserTypes::victron, &victronParser);
   bleConnection.addParser(BleParserTypes::tempHumidity, &tempHumParser);
@@ -165,7 +140,6 @@ void setup(){
   victronParser.setUploadClient(&uploadClient);
   tempHumParser.init(&dbg);
   tempHumParser.setUploadClient(&uploadClient);
-#endif
   shell.init( &dbg);
   dbg.print( __FILE__, __LINE__, 1, "setup_done:");
 }
