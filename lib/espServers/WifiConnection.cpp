@@ -181,7 +181,7 @@ typedef enum {
 
 } wifiStates_t;
 
-WifiConnection::WifiConnection( LedBlink* led, DebugLog* log, uint32_t connectTimeout) : networkParameters(log) {
+WifiConnection::WifiConnection( LedDriver* led, DebugLog* log, uint32_t connectTimeout) : networkParameters(log) {
   m_led = led;
   m_log = log;
   m_connectTimeout = connectTimeout;

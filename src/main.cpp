@@ -1,7 +1,7 @@
 #include "YRShell8266.h"
 #include "WifiConnection.h"
 #include "HttpExecServer.h"
-#include "LedStripDriver.h"
+#include <utility/LedBlink.h>
 #include "TelnetServer.h"
 #include "UploadDataClient.h"
 #ifdef ESP32
@@ -10,6 +10,11 @@
   #include "TempHumidityParser.h"
   #include "VictronDevice.h"
 #endif
+
+#ifdef HAS_LED_STRIP
+  #include "LedStripDriver.h"
+#endif
+
 //  0x01 - setup log
 //  0x02 - errors
 //  0x04 - exec output
@@ -52,9 +57,14 @@
 Preferences pref;
 DebugLog dbg;
 YRShell8266 shell;
-LedBlink onBoardLed;
-LedStripDriver ledStrip;
-WifiConnection wifiConnection(&onBoardLed, &dbg);
+#ifndef HAS_LED_STRIP
+  LedBlink onBoardLed;
+  LedDriver* ledDriver = &onBoardLed;
+#else
+  LedStripDriver ledStrip;
+  LedDriver* ledDriver = &ledStrip;
+#endif
+WifiConnection wifiConnection(ledDriver, &dbg);
 HttpExecServer httpServer;
 TelnetServer telnetServer;
 TelnetLogServer telnetLogServer;
@@ -107,15 +117,17 @@ void setup(){
     wifiConnection.networkParameters.save();
     dbg.print( __FILE__, __LINE__, 1, "Network parameters have been re-initialized");
  }
-  
+
+#ifndef HAS_LED_STRIP
   onBoardLed.setLedPin( LED_PIN);
+#else
   ledStrip.setup(&dbg);
+#endif
   wifiConnection.enable();
 
   if( httpPort != 0) {
     httpServer.init( httpPort, &dbg);
     httpServer.setYRShell(&shell);
-    //httpServer.setLedBlink(&onBoardLed);
   }
 #ifdef YRSHELL_ON_TELNET
   if( telnetPort != 0) {
@@ -133,7 +145,7 @@ void setup(){
   BSerial.init(shell.getInq(), shell.getOutq());
 #endif
 
-  shell.setLedBlink(&onBoardLed);
+  shell.setLedDriver(ledDriver);
   shell.setWifiConnection(&wifiConnection);
   shell.setTelnetLogServer(&telnetLogServer);
   shell.setUploadClient(&uploadClient);
@@ -145,7 +157,9 @@ void setup(){
   shell.setBleConnection(&bleConnection);
   shell.setVictronDevice(&victronParser);
   shell.setTempHumParser(&tempHumParser);
+#ifdef HAS_LED_STRIP
   shell.setLedStrip(&ledStrip);
+#endif
   victronParser.setup(pref);
   victronParser.init(&dbg);
   victronParser.setUploadClient(&uploadClient);

@@ -8,7 +8,7 @@
 #include "YRShellExec.h"
 
 class Preferences;
-class LedBlink;
+class LedDriver;
 class LedStripDriver;
 class WifiConnection;
 class TelnetLogServer;
@@ -112,7 +112,7 @@ protected:
 
   Preferences* m_pref;
   TelnetLogServer* m_telnetLogServer;
-  LedBlink* m_led;
+  LedDriver* m_led;
   LedStripDriver* m_ledStrip;
   WifiConnection* m_wifiConnection;
   BleConnection* m_bleConnection;
@@ -137,7 +137,7 @@ public:
 
   // Provide object instances to drive testing, can be nullptr
   void setPreferences(Preferences *pref) { m_pref = pref; }
-  void setLedBlink(LedBlink *led) { m_led = led; }
+  void setLedDriver(LedDriver *led) { m_led = led; }
   void setLedStrip(LedStripDriver *strip) { m_ledStrip = strip; }
   void setWifiConnection(WifiConnection* wifiConnection) { m_wifiConnection = wifiConnection; }
   void setBleConnection(BleConnection* bleConnection) { m_bleConnection = bleConnection; }

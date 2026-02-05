@@ -11,7 +11,7 @@
 #include <utility/Sliceable.h>
 #include <utility/IntervalTimer.h>
 #include <utility/DebugLog.h>
-#include <utility/LedBlink.h>
+#include <utility/LedDriver.h>
 
 typedef struct {
   uint16_t m_index[ 32];
@@ -85,7 +85,7 @@ protected:
   int32_t m_maxRssi;
   uint8_t m_maxRssiIndex;
   DebugLog* m_log;
-  LedBlink* m_led;
+  LedDriver* m_led;
   bool m_enable;
   IntervalTimer m_timer;
   bool m_hostActive;
@@ -93,7 +93,7 @@ protected:
   void hostConfig( void);
 
 public:
-  WifiConnection( LedBlink* led, DebugLog* log = NULL, uint32_t connectTimeout = 5000); 
+  WifiConnection( LedDriver* led, DebugLog* log = NULL, uint32_t connectTimeout = 5000); 
   virtual ~WifiConnection() { }
   virtual const char* sliceName( void) { return "WifiConnection"; }
   virtual void slice( void);

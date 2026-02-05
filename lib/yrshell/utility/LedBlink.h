@@ -2,9 +2,10 @@
 #define LedBlink_h
 
 #include "utility/Sliceable.h"
+#include "utility/LedDriver.h"
 #include "utility/IntervalTimer.h"
 
-class LedBlink : public Sliceable {
+class LedBlink : public Sliceable, public LedDriver {
 protected:
   int8_t m_ledPin, m_tos;
 

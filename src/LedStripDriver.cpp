@@ -4,9 +4,10 @@
 #define RMT_LED_STRIP_RESOLUTION_HZ 10000000 // 10MHz resolution, 1 tick = 0.1us (led strip needs a high resolution)
 #define RMT_LED_STRIP_GPIO_NUM      21
 
-#define EXAMPLE_LED_NUMBERS         1
+// Low intensity blue
+const uint32_t LedStripDriver::s_DEFAULT_COLOUR = 0x00100000;
 
-static uint8_t led_strip_pixels[EXAMPLE_LED_NUMBERS * 3];
+static uint8_t led_strip_pixels[3];
 
 static const rmt_symbol_word_t ws2812_zero = {
     .duration0 = (uint16_t) (0.3 * RMT_LED_STRIP_RESOLUTION_HZ / 1000000), // T0H=0.3us
@@ -68,11 +69,24 @@ static size_t encoder_callback(const void *data, size_t data_size,
 }
 
 LedStripDriver::LedStripDriver() {
-
+    m_ledChan = nullptr;
+    m_encoder = nullptr;
+    m_ledState = false;
+    m_ledOnMs = 1;
+    m_ledOffMs = 10000;
+    m_tos = 0;
+    m_colour = s_DEFAULT_COLOUR;
 }
 
 LedStripDriver::~LedStripDriver() {
-    
+}
+
+void LedStripDriver::setLedOnOffMs(uint32_t on, uint32_t off) {
+    m_ledOnMs = on;
+    m_ledOffMs = off;
+    m_ledTimer.setInterval( m_ledOffMs);
+    transmit(m_colour);
+    m_ledState = false;
 }
 
 void LedStripDriver::setup(DebugLog *log) {
@@ -109,8 +123,25 @@ void LedStripDriver::setup(DebugLog *log) {
     }
 }
 
-void LedStripDriver::setLed(uint32_t pixelVal)
-{
+void LedStripDriver::slice() {
+    if(m_ledChan) {
+        if(m_ledState) {
+            if( m_ledTimer.hasIntervalElapsed()) {
+                m_ledState = false;
+                m_ledTimer.setInterval( m_ledOffMs);
+                transmit(m_colour);
+            }
+        } else {
+            if( m_ledTimer.hasIntervalElapsed()) {
+                m_ledState = true;
+                m_ledTimer.setInterval( m_ledOnMs);
+                transmit(0);
+            }
+        }
+    }
+}
+
+void LedStripDriver::transmit(uint32_t pixelVal) {
     rmt_transmit_config_t tx_config = {
         .loop_count = 0, // no transfer loop
     };
@@ -122,8 +153,16 @@ void LedStripDriver::setLed(uint32_t pixelVal)
     if(err != ESP_OK && m_log) {
         m_log->print( __FILE__, __LINE__, 1, err, "LedStripDriver::setLed - error");
     }
-
-    // Flush RGB values to LEDs
-    //ESP_ERROR_CHECK(rmt_tx_wait_all_done(led_chan, portMAX_DELAY));
-
+}
+void LedStripDriver::push() {
+    if( m_tos <= (int8_t) ((sizeof(m_stack)/sizeof(m_stack[0]))-2) ) {
+        m_stack[ m_tos++] = m_ledOnMs;
+        m_stack[ m_tos++] = m_ledOffMs;
+    }
+}
+void LedStripDriver::pop() {
+    if( m_tos >= 2) {
+        m_ledOffMs = m_stack[ --m_tos];
+        m_ledOnMs = m_stack[ --m_tos];
+    }
 }
