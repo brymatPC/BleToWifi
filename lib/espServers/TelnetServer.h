@@ -4,15 +4,15 @@
 #include <utility/DebugLog.h>
 #include <utility/IntervalTimer.h>
 
-class WiFiServer;
-class WiFiClient;
+class NetworkServer;
+class NetworkClient;
 
 class TelnetServer : public Sliceable {
 protected:
 
   unsigned m_port;
-  WiFiServer* m_server;
-  WiFiClient* m_client;
+  NetworkServer* m_server;
+  NetworkClient* m_client;
 
   CircularQBase<char>* m_fromTelnetQ;
   CircularQBase<char>* m_toTelnetQ; 

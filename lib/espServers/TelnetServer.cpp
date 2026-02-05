@@ -9,8 +9,8 @@
 #else
   #warning "WiFi is not supported on the selected target"
 #endif
-#include <WiFiServer.h>
-#include <WiFiClient.h>
+#include <NetworkServer.h>
+#include <NetworkClient.h>
 
 typedef enum {
   STATE_STARTUP   = 10,

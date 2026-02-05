@@ -11,8 +11,8 @@
 #else
   #warning "WiFi is not supported on the selected target"
 #endif
-#include <WiFiServer.h>
-#include <WiFiClient.h>
+
+#include <NetworkClient.h>
 
 typedef enum {
   STATE_STARTUP         = 0,
@@ -25,7 +25,7 @@ typedef enum {
 
 } ClientStates_t;
 
-static WiFiClient s_client;
+static NetworkClient s_client;
 
 const char UploadDataClient::s_PREF_NAMESPACE[] = "udc";
 

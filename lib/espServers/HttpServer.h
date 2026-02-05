@@ -8,8 +8,8 @@
 
 class DebugLog;
 class LedBlink;
-class WiFiServer;
-class WiFiClient;
+class NetworkServer;
+class NetworkClient;
 
 class HttpServer : public Sliceable {
 protected:
@@ -23,8 +23,8 @@ protected:
 
   IntervalTimer m_timer;
   File m_sendFile;
-  WiFiServer* m_server;
-  WiFiClient* m_client;
+  NetworkServer* m_server;
+  NetworkClient* m_client;
 
   DebugLog* m_log;
   LedBlink* m_led;

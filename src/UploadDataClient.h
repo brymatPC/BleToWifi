@@ -5,7 +5,7 @@
 #include <Preferences.h>
 
 class DebugLog;
-class WiFiClient;
+class NetworkClient;
 
 #define MAX_HEADER_BUF_SIZE 128
 #define UDC_IP_LEN 16
@@ -25,7 +25,7 @@ private:
     unsigned m_fileLength;
 
     DebugLog *m_log;
-    WiFiClient* m_client;
+    NetworkClient* m_client;
 
   void changeState( uint8_t newState);
   void sendHeader();
