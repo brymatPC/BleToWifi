@@ -1,5 +1,5 @@
-#ifndef YRShell8266_h
-#define YRShell8266_h
+#ifndef YRSHELL_ESP32_H_
+#define YRSHELL_ESP32_H_
 
 #include <YRShell.h>
 #include <utility/DebugLog.h>
@@ -104,7 +104,7 @@ typedef enum {
     SE_CC_last
 } SE_CC_functions;
 
-class YRShell8266 : public YRShellExec, public virtual YRShellBase<2048, 128, 128, 16, 16, 16, 8, 256, 512, 256, 512, 128> {
+class YRShellEsp32 : public YRShellExec, public virtual YRShellBase<2048, 128, 128, 16, 16, 16, 8, 256, 512, 256, 512, 128> {
 protected:
   bool m_exec, m_initialized;
   char m_auxBuf[ 128];
@@ -124,15 +124,15 @@ protected:
   File m_file;
 
   virtual void executeFunction( uint16_t n);
-  virtual const char* shellClass( void) { return "YRShell8266"; }
+  virtual const char* shellClass( void) { return "YRShellEsp32"; }
   virtual const char* mainFileName( ) { return "main.cpp"; }
   void outUInt8( int8_t v);
 
   void logTime();
 
 public:
-  YRShell8266( );
-  virtual ~YRShell8266( );
+  YRShellEsp32( );
+  virtual ~YRShellEsp32( );
   void init( DebugLog* log);
 
   // Provide object instances to drive testing, can be nullptr

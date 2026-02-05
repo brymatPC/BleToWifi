@@ -1,4 +1,4 @@
-#include "YRShell8266.h"
+#include "YRShellEsp32.h"
 #include "WifiConnection.h"
 #include "HttpExecServer.h"
 #include <utility/LedBlink.h>
@@ -44,7 +44,7 @@ static const char * s_NETWORK_NAME = "esp32";
 
 Preferences pref;
 DebugLog dbg;
-YRShell8266 shell;
+YRShellEsp32 shell;
 #ifndef HAS_LED_STRIP
   LedBlink onBoardLed;
   LedDriver* ledDriver = &onBoardLed;

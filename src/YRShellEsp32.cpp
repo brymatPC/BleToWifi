@@ -1,4 +1,4 @@
-#include "YRShell8266.h"
+#include "YRShellEsp32.h"
 #include "LedStripDriver.h"
 #include "TelnetServer.h"
 #include "TempHumidityParser.h"
@@ -115,7 +115,7 @@ CompiledDictionary compiledExtensionDictionary( NULL, 0xFFFF , 0x0000 , YRSHELL_
 
 static char s_uploadData[] = "{\"data\":32}";
 
-YRShell8266::YRShell8266() {
+YRShellEsp32::YRShellEsp32() {
   m_telnetLogServer = NULL;
   m_fileOpen = false;
   m_initialFileLoaded = false;
@@ -123,10 +123,10 @@ YRShell8266::YRShell8266() {
   m_auxBufIndex = 0;
 }
 
-YRShell8266::~YRShell8266() {
+YRShellEsp32::~YRShellEsp32() {
 }
 
-void YRShell8266::init( DebugLog* log) {
+void YRShellEsp32::init( DebugLog* log) {
   YRShellBase::init();
   m_dictionaryList[ YRSHELL_DICTIONARY_EXTENSION_COMPILED_INDEX] = &compiledExtensionDictionary;
   m_dictionaryList[ YRSHELL_DICTIONARY_EXTENSION_FUNCTION_INDEX] = &dictionaryExtensionFunction;
@@ -135,20 +135,20 @@ void YRShell8266::init( DebugLog* log) {
   m_initialized = true;
 }
 
-void YRShell8266::startExec( void) {
+void YRShellEsp32::startExec( void) {
   m_lastPromptEnable = getPromptEnable();
   m_lastCommandEcho = getCommandEcho();
   setPromptEnable( false);
   setCommandEcho( false);
 }
-void YRShell8266::endExec( void) {
+void YRShellEsp32::endExec( void) {
   setPromptEnable( m_lastPromptEnable);
   setCommandEcho( m_lastCommandEcho);
   requestUseMainQueues();
 }
-void YRShell8266::execString( const char* p) {
+void YRShellEsp32::execString( const char* p) {
   if( m_exec) {
-      m_log->print( __FILE__, __LINE__, 1, "YRShell8266_execString_failed: ");
+      m_log->print( __FILE__, __LINE__, 1, "YRShellEsp32_execString_failed: ");
   } else {
     requestUseAuxQueues();
     for( ; *p != '\0'; p++ ) {
@@ -162,19 +162,19 @@ void YRShell8266::execString( const char* p) {
   }
 }
 
-void YRShell8266::loadFile( const char* fname, bool exec) {
+void YRShellEsp32::loadFile( const char* fname, bool exec) {
   if( m_fileOpen) {
     if( m_log != NULL) {
-      m_log->print( __FILE__, __LINE__, 1, "YRShell8266_loadFile_Failed: ");
+      m_log->print( __FILE__, __LINE__, 1, "YRShellEsp32_loadFile_Failed: ");
     }
   } else {
     if( fname == NULL || fname[0] == '\0') {
-      m_log->print( __FILE__, __LINE__, 1, "YRShell8266_loadFile_no_valid_file: ");
+      m_log->print( __FILE__, __LINE__, 1, "YRShellEsp32_loadFile_no_valid_file: ");
     } else {
       m_file = LittleFS.open(fname, "r");
       if( !m_file) {
         if( m_log != NULL) {
-          m_log->print( __FILE__, __LINE__, 1, fname, "YRShell8266_loadFile_Failed: fname");
+          m_log->print( __FILE__, __LINE__, 1, fname, "YRShellEsp32_loadFile_Failed: fname");
         }
       } else {
         if( exec) {
@@ -182,14 +182,14 @@ void YRShell8266::loadFile( const char* fname, bool exec) {
         }
         m_fileOpen = true;
         if( m_log != NULL) {
-          m_log->print( __FILE__, __LINE__, 1, fname, "YRShell8266_loadFile_loading: fname");
+          m_log->print( __FILE__, __LINE__, 1, fname, "YRShellEsp32_loadFile_loading: fname");
         }
       }
     }
   }
 }
 
-void YRShell8266::slice() {
+void YRShellEsp32::slice() {
   YRShellBase::slice();
   if( m_fileOpen && m_auxInq.spaceAvailable(10)) {
     int c = m_file.read();
@@ -198,7 +198,7 @@ void YRShell8266::slice() {
     } else {
       m_file.close();
       m_fileOpen = false;
-      m_log->print( __FILE__, __LINE__, 1, "YRShell8266_slice_closing_file");
+      m_log->print( __FILE__, __LINE__, 1, "YRShellEsp32_slice_closing_file");
     } 
   }
 
@@ -221,14 +221,14 @@ void YRShell8266::slice() {
           }
         }
         if( !flag && m_log != NULL) {
-          m_log->print( __FILE__, __LINE__, 8, m_auxBuf, "YRShell8266_slice: auxBuf");
+          m_log->print( __FILE__, __LINE__, 8, m_auxBuf, "YRShellEsp32_slice: auxBuf");
         }
         m_auxBufIndex = 0;
       }
     }
   } else if( m_auxBufIndex > 0) {
     if( m_log != NULL) {
-      m_log->print( __FILE__, __LINE__, 8, m_auxBuf, "YRShell8266_slice: auxBuf");
+      m_log->print( __FILE__, __LINE__, 8, m_auxBuf, "YRShellEsp32_slice: auxBuf");
     }
     m_auxBufIndex = 0;
   }
@@ -241,7 +241,7 @@ void YRShell8266::slice() {
 
 
 
-void YRShell8266::executeFunction( uint16_t n) {
+void YRShellEsp32::executeFunction( uint16_t n) {
   uint32_t t1, t2;
   if( n <= SE_CC_first || n >= SE_CC_last) {
       YRShellBase::executeFunction(n);
@@ -672,13 +672,13 @@ void YRShell8266::executeFunction( uint16_t n) {
   }
 }
 
-void YRShell8266::outUInt8( int8_t v) {
+void YRShellEsp32::outUInt8( int8_t v) {
     char buf[ 5];
     unsignedToString(v, 3, buf);
     outString( buf);
 }
 
-void YRShell8266::logTime() {
+void YRShellEsp32::logTime() {
     char s[51];
     struct tm timeinfo;
     time_t now;
