@@ -5,6 +5,13 @@
 #define BLINK_SPEED_SCANNING_MS 400
 
 const char WifiConnection::s_PREF_NAMESPACE[] = "wifi";
+const char WifiConnection::s_DEFAULT_HOST_NAME[] = "esp32";
+const char WifiConnection::s_DEFAULT_HOST_PASSWORD[] = "espPassword";
+// 192.168.10.2
+const char WifiConnection::s_DEFAULT_HOST_IP[] = "0x020AA8C0";
+// 192.168.10.1
+const char WifiConnection::s_DEFAULT_HOST_GATEWAY[] = "0x010AA8C0";
+const char WifiConnection::s_DEFAULT_HOST_MASK[] = "0x00FFFFFF";
 
 typedef enum {
   STATE_RESET             = 0,
@@ -38,23 +45,46 @@ WifiConnection::WifiConnection( LedDriver* led, DebugLog* log, uint32_t connectT
   m_hostGateway[0] = '\0';
   m_hostMask[0] = '\0';
 
+  for(uint8_t i=0; i < MAX_WIFI_NETWORKS; i++) {
+    m_networkName[i][0] = '\0';
+    m_networkPassword[i][0] = '\0';
+  }
+
   m_networkIp = 0;
 }
 
 void WifiConnection::setup(Preferences &pref) {
     char parserKey[16];
     pref.begin(s_PREF_NAMESPACE, true);
-    pref.getString("hName", m_hostName, MAX_WIFI_ENTRY_LEN);
-    pref.getString("hPass", m_hostPassword, MAX_WIFI_ENTRY_LEN);
-    pref.getString("hIp", m_hostIp, MAX_WIFI_ENTRY_LEN);
-    pref.getString("hGate", m_hostGateway, MAX_WIFI_ENTRY_LEN);
-    pref.getString("hMask", m_hostMask, MAX_WIFI_ENTRY_LEN);
+    if(pref.isKey("hName")) {
+        pref.getString("hName", m_hostName, MAX_WIFI_ENTRY_LEN);
+    } else {
+        strcpy(m_hostName, s_DEFAULT_HOST_NAME);
+    }
+    if(pref.isKey("hPass")) {
+        pref.getString("hPass", m_hostPassword, MAX_WIFI_ENTRY_LEN);
+    } else {
+        strcpy(m_hostPassword, s_DEFAULT_HOST_PASSWORD);
+    }
+    if(pref.isKey("hIp")) {
+        pref.getString("hIp", m_hostIp, MAX_WIFI_ENTRY_LEN);
+    } else {
+        strcpy(m_hostIp, s_DEFAULT_HOST_IP);
+    }
+    if(pref.isKey("hGate")) {
+        pref.getString("hGate", m_hostGateway, MAX_WIFI_ENTRY_LEN);
+    } else {
+        strcpy(m_hostGateway, s_DEFAULT_HOST_GATEWAY);
+    }
+    if(pref.isKey("hMask")) {
+        pref.getString("hMask", m_hostMask, MAX_WIFI_ENTRY_LEN);
+    } else {
+        strcpy(m_hostMask, s_DEFAULT_HOST_MASK);
+    }
     for(uint8_t i=0; i < MAX_WIFI_NETWORKS; i++) {
         snprintf(parserKey, 16, "nName%d", i);
-        m_networkName[i][0] = '\0';
         pref.getString(parserKey, m_networkName[i], MAX_WIFI_ENTRY_LEN);
         snprintf(parserKey, 16, "nPass%d", i);
-        m_networkPassword[i][0] = '\0';
         pref.getString(parserKey, m_networkPassword[i], MAX_WIFI_ENTRY_LEN);
     }
     pref.end();

@@ -18,6 +18,11 @@
 class WifiConnection : public Sliceable {
 private:
   static const char s_PREF_NAMESPACE[];
+  static const char s_DEFAULT_HOST_NAME[];
+  static const char s_DEFAULT_HOST_PASSWORD[];
+  static const char s_DEFAULT_HOST_IP[];
+  static const char s_DEFAULT_HOST_GATEWAY[];
+  static const char s_DEFAULT_HOST_MASK[];
 
   char m_hostName[MAX_WIFI_ENTRY_LEN];
   char m_hostPassword[MAX_WIFI_ENTRY_LEN];
