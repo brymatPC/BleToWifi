@@ -1,5 +1,4 @@
 function bodyonload() { 
-    nav_divSelect( "__idButton_pinStatus")
-    global_setPinsInitialSetting( )
+    nav_divSelect( "__idButton_netConfig")
   }
   

@@ -2,8 +2,6 @@ let nav_navMap = new Map()
 
 function nav_initMap() {
     nav_navMap.set("__idButton_netConfig", { "divId": "__iddiv__netConfig" } )
-    nav_navMap.set("__idButton_pinConfig", { "divId": "__iddiv__pinConfig" } )
-    nav_navMap.set("__idButton_pinStatus", { "divId": "__iddiv__pinStatus" } )
     nav_navMap.set("__idButton_debug", { "divId": "__iddiv__debug" } )
     nav_navMap.set("__idButton_logs", { "divId": "__iddiv__logs" } )  
     logs_msg("nav_initMap")
