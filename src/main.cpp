@@ -13,6 +13,9 @@
   #include "LedStripDriver.h"
 #endif
 
+#include "esp_netif_sntp.h"
+//#include "esp_sntp.h"
+
 //  0x01 - setup log
 //  0x02 - errors
 //  0x04 - exec output
@@ -58,6 +61,23 @@ UploadDataClient uploadClient;
 BleConnection bleConnection(&dbg);
 VictronDevice victronParser;
 TempHumidityParser tempHumParser;
+
+void timeSyncNotification(struct timeval *tv) {
+    dbg.print(__FILE__, __LINE__, 1, "Notification of a time synchronization event");
+}
+
+void startSntp(void) {
+    esp_err_t err;
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
+    config.sync_cb = timeSyncNotification;
+    err = esp_netif_sntp_init(&config);
+    if(err != ESP_OK) {
+      dbg.print(__FILE__, __LINE__, 1, err, "startSntp:init - error");
+    } else {
+      dbg.print(__FILE__, __LINE__, 1, "startSntp - ntp request started");
+    }
+}
+
 
 void setup(){
   unsigned httpPort = 80;
@@ -125,8 +145,11 @@ void setup(){
   tempHumParser.init(&dbg);
   tempHumParser.setUploadClient(&uploadClient);
   shell.init( &dbg);
+
+  startSntp();
   dbg.print( __FILE__, __LINE__, 1, "setup_done:");
 }
+
 
 void loop() {
   Sliceable::sliceAll( );
