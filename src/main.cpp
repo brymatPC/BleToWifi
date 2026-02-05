@@ -40,8 +40,6 @@
 
 #define YRSHELL_ON_TELNET
 
-static const char * s_NETWORK_NAME = "esp32";
-
 Preferences pref;
 DebugLog dbg;
 YRShellEsp32 shell;
@@ -78,27 +76,13 @@ void setup(){
     dbg.print( __FILE__, __LINE__, 1, "setup_Mounted_file_system:");
   }
 
-  if( !LittleFS.exists( wifiConnection.networkParameters.fileName())) {
-    wifiConnection.networkParameters.setHost(s_NETWORK_NAME, "espPassword", "0x020AA8C0" , "0x010AA8C0", "0x00FFFFFF" );
-    wifiConnection.networkParameters.addNetwork( "", "");
-    wifiConnection.networkParameters.addNetwork( "", "");
-    wifiConnection.networkParameters.addNetwork( "", "");
-    wifiConnection.networkParameters.addNetwork( "", "");
-    wifiConnection.networkParameters.addNetwork( "", "");
-    wifiConnection.networkParameters.addNetwork( "", "");
-    wifiConnection.networkParameters.addNetwork( "", "");
-    wifiConnection.networkParameters.addNetwork( "", "");
-    wifiConnection.networkParameters.addNetwork( "", "");
-    wifiConnection.networkParameters.addNetwork( "", "");
-    wifiConnection.networkParameters.save();
-    dbg.print( __FILE__, __LINE__, 1, "Network parameters have been re-initialized");
- }
-
-#ifndef HAS_LED_STRIP
+  #ifndef HAS_LED_STRIP
   onBoardLed.setLedPin( LED_PIN);
 #else
   ledStrip.setup(&dbg);
 #endif
+
+  wifiConnection.setup(pref);
   wifiConnection.enable();
 
   if( httpPort != 0) {

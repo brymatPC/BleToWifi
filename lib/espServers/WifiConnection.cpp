@@ -1,169 +1,10 @@
 #include "WifiConnection.h"
-#include <LittleFS.h>
 #include <utility/String.h>
-
-
-StringArray::StringArray(DebugLog* log) {
-  m_log = log;
-  reset();
-}
-void StringArray::reset( ) {
-  memset( m_s.m_index, 0xFFFF, sizeof( m_s.m_index));
-  m_s.m_lastOffset = 1;
-  m_s.m_lastIndex = 0;
-  m_s.m_buf[0] = 0;
-}
-void StringArray::resetString(uint8_t index, const char* s) {
-  const char* d = get(index);
-  if( strlen(d) == strlen(s)) {
-    strcpy( (char*) d, s);
-  } else {
-    if( m_log) {
-      m_log->print( __FILE__, __LINE__, 1, index, s, "StringArray_resetString_Failed: index, string" );
-    }
-  }
-}
-
-void StringArray::dump() {
-  if( m_log) {
-    m_log->print( __FILE__, __LINE__, 1, m_s.m_lastIndex, m_s.m_lastOffset, "StringArray_dump: lastIndex, lastOffset" );
-    for( uint8_t i = 0; i < m_s.m_lastIndex && i <  ( sizeof( m_s.m_index) / sizeof(m_s.m_index[0])); i++ ) {
-      m_log->print( __FILE__, __LINE__, 1, i, m_s.m_index[i], &m_s.m_buf[ m_s.m_index[ i]], "StringArray_dump: i, index, string" );
-      m_log->flush();
-    }
-  }
-}
-void StringArray::append( const char* s) {
-  if( m_s.m_lastIndex < ( sizeof( m_s.m_index) / sizeof(m_s.m_index[0])) ) {
-    set( m_s.m_lastIndex++, s);
-    if( m_log) {
-      m_log->print( __FILE__, __LINE__, 1, m_s.m_lastIndex, s, "StringArray_append: lastIndex, string" );
-    }
-  }
-}
-void StringArray::set( uint8_t index, const char* s) {
-  if( *s == '\0') {
-    m_s.m_index[ index] = 0;
-  } else {
-    size_t sz = strlen( s) + 1;
-    if( index < ( sizeof( m_s.m_index) / sizeof(m_s.m_index[0])) && sz < (sizeof(m_s.m_buf) - m_s.m_lastOffset) ) {
-      m_s.m_index[ index] = m_s.m_lastOffset;
-      strcpy( &m_s.m_buf[ m_s.m_lastOffset], s );
-      m_s.m_lastOffset += sz;
-    } else {
-      if( m_log) {
-        m_log->print( __FILE__, __LINE__, 1, index, "StringArray_set_failed: index" );
-      }
-    }
-  }
-}
-const char* StringArray::get( uint8_t index) {
-  const char * rc = "";
-  if( index < m_s.m_lastIndex && index < ( sizeof( m_s.m_index) / sizeof(m_s.m_index[0])) && m_s.m_index[index] < m_s.m_lastOffset ) {
-    rc =  &m_s.m_buf[m_s.m_index[ index]];
-  } else {
-    if( m_log) {
-      m_log->print( __FILE__, __LINE__, 1, index, "StringArray_get_failed: index" );
-    }
-  }
-  return rc;
-}
-
-void StringArray::load(const char* fname) {
-  uint16_t i;
-  File file = LittleFS.open(fname, "r");
-  if( !file) {
-    if( m_log) {
-      m_log->print( __FILE__, __LINE__, 1, fname, "StringArray_load_failed: fname" );
-    }
-    reset();
-  } else {
-    char* p = (char*) &m_s;
-    for( i = 0; i < sizeof( m_s) && file.available(); i++) {
-      *p++ = (char) file.read();
-    }
-    file.close();
-    if( i  == sizeof(m_s)) {
-      if( m_log) {
-        m_log->print( __FILE__, __LINE__, 1, fname, "StringArray_load: fname" );
-        //dump();
-      }
-    } else {
-      if( m_log) {
-        m_log->print( __FILE__, __LINE__, 1, fname, "StringArray_load_failed: fname" );
-      }
-      reset();
-    }
-  }
-}
-
-void StringArray::save(const char* fname ) {
-    File file = LittleFS.open(fname, "w");
-    if( !file) {
-      if( m_log) {
-        m_log->print( __FILE__, __LINE__, 1, fname, "StringArray_save: fname" );
-      }
-    } else {
-      file.write( (uint8_t*)  &m_s, sizeof(m_s));
-      file.close();
-      if( m_log) {
-        m_log->print( __FILE__, __LINE__, 1, fname, "StringArray_save_done: fname" );
-      }
-    }
-}
-
-NetworkParameters::NetworkParameters( DebugLog* log) : StringArray( log) {
-  reset();
-  m_numberOfFixedParameters = 6;
-  append( "");
-  append( "");
-  append( "0x00000000");
-  append( "0x00000000");
-  append( "0x00000000");
-  append( "0x00000000");
-}
-
-void NetworkParameters::resetUint32(uint8_t index, uint32_t v ) {
-  char buf[ 11];
-  unsignedToStringX( v, 8, buf);
-  resetString( index, buf);
-}
-
-void NetworkParameters::setHost(const char* networkName, const char* networkPassword,  const char* ip,  const char* gateway,  const char* mask ) {
-  set( 0, networkName);
-  set( 1, networkPassword);
-  set( 2, ip);
-  set( 3, gateway);
-  set( 4, mask);
-}
-void NetworkParameters::setNetworkIp( uint32_t ip) {
-  resetUint32( 5, ip);
-}
-
-void NetworkParameters::addNetwork(const char* networkName, const char* networkPassword ) {
-  append( networkName);
-  append( networkPassword);
-}
-
-const char* NetworkParameters::getNetworkName( uint8_t index) {
-  const char* rc = "";
-  uint8_t idx = index * 2 + m_numberOfFixedParameters;
-  if( idx < m_s.m_lastIndex) {
-    rc = get( idx);
-  }
-  return rc;
-}
-const char* NetworkParameters::getNetworkPassword( uint8_t index) {
-  const char* rc = "";
-  uint8_t idx = index * 2 + m_numberOfFixedParameters + 1;
-  if( idx < m_s.m_lastIndex) {
-    rc = get( idx);
-  }
-  return rc;
-}
 
 #define BLINK_SPEED_CONNECTING_MS 200
 #define BLINK_SPEED_SCANNING_MS 400
+
+const char WifiConnection::s_PREF_NAMESPACE[] = "wifi";
 
 typedef enum {
   STATE_RESET             = 0,
@@ -181,7 +22,7 @@ typedef enum {
 
 } wifiStates_t;
 
-WifiConnection::WifiConnection( LedDriver* led, DebugLog* log, uint32_t connectTimeout) : networkParameters(log) {
+WifiConnection::WifiConnection( LedDriver* led, DebugLog* log, uint32_t connectTimeout) {
   m_led = led;
   m_log = log;
   m_connectTimeout = connectTimeout;
@@ -190,8 +31,89 @@ WifiConnection::WifiConnection( LedDriver* led, DebugLog* log, uint32_t connectT
   m_enable = false;
   m_maxRssi = -1024;
   m_hostActive = false;
+
+  m_hostName[0] = '\0';
+  m_hostPassword[0] = '\0';
+  m_hostIp[0] = '\0';
+  m_hostGateway[0] = '\0';
+  m_hostMask[0] = '\0';
+
+  m_networkIp = 0;
 }
 
+void WifiConnection::setup(Preferences &pref) {
+    char parserKey[16];
+    pref.begin(s_PREF_NAMESPACE, true);
+    pref.getString("hName", m_hostName, MAX_WIFI_ENTRY_LEN);
+    pref.getString("hPass", m_hostPassword, MAX_WIFI_ENTRY_LEN);
+    pref.getString("hIp", m_hostIp, MAX_WIFI_ENTRY_LEN);
+    pref.getString("hGate", m_hostGateway, MAX_WIFI_ENTRY_LEN);
+    pref.getString("hMask", m_hostMask, MAX_WIFI_ENTRY_LEN);
+    for(uint8_t i=0; i < MAX_WIFI_NETWORKS; i++) {
+        snprintf(parserKey, 16, "nName%d", i);
+        m_networkName[i][0] = '\0';
+        pref.getString(parserKey, m_networkName[i], MAX_WIFI_ENTRY_LEN);
+        snprintf(parserKey, 16, "nPass%d", i);
+        m_networkPassword[i][0] = '\0';
+        pref.getString(parserKey, m_networkPassword[i], MAX_WIFI_ENTRY_LEN);
+    }
+    pref.end();
+}
+void WifiConnection::save(Preferences &pref) {
+    char parserKey[16];
+    pref.begin(s_PREF_NAMESPACE, false);
+    pref.putString("hName", m_hostName);
+    pref.putString("hPass", m_hostPassword);
+    pref.putString("hIp", m_hostIp);
+    pref.putString("hGate", m_hostGateway);
+    pref.putString("hMask", m_hostMask);
+    for(uint8_t i=0; i < MAX_WIFI_NETWORKS; i++) {
+        snprintf(parserKey, 16, "nName%d", i);
+        pref.putString(parserKey, m_networkName[i]);
+        snprintf(parserKey, 16, "nPass%d", i);
+        pref.putString(parserKey, m_networkPassword[i]);
+    }
+    pref.end();
+    if( m_log) {
+        m_log->print( __FILE__, __LINE__, 1, "WifiConnection::save: pref updated" );
+    }
+}
+const char* WifiConnection::getNetworkIp( void) {
+    static char ipStr[MAX_WIFI_ENTRY_LEN];
+    snprintf(ipStr, MAX_WIFI_ENTRY_LEN, "0x%08X", m_networkIp);
+    return ipStr;
+}
+const char* WifiConnection::getNetworkName( uint8_t index) {
+    if(index >= MAX_WIFI_NETWORKS) return nullptr;
+    return m_networkName[index];
+}
+const char* WifiConnection::getNetworkPassword( uint8_t index) {
+    if(index >= MAX_WIFI_NETWORKS) return nullptr;
+    return m_networkPassword[index];
+}
+void WifiConnection::setHostName( const char* networkName) {
+    strncpy(m_hostName, networkName, MAX_WIFI_ENTRY_LEN);
+}
+void WifiConnection::setHostPassword( const char* networkPassword ) {
+    strncpy(m_hostPassword, networkPassword, MAX_WIFI_ENTRY_LEN);
+}
+void WifiConnection::setHostIp( const char* ip ) {
+    strncpy(m_hostIp, ip, MAX_WIFI_ENTRY_LEN);
+}
+void WifiConnection::setHostGateway( const char* gateway) {
+    strncpy(m_hostGateway, gateway, MAX_WIFI_ENTRY_LEN);
+}
+void WifiConnection::setHostMask( const char* mask) {
+    strncpy(m_hostMask, mask, MAX_WIFI_ENTRY_LEN);
+}
+void WifiConnection::setNetworkName( uint8_t index, const char* networkName) {
+    if(index >= MAX_WIFI_NETWORKS) return;
+    strncpy(m_networkName[index], networkName, MAX_WIFI_ENTRY_LEN);
+}
+void WifiConnection::setNetworkPassword( uint8_t index, const char* networkPassword) {
+    if(index >= MAX_WIFI_NETWORKS) return;
+    strncpy(m_networkPassword[index], networkPassword, MAX_WIFI_ENTRY_LEN);
+}
 void WifiConnection::changeState( uint8_t state) {
   if( m_log) {
     m_log->print( __FILE__, __LINE__, 1, m_state, state, "WifiConnection::changeState: m_state, state" );
@@ -213,7 +135,6 @@ void WifiConnection::slice( ) {
   int i, k, m;
   switch( m_state) {
     case STATE_RESET:
-      networkParameters.load();
       m_currentAp = 0;
       if( m_led) {
         m_led->off();
@@ -225,7 +146,7 @@ void WifiConnection::slice( ) {
       if( m_led) {
         m_led->off();
       }
-      if( m_enable && networkParameters.getNumberOfNetworks() >= 0) {
+      if( m_enable && getNumberOfNetworks() >= 0) {
         m_timer.setInterval( m_connectTimeout);
         changeState( STATE_LOAD_NETWORK_NAME);
       }
@@ -235,8 +156,8 @@ void WifiConnection::slice( ) {
       if( m_led) {
         m_led->blink( BLINK_SPEED_CONNECTING_MS);
       }
-      p = networkParameters.getNetworkName( m_currentAp );
-      q = networkParameters.getNetworkPassword( m_currentAp );
+      p = getNetworkName( m_currentAp );
+      q = getNetworkPassword( m_currentAp );
       m_log->print( __FILE__, __LINE__, 1, m_currentAp, "WifiConnection::slice_connecting: currentAp" );
       m_log->print( __FILE__, __LINE__, 1, p, q, "WifiConnection::slice_connecting: p, q" );
       if( *p == '\0' || *q == '\0') {
@@ -252,7 +173,7 @@ void WifiConnection::slice( ) {
 
     case STATE_WAIT_CONNECT:
       if( WiFi.status() == WL_CONNECTED) {
-        networkParameters.setNetworkIp((uint32_t) WiFi.localIP());
+        m_networkIp = (uint32_t) WiFi.localIP();
         changeState( STATE_CONNECTING);
       } else if( m_timer.hasIntervalElapsed()) {
         changeState( STATE_NEXT_NETWORK);
@@ -261,16 +182,16 @@ void WifiConnection::slice( ) {
 
     case STATE_NEXT_NETWORK:
       m_currentAp++;
-      if( m_currentAp >= networkParameters.getNumberOfNetworks() ) {
+      if( m_currentAp >= getNumberOfNetworks() ) {
         m_currentAp = 0;
       }
       changeState( STATE_INIT_CONNECT);
     break;
 
     case STATE_CONNECTING:
-      p = networkParameters.getNetworkName( m_currentAp );
+      p = getNetworkName( m_currentAp );
       if( m_log) {
-        m_log->print( __FILE__, __LINE__, 1,  networkParameters.get( m_currentAp), "WifiConnection::slice_connected: networkName" );
+        m_log->print( __FILE__, __LINE__, 1,  p, "WifiConnection::slice_connected: networkName" );
       }
       m_timer.setInterval( 500);
       changeState( STATE_CONNECTED);
@@ -283,7 +204,7 @@ void WifiConnection::slice( ) {
       if( m_timer.isNextInterval() ) {
         if(WiFi.status() != WL_CONNECTED) {
             if( m_log) {
-              m_log->print( __FILE__, __LINE__, 1,  networkParameters.getNetworkName( m_currentAp ), "WifiConnection::slice_disconnected: networkName" );
+              m_log->print( __FILE__, __LINE__, 1,  getNetworkName( m_currentAp ), "WifiConnection::slice_disconnected: networkName" );
             }
           changeState( STATE_NEXT_NETWORK);
         }
@@ -317,13 +238,13 @@ void WifiConnection::slice( ) {
     case STATE_PARSE_NETWORKS:
       i = WiFi.scanComplete();
       if( i > 0) {
-        m = networkParameters.getNumberOfNetworks();
+        m = getNumberOfNetworks();
         if( m_log) {
           m_log->print( __FILE__, __LINE__, 1, i, m, "WifiConnection_slice_scan: numberOfNetworks, lastIndex" );
         }
         for( int j = 0; j < i; j++ ) {
           for( k = 0; k < m; k++ ) {
-            if( !strcmp( WiFi.SSID( j).c_str(), networkParameters.getNetworkName( k)) ) {
+            if( !strcmp( WiFi.SSID( j).c_str(), getNetworkName( k)) ) {
               int32_t RSSI;
               RSSI = WiFi.RSSI( j);
               if( RSSI > m_maxRssi) {
@@ -348,8 +269,8 @@ void WifiConnection::slice( ) {
     break;
 
     case STATE_CONFIGURE_AP:
-      p = networkParameters.getHostName( );
-      q = networkParameters.getHostPassword(  );
+      p = m_hostName;
+      q = m_hostPassword;
       m_log->print( __FILE__, __LINE__, 1, p, q, "WifiConnection::slice_host: p, q" );
       if( *p == '\0' || *q == '\0') {
         if( m_log) {
@@ -375,7 +296,7 @@ void WifiConnection::slice( ) {
 
     case STATE_AP_READY:
       m_currentAp = m_maxRssiIndex == 0 ? 0 : m_maxRssiIndex;
-      m_log->print( __FILE__, __LINE__, 1, m_enable,  m_currentAp, networkParameters.getNumberOfNetworks(), "WifiConnection::slice_scan_done: enable, m_currentAp, numberOfNetworks" );
+      m_log->print( __FILE__, __LINE__, 1, m_enable,  m_currentAp, getNumberOfNetworks(), "WifiConnection::slice_scan_done: enable, m_currentAp, numberOfNetworks" );
       changeState( STATE_INIT_CONNECT);
       if( m_led) {
         m_led->off();
@@ -389,13 +310,13 @@ void WifiConnection::hostConfig( ) {
   uint32_t gw = 0;
   uint32_t mask = 0;
 
-  if( stringToUnsignedX( networkParameters.getHostIp( ), &v)) {
+  if( stringToUnsignedX( m_hostIp, &v)) {
     ip = v;
   }
-  if( stringToUnsignedX( networkParameters.getHostGateway( ), &v)) {
+  if( stringToUnsignedX( m_hostGateway, &v)) {
     gw = v;
   }
-  if( stringToUnsignedX( networkParameters.getHostMask( ), &v)) {
+  if( stringToUnsignedX( m_hostMask, &v)) {
     mask = v;
   }
   if( !WiFi.softAPConfig( IPAddress(ip), IPAddress(gw) , IPAddress( mask))) {

@@ -3,6 +3,7 @@
 
 #if defined (ESP32)
   #include <Wifi.h>
+  #include <Preferences.h>
 #else
   #warning "WiFi is not supported on the selected target"
 #endif
@@ -11,72 +12,24 @@
 #include <utility/DebugLog.h>
 #include <utility/LedDriver.h>
 
-typedef struct {
-  uint16_t m_index[ 32];
-  uint16_t m_lastIndex;
-  uint16_t m_lastOffset;
-  char m_buf[ 512];
-} StringArrayStruct;
-
-class StringArray {
-protected:
-  StringArrayStruct m_s;
-  DebugLog* m_log;
-  void resetString(uint8_t index, const char* s);
-public:
-  StringArray( DebugLog* log = NULL);
-  ~StringArray() { }
-  void set( uint8_t index, const char* s);
-  void append( const char* s);
-  const char* get( uint8_t index);
-  uint16_t getLastIndex( void) { return m_s.m_lastIndex; }
-  void reset( void);
-  void load( const char* fname);
-  void save( const char* fname);
-  void dump( void);
-};
-
-class NetworkParameters : public StringArray {
-protected:
-  uint8_t m_numberOfFixedParameters;
-  void resetUint32(uint8_t index, uint32_t v );
-
-public:
-  NetworkParameters( DebugLog* log = NULL);
-  ~NetworkParameters( ){}
-  void setHost(const char* networkName, const char* networkPassword,  const char* ip,  const char* gateway,  const char* mask );
-  void addNetwork(const char* networkName, const char* networkPassword );
-  const char* fileName( void) { return "/NetworkParameters"; }
-  const char* getHostName( void) { return get(0); }
-  const char* getHostPassword( void) { return get(1); }
-  const char* getHostIp( void) { return get(2); }
-  const char* getHostGateway( void) { return get(3); }
-  const char* getHostMask( void) { return get(4); }
-  const char* getNetworkIp( void) { return get(5); }
-  const char* getNetworkName( uint8_t index);
-  const char* getNetworkPassword( uint8_t index);
-  uint8_t getNumberOfNetworks( void) { return (m_s.m_lastIndex - m_numberOfFixedParameters)/2; }
-  void save( void) { StringArray::save( fileName()); }
-  void load( void) { StringArray::load( fileName()); }
-  void getHostMac( char* buf) { WiFi.softAPmacAddress( (uint8_t*) buf); }
-  void getNetworkMac( char* buf) { WiFi.macAddress( (uint8_t*) buf); }
-
-  void setHostName( const char* networkName) { set( 0, networkName); }
-  void setHostPassword( const char* networkPassword ) { set( 1, networkPassword); }
-  void setHostIp( const char* ip ) { set( 2, ip); }
-  void setHostGateway( const char* gateway) { set( 3, gateway); }
-  void setHostMask( const char* mask) { set( 4, mask); }
-  void setNetworkIp( uint32_t ip);
-  void setNetworkMac( const char* mac);
-
-  void setNetworkName( uint8_t index, const char* networkName) { set( index * 2 + m_numberOfFixedParameters, networkName); }
-  void setNetworkPassword( uint8_t index, const char* networkPassword) { set( index * 2 + m_numberOfFixedParameters + 1, networkPassword); }
-
-};
-
-
+#define MAX_WIFI_ENTRY_LEN 32
+#define MAX_WIFI_NETWORKS  4
 
 class WifiConnection : public Sliceable {
+private:
+  static const char s_PREF_NAMESPACE[];
+
+  char m_hostName[MAX_WIFI_ENTRY_LEN];
+  char m_hostPassword[MAX_WIFI_ENTRY_LEN];
+  char m_hostIp[MAX_WIFI_ENTRY_LEN];
+  char m_hostGateway[MAX_WIFI_ENTRY_LEN];
+  char m_hostMask[MAX_WIFI_ENTRY_LEN];
+
+  char m_networkName[MAX_WIFI_NETWORKS][MAX_WIFI_ENTRY_LEN];
+  char m_networkPassword[MAX_WIFI_NETWORKS][MAX_WIFI_ENTRY_LEN];
+
+  uint32_t m_networkIp;
+
 protected:
   uint8_t m_currentAp, m_state;
   uint32_t m_connectTimeout;
@@ -98,7 +51,28 @@ public:
   int getConnectedNetworkIndex( void);
   bool isNetworkConnected( void);
 
-  NetworkParameters networkParameters;
+  void setup(Preferences &pref);
+  void save(Preferences &pref);
+
+  const char* getHostName( void) { return m_hostName; }
+  const char* getHostPassword( void) { return m_hostPassword; }
+  const char* getHostIp( void) { return m_hostIp; }
+  const char* getHostGateway( void) { return m_hostGateway; }
+  const char* getHostMask( void) { return m_hostMask; }
+  const char* getNetworkIp( void);
+  const char* getNetworkName( uint8_t index);
+  const char* getNetworkPassword( uint8_t index);
+  void getHostMac( char* buf) { WiFi.softAPmacAddress( (uint8_t*) buf); }
+  void getNetworkMac( char* buf) { WiFi.macAddress( (uint8_t*) buf); }
+  uint8_t getNumberOfNetworks( void) { return MAX_WIFI_NETWORKS; }
+
+  void setHostName( const char* networkName);
+  void setHostPassword( const char* networkPassword );
+  void setHostIp( const char* ip );
+  void setHostGateway( const char* gateway);
+  void setHostMask( const char* mask);
+  void setNetworkName( uint8_t index, const char* networkName);
+  void setNetworkPassword( uint8_t index, const char* networkPassword);
 
   bool isHostActive( void) { return m_hostActive; }
   void enable( void) { m_enable = true; }

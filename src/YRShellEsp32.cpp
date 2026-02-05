@@ -318,42 +318,42 @@ void YRShellEsp32::executeFunction( uint16_t n) {
           case SE_CC_getHostName:
               m_textBuffer[ 0] = '\0';
               if( m_wifiConnection) {
-                strcpy( m_textBuffer, m_wifiConnection->networkParameters.getHostName());
+                strcpy( m_textBuffer, m_wifiConnection->getHostName());
               }
               pushParameterStack( 0);
             break;
           case SE_CC_getHostPassword:
               m_textBuffer[ 0] = '\0';
               if( m_wifiConnection) {
-                strcpy( m_textBuffer, m_wifiConnection->networkParameters.getHostPassword());
+                strcpy( m_textBuffer, m_wifiConnection->getHostPassword());
               }
               pushParameterStack( 0);
             break;
           case SE_CC_getHostIp:
               m_textBuffer[ 0] = '\0';
               if( m_wifiConnection) {
-                strcpy( m_textBuffer, m_wifiConnection->networkParameters.getHostIp());
+                strcpy( m_textBuffer, m_wifiConnection->getHostIp());
               }
               pushParameterStack( 0);
               break;
           case SE_CC_getHostGateway:
               m_textBuffer[ 0] = '\0';
               if( m_wifiConnection) {
-                strcpy( m_textBuffer, m_wifiConnection->networkParameters.getHostGateway());
+                strcpy( m_textBuffer, m_wifiConnection->getHostGateway());
               }
               pushParameterStack( 0);
               break;
           case SE_CC_getHostMask:
               m_textBuffer[ 0] = '\0';
               if( m_wifiConnection) {
-                strcpy( m_textBuffer, m_wifiConnection->networkParameters.getHostMask());
+                strcpy( m_textBuffer, m_wifiConnection->getHostMask());
               }
               pushParameterStack( 0);
               break;
           case SE_CC_getHostMac:
               m_textBuffer[ 0] = '\0';
               if( m_wifiConnection) {
-                m_wifiConnection->networkParameters.getHostMac(m_textBuffer);
+                m_wifiConnection->getHostMac(m_textBuffer);
               }
               pushParameterStack( 0);
               break;
@@ -369,7 +369,7 @@ void YRShellEsp32::executeFunction( uint16_t n) {
 
           case SE_CC_getNumberOfNetworks:
               if( m_wifiConnection) {
-                pushParameterStack( m_wifiConnection->networkParameters.getNumberOfNetworks());
+                pushParameterStack( m_wifiConnection->getNumberOfNetworks());
               } else {
                 pushParameterStack( 0);
               }
@@ -384,14 +384,14 @@ void YRShellEsp32::executeFunction( uint16_t n) {
           case SE_CC_getNetworkIp:
               m_textBuffer[ 0] = '\0';
               if( m_wifiConnection) {
-                strcpy( m_textBuffer, m_wifiConnection->networkParameters.getNetworkIp( ));
+                strcpy( m_textBuffer, m_wifiConnection->getNetworkIp( ));
               }
               pushParameterStack( 0);
               break;
           case SE_CC_getNetworkMac:
               m_textBuffer[ 0] = '\0';
               if( m_wifiConnection) {
-                m_wifiConnection->networkParameters.getNetworkMac( m_textBuffer );
+                m_wifiConnection->getNetworkMac( m_textBuffer );
               }
               pushParameterStack( 0);
               break;
@@ -399,7 +399,7 @@ void YRShellEsp32::executeFunction( uint16_t n) {
               t1 = popParameterStack();
               m_textBuffer[ 0] = '\0';
               if( m_wifiConnection) {
-                strcpy( m_textBuffer, m_wifiConnection->networkParameters.getNetworkName( t1));
+                strcpy( m_textBuffer, m_wifiConnection->getNetworkName( t1));
               }
               pushParameterStack( 0);
               break;
@@ -407,57 +407,57 @@ void YRShellEsp32::executeFunction( uint16_t n) {
               t1 = popParameterStack();
               m_textBuffer[ 0] = '\0';
               if( m_wifiConnection) {
-                strcpy( m_textBuffer, m_wifiConnection->networkParameters.getNetworkPassword( t1));
+                strcpy( m_textBuffer, m_wifiConnection->getNetworkPassword( t1));
               }
               pushParameterStack( 0);
               break;
           case SE_CC_setHostName:
               t1 = popParameterStack();
               if( m_wifiConnection) {
-                  m_wifiConnection->networkParameters.setHostName( getAddressFromToken( t1));
+                  m_wifiConnection->setHostName( getAddressFromToken( t1));
               }
               break;
-          case SE_CC_setHostPassword:     
+          case SE_CC_setHostPassword:
               t1 = popParameterStack();
               if( m_wifiConnection) {
-                  m_wifiConnection->networkParameters.setHostPassword( getAddressFromToken( t1));
+                  m_wifiConnection->setHostPassword( getAddressFromToken( t1));
               }
               break;
-          case SE_CC_setHostIp:          
+          case SE_CC_setHostIp:
               t1 = popParameterStack();
               if( m_wifiConnection) {
-                  m_wifiConnection->networkParameters.setHostIp( getAddressFromToken( t1));
+                  m_wifiConnection->setHostIp( getAddressFromToken( t1));
               }
               break;
-          case SE_CC_setHostGateway:     
+          case SE_CC_setHostGateway:
               t1 = popParameterStack();
               if( m_wifiConnection) {
-                  m_wifiConnection->networkParameters.setHostGateway( getAddressFromToken( t1));
+                  m_wifiConnection->setHostGateway( getAddressFromToken( t1));
               }
               break;
-          case SE_CC_setHostMask:        
+          case SE_CC_setHostMask:
               t1 = popParameterStack();
               if( m_wifiConnection) {
-                  m_wifiConnection->networkParameters.setHostMask( getAddressFromToken( t1));
+                  m_wifiConnection->setHostMask( getAddressFromToken( t1));
               }
               break;
-          case SE_CC_setNetworkName:     
+          case SE_CC_setNetworkName:
               t1 = popParameterStack();
               t2 = popParameterStack();
               if( m_wifiConnection) {
-                  m_wifiConnection->networkParameters.setNetworkName( t1, getAddressFromToken( t2));
+                  m_wifiConnection->setNetworkName( t1, getAddressFromToken( t2));
               }
               break;
           case SE_CC_setNetworkPassword: 
               t1 = popParameterStack();
               t2 = popParameterStack();
               if( m_wifiConnection) {
-                  m_wifiConnection->networkParameters.setNetworkPassword( t1, getAddressFromToken( t2));
+                  m_wifiConnection->setNetworkPassword( t1, getAddressFromToken( t2));
               }
               break;
           case SE_CC_saveNetworkParameters: 
-              if( m_wifiConnection) {
-                  m_wifiConnection->networkParameters.save();
+              if( m_wifiConnection && m_pref) {
+                  m_wifiConnection->save(*m_pref);
               }
               break;
 
@@ -522,6 +522,9 @@ void YRShellEsp32::executeFunction( uint16_t n) {
               break;
           case SE_CC_storePreferences:
               if(m_pref) {
+                if(m_wifiConnection) {
+                  m_wifiConnection->save(*m_pref);
+                }
                 if( m_bleConnection ) {
                   m_bleConnection->save(*m_pref);
                 }
