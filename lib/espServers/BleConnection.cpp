@@ -187,7 +187,10 @@ void BleConnection::onResult(BLEAdvertisedDevice advertisedDevice) {
         if(!m_deviceParsers[i].enabled) continue;
         BleParser* parser = getParser(m_deviceParsers[i].parserType);
         BLEAddress addrToParse(m_deviceParsers[i].addr);
-        if(address == addrToParse) {
+        // BAM - 20260206 - Latest BLEAddress == also compares an addr type, which this code is not tracking or interested in
+        //  so need do a direct memcmp on the raw bytes.
+        //if(address == addrToParse) {
+        if(memcmp(address.getNative(), addrToParse.getNative(), ESP_BD_ADDR_LEN) == 0) {
             m_devices[0].payloadLen = 0;
             strcpy(m_devices[0].addr, address.toString().c_str());
             if (advertisedDevice.haveManufacturerData()) {
@@ -201,12 +204,16 @@ void BleConnection::onResult(BLEAdvertisedDevice advertisedDevice) {
                     parser->setData(m_devices[0]);
                     parser->parse();
                 }
+            } else {
+                if(m_log) {
+                    m_log->print( __FILE__, __LINE__, 1, address.toString().c_str(), "match but no mfg data, address");
+                }
             }
         }
     }
 
     if(m_log && m_bleLogState != BLE_LOG_NONE) {
-        m_log->print( __FILE__, __LINE__, 1, address.toString().c_str(), "BleConnection: address");
+        m_log->print( __FILE__, __LINE__, 1, (uint32_t) address.getType(), address.toString().c_str(), "BleConnection: type, address");
         if (advertisedDevice.haveName()) {
             m_log->print( __FILE__, __LINE__, 1, advertisedDevice.getName().c_str(), "BleConnection: name");
         }
