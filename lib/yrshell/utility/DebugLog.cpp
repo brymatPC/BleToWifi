@@ -47,6 +47,10 @@ void DebugLog::out( uint32_t v, uint32_t n) {
     unsignedToString( v, n, m_buf);
     out( m_buf);
 }
+void DebugLog::out( int32_t v, uint32_t n) {
+    intToString( v, n, m_buf);
+    out( m_buf);
+}
 void DebugLog::outX( uint32_t v, uint32_t n) {
     unsignedToStringX( v, n, m_buf);
     out( m_buf);
@@ -77,6 +81,10 @@ void DebugLog::printh( const char* file, uint32_t line) {
 }
 void DebugLog::printu( uint32_t v) {
     out( v);
+    out( ' ');
+}
+void DebugLog::printi( int32_t v) {
+    out( v, 9);
     out( ' ');
 }
 void DebugLog::printx( uint32_t v) {
@@ -173,7 +181,21 @@ void DebugLog::print( const char* file, uint32_t line, uint32_t mask, uint32_t v
         printm( message);
     }
 }
-
+void DebugLog::printI( const char* file, uint32_t line, uint32_t mask, int32_t v1, const char* message) {
+    if( m_mask & mask) {
+        printh( file, line);
+        printi(v1);
+        printm( message);
+    }
+}
+void DebugLog::printI( const char* file, uint32_t line, uint32_t mask, int32_t v1, int32_t v2, const char* message) {
+    if( m_mask & mask) {
+        printh( file, line);
+        printi(v1);
+        printi(v2);
+        printm( message);
+    }
+}
 void DebugLog::printX( const char* file, uint32_t line, uint32_t mask, uint32_t v1, const char* m, const char* message) {
     if( m_mask & mask) {
         printh( file, line);

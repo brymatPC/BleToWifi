@@ -154,7 +154,7 @@ void VictronDevice::decrypt() {
         }
 
         if(m_log) {
-            m_log->print( __FILE__, __LINE__, 1, batteryVoltage, batteryCurrent_u, batteryCurrent, "VictronDevice: batteryVoltage, batteryCurrent_u, batteryCurrent");
+            m_log->printI( __FILE__, __LINE__, 1, batteryVoltage, batteryCurrent, "VictronDevice: batteryVoltage, batteryCurrent");
             //m_log->print( __FILE__, __LINE__, 1, auxVoltage, auxType, "VictronDevice: auxVoltage, auxType");
             m_log->print( __FILE__, __LINE__, 1, timeToGo, consumed, stateOfCharge, "VictronDevice: timeToGo, consumed, stateOfCharge");
         }

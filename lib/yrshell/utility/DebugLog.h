@@ -17,10 +17,12 @@ protected:
   void out( const char c);
   void out( const char* s);
   void out( uint32_t v, uint32_t n = 10);
+  void out( int32_t v, uint32_t n = 10);
   void outX( uint32_t v, uint32_t n = 8);
   void outPaddedStr( const char* p, uint32_t len);
   void printh( const char* file, uint32_t line);
   void printu( uint32_t v);
+  void printi( int32_t v);
   void printx( uint32_t v);
   void printm( const char* m);
   void prints( const char* m);
@@ -44,6 +46,9 @@ public:
   void print( const char* file, uint32_t line, uint32_t mask, uint32_t v1, const char* message);
   void print( const char* file, uint32_t line, uint32_t mask, uint32_t v1, uint32_t v2, const char* message);
   void print( const char* file, uint32_t line, uint32_t mask, uint32_t v1, uint32_t v2, uint32_t v3, const char* message);
+
+  void printI( const char* file, uint32_t line, uint32_t mask, int32_t v1, const char* message);
+  void printI( const char* file, uint32_t line, uint32_t mask, int32_t v1, int32_t v2, const char* message);
 
   void printX( const char* file, uint32_t line, uint32_t mask, uint32_t v1, const char* m, const char* message);
   void printX( const char* file, uint32_t line, uint32_t mask, uint32_t v1, uint32_t v2, const char* m, const char* message);
