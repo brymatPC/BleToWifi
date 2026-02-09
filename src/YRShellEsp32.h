@@ -8,6 +8,7 @@
 #include "YRShellExec.h"
 
 class Preferences;
+class AppManager;
 class LedDriver;
 class LedStripDriver;
 class WifiConnection;
@@ -35,6 +36,10 @@ typedef enum {
     SE_CC_wifiConnected,
     SE_CC_setTelnetLogEnable,
     SE_CC_deepSleep,
+
+    SE_CC_setRunTimeMs,
+    SE_CC_setSleepTimeMs,
+    SE_CC_setSleepEnable,
 
     SE_CC_getHostName,
     SE_CC_getHostPassword,
@@ -113,6 +118,7 @@ protected:
 
   Preferences* m_pref;
   TelnetLogServer* m_telnetLogServer;
+  AppManager* m_appMgr;
   LedDriver* m_led;
   LedStripDriver* m_ledStrip;
   WifiConnection* m_wifiConnection;
@@ -138,6 +144,7 @@ public:
 
   // Provide object instances to drive testing, can be nullptr
   void setPreferences(Preferences *pref) { m_pref = pref; }
+  void setAppMgr(AppManager *appMgr) { m_appMgr = appMgr; }
   void setLedDriver(LedDriver *led) { m_led = led; }
   void setLedStrip(LedStripDriver *strip) { m_ledStrip = strip; }
   void setWifiConnection(WifiConnection* wifiConnection) { m_wifiConnection = wifiConnection; }

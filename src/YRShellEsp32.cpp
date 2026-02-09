@@ -1,4 +1,5 @@
 #include "YRShellEsp32.h"
+#include "AppManager.h"
 #include "LedStripDriver.h"
 #include "TelnetServer.h"
 #include "TempHumidityParser.h"
@@ -39,6 +40,10 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_wifiConnected,        "wifiConnected"},
     { SE_CC_setTelnetLogEnable,   "setTelnetLogEnable"},
     { SE_CC_deepSleep,            "deepSleep"},
+
+    { SE_CC_setRunTimeMs,         "setRunTime"},
+    { SE_CC_setSleepTimeMs,       "setSleepTime"},
+    { SE_CC_setSleepEnable,       "setSleepEnable"},
 
     { SE_CC_getHostName,          "getHostName" },
     { SE_CC_getHostPassword,      "getHostPassword" },
@@ -328,6 +333,24 @@ void YRShellEsp32::executeFunction( uint16_t n) {
               }
               esp_deep_sleep(1000LL * t1);
               break;
+          case SE_CC_setRunTimeMs:
+              t1 = popParameterStack();
+              if(m_appMgr) {
+                m_appMgr->setRunTimeMs(t1);
+              }
+          break;
+          case SE_CC_setSleepTimeMs:
+              t1 = popParameterStack();
+              if(m_appMgr) {
+                m_appMgr->setSleepTimeMs(t1);
+              }
+          break;
+          case SE_CC_setSleepEnable:
+              t1 = popParameterStack();
+              if(m_appMgr) {
+                m_appMgr->setSleepEnabled(t1);
+              }
+          break;
           case SE_CC_getHostName:
               m_textBuffer[ 0] = '\0';
               if( m_wifiConnection) {
@@ -535,6 +558,9 @@ void YRShellEsp32::executeFunction( uint16_t n) {
               break;
           case SE_CC_storePreferences:
               if(m_pref) {
+                if(m_appMgr) {
+                  m_appMgr->save(*m_pref);
+                }
                 if(m_wifiConnection) {
                   m_wifiConnection->save(*m_pref);
                 }
