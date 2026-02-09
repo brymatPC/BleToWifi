@@ -85,6 +85,7 @@ public:
     void setScanStartInterval(uint32_t interval) { m_scanStartInterval = interval; }
 
     void requestScan() { m_requestScan = true; }
+    void off();
     bleDeviceData_t *deviceData(uint8_t index);
 
     void setLogState(bleLogState state) {m_bleLogState = state; }

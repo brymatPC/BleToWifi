@@ -34,6 +34,7 @@ typedef enum {
     SE_CC_hexModeQ,
     SE_CC_wifiConnected,
     SE_CC_setTelnetLogEnable,
+    SE_CC_deepSleep,
 
     SE_CC_getHostName,
     SE_CC_getHostPassword,

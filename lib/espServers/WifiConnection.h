@@ -82,6 +82,7 @@ public:
   bool isHostActive( void) { return m_hostActive; }
   void enable( void) { m_enable = true; }
   void disable( void) { m_enable = false; }
+  void off();
 };
 
 #endif

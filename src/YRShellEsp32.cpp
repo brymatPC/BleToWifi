@@ -38,6 +38,7 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_hexModeQ,             "hexMode?"},
     { SE_CC_wifiConnected,        "wifiConnected"},
     { SE_CC_setTelnetLogEnable,   "setTelnetLogEnable"},
+    { SE_CC_deepSleep,            "deepSleep"},
 
     { SE_CC_getHostName,          "getHostName" },
     { SE_CC_getHostPassword,      "getHostPassword" },
@@ -314,7 +315,19 @@ void YRShellEsp32::executeFunction( uint16_t n) {
                 m_telnetLogServer->enable(t1);
               }
               break;
-
+          case SE_CC_deepSleep:
+              t1 = popParameterStack();
+              if(m_log) {
+                m_log->print(__FILE__, __LINE__, 1, t1, "Entering deep sleep, timeMs");
+              }
+              if(m_bleConnection) {
+                m_bleConnection->off();
+              }
+              if(m_wifiConnection) {
+                m_wifiConnection->off();
+              }
+              esp_deep_sleep(1000LL * t1);
+              break;
           case SE_CC_getHostName:
               m_textBuffer[ 0] = '\0';
               if( m_wifiConnection) {

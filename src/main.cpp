@@ -67,6 +67,7 @@ TempHumidityParser tempHumParser;
 
 IntervalTimer systemStatusTimer;
 esp_reset_reason_t resetReasonStartup;
+RTC_DATA_ATTR static int bootCount = 0;
 
 static char s_appName[] = "ESP32 BLE Test";
 static char s_appVersion[] = "0.9.0";
@@ -167,6 +168,7 @@ void setup(){
   dbg.setMask( LOG_MASK);
 
   resetReasonStartup = esp_reset_reason();
+  bootCount++;
 
   // BAM - 20260108 - ESP32 uses a USB interface and doesn't support different baud rates
   BSerial.begin( 115200);
@@ -243,6 +245,7 @@ void loop() {
     dbg.print(__FILE__, __LINE__, 1, "System Status Only, not a reboot!");
     dbg.print(__FILE__, __LINE__, 1, s_appName, "s_appName");
     dbg.print(__FILE__, __LINE__, 1, s_appVersion, "s_appVersion");
+    dbg.print(__FILE__, __LINE__, 1, bootCount, "bootCount");
     dbg.print(__FILE__, __LINE__, 1, resetReasonStartup, resetReasonToString(resetReasonStartup), "Reset Reason - resetReasonStartup, resetReasonStartupStr");
   }
 

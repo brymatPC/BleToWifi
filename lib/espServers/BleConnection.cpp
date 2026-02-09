@@ -20,6 +20,7 @@ typedef enum {
   STATE_START_SCAN = 1,
   STATE_IDLE       = 2,
   STATE_SCANNING   = 3,
+  STATE_OFF        = 4,
 
 } bleStates_t;
 
@@ -178,6 +179,15 @@ void BleConnection::slice( void) {
                 changeState( STATE_IDLE);
             }
         break;
+        case STATE_OFF:
+            // Wait for reboot or wake up
+        break;
+        default:
+            if( m_log) {
+                m_log->print( __FILE__, __LINE__, 1, m_state, "BleConnection: invalid state");
+            }
+            changeState( STATE_RESET);
+        break;
     }
 }
 
@@ -256,6 +266,13 @@ void BleConnection::onResult(BLEAdvertisedDevice advertisedDevice) {
             }
         }
     }
+}
+
+void BleConnection::off() {
+    if(m_pBleScan) {
+        m_pBleScan->stop();
+    }
+    changeState( STATE_OFF);
 }
 
 void BleConnection::scanComplete(BLEScanResults results) {

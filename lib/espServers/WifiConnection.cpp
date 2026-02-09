@@ -26,6 +26,7 @@ typedef enum {
   STATE_PARSE_NETWORKS    = 9,
   STATE_CONFIGURE_AP      = 10,
   STATE_AP_READY          = 11,
+  STATE_OFF               = 12,
 
 } wifiStates_t;
 
@@ -332,7 +333,24 @@ void WifiConnection::slice( ) {
         m_led->off();
       }
     break;
+    case STATE_OFF:
+        // Wait for reboot or wake up
+    break;
+    default:
+        if( m_log) {
+            m_log->print( __FILE__, __LINE__, 1, m_state, "WifiConnection: invalid state");
+        }
+        changeState( STATE_RESET);
+    break;
   }
+}
+void WifiConnection::off() {
+    if(WiFi.isConnected()) {
+        WiFi.disconnect();
+    }
+    WiFi.softAPdisconnect();
+
+    changeState( STATE_OFF);
 }
 void WifiConnection::hostConfig( ) {
   uint32_t v;
