@@ -46,6 +46,7 @@ private:
 
     uint8_t m_state;
     bool m_requestScan;
+    bool m_requestOff;
     bleLogState m_bleLogState;
 
     DebugLog* m_log;
@@ -89,6 +90,7 @@ public:
 
     void requestScan() { m_requestScan = true; }
     void off();
+    bool isOff();
     bleDeviceData_t *deviceData(uint8_t index);
 
     void setLogState(bleLogState state) {m_bleLogState = state; }

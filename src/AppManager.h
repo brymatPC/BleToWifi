@@ -8,6 +8,7 @@ class DebugLog;
 class Preferences;
 
 typedef void (*preSleepNotificationCallback)(void);
+typedef bool (*sleepReadyCallback)(void);
 
 class AppManager : public Sliceable {
 private:
@@ -27,6 +28,7 @@ private:
     bool m_sleepEnabled;
 
     preSleepNotificationCallback preSleep_cb = nullptr;
+    sleepReadyCallback sleepReady_cb = nullptr;
 
     uint32_t m_state;
 
@@ -40,6 +42,7 @@ public:
     virtual void slice( void);
 
     void setPreSleepCallback(preSleepNotificationCallback cb) {preSleep_cb = cb; }
+    void setSleepReadyCallback(sleepReadyCallback cb) {sleepReady_cb = cb; }
 
     void setRunTimeMs(uint32_t runTime) {m_runTimeMs = runTime;}
     void setSleepTimeMs(uint32_t sleepTime) {m_sleepTimeMs = sleepTime;}

@@ -31,6 +31,7 @@ BleConnection::BleConnection(DebugLog* log)
     m_log = log;
     m_state = STATE_RESET;
     m_requestScan = false;
+    m_requestOff = false;
     m_bleLogState = BLE_LOG_NONE;
 
     m_scanIntervalMs = s_DEFAULT_SCAN_INTERVAL_MS;
@@ -166,7 +167,10 @@ void BleConnection::slice( void) {
             }
         break;
         case STATE_IDLE:
-            if( m_requestScan) {
+            if( m_requestOff) {
+                m_pBleScan->stop();
+                changeState( STATE_OFF);
+            } else if( m_requestScan) {
                 m_requestScan = false;
                 if( m_log) {
                     m_log->print( __FILE__, __LINE__, 1, "Start scan request");
@@ -189,7 +193,10 @@ void BleConnection::slice( void) {
             changeState( STATE_SCANNING);
         break;
         case STATE_SCANNING:
-            if( m_resultsReceived) {
+            if( m_requestOff) {
+                // Should trigger scan complete
+                m_pBleScan->stop();
+            } else if( m_resultsReceived) {
                 if( m_log) {
                     m_log->print( __FILE__, __LINE__, 1, m_results.getCount(), "Scan complete: count");
                 }
@@ -202,6 +209,7 @@ void BleConnection::slice( void) {
             }
         break;
         case STATE_OFF:
+            m_requestOff = false;
             // Wait for reboot or wake up
         break;
         default:
@@ -291,10 +299,12 @@ void BleConnection::onResult(BLEAdvertisedDevice advertisedDevice) {
 }
 
 void BleConnection::off() {
-    if(m_pBleScan) {
-        m_pBleScan->stop();
+    if(m_state != STATE_OFF) {
+        m_requestOff = true;
     }
-    changeState( STATE_OFF);
+}
+bool BleConnection::isOff() {
+    return m_state == STATE_OFF;
 }
 
 void BleConnection::scanComplete(BLEScanResults results) {

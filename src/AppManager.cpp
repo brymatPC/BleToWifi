@@ -92,15 +92,17 @@ void AppManager::slice( void) {
                 if(m_log) {
                     m_log->print(__FILE__, __LINE__, 1, m_sleepTimeMs, "Sleep enabled - m_sleepTimeMs");
                 }
+                if(preSleep_cb) {
+                    preSleep_cb();
+                }
                 m_state = STATE_SLEEP_REQ;
             }
         break;
         case STATE_SLEEP_REQ:
-            // Small pause to allow flushing of log buffers
-            if(millis() > m_runTimeMs + 500) {
-                if(preSleep_cb) {
-                    preSleep_cb();
-                }
+            // Force sleep after 3 seconds
+            if(millis() > m_runTimeMs + 3000) {
+                m_state = STATE_SLEEP;
+            } else if(sleepReady_cb == nullptr || sleepReady_cb()) {
                 m_state = STATE_SLEEP;
             }
         break;

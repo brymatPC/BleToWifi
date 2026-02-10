@@ -91,6 +91,10 @@ void preSleepNotification(void) {
     wifiConnection.off();
 }
 
+bool sleepReady(void) {
+   return bleConnection.isOff() && wifiConnection.isOff();
+}
+
 void setup(){
   unsigned httpPort = 80;
   unsigned telnetPort = 23;
@@ -112,6 +116,7 @@ void setup(){
 
   appMgr.init(pref);
   appMgr.setPreSleepCallback(preSleepNotification);
+  appMgr.setSleepReadyCallback(sleepReady);
 
   #ifndef HAS_LED_STRIP
   onBoardLed.setLedPin( LED_PIN);

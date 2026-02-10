@@ -43,6 +43,7 @@ protected:
   DebugLog* m_log;
   LedDriver* m_led;
   bool m_enable;
+  bool m_requestOff;
   IntervalTimer m_timer;
   bool m_hostActive;
   void changeState( uint8_t state);
@@ -83,6 +84,7 @@ public:
   void enable( void) { m_enable = true; }
   void disable( void) { m_enable = false; }
   void off();
+  bool isOff();
 };
 
 #endif

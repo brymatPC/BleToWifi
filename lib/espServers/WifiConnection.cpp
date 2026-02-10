@@ -26,7 +26,9 @@ typedef enum {
   STATE_PARSE_NETWORKS    = 9,
   STATE_CONFIGURE_AP      = 10,
   STATE_AP_READY          = 11,
-  STATE_OFF               = 12,
+  STATE_TURN_OFF          = 12,
+  STATE_WAIT_OFF          = 13,
+  STATE_OFF               = 14,
 
 } wifiStates_t;
 
@@ -37,6 +39,7 @@ WifiConnection::WifiConnection( LedDriver* led, DebugLog* log, uint32_t connectT
   m_currentAp = 0;
   m_state = STATE_RESET;
   m_enable = false;
+  m_requestOff = false;
   m_maxRssi = -1024;
   m_hostActive = false;
 
@@ -206,6 +209,8 @@ void WifiConnection::slice( ) {
       if( WiFi.status() == WL_CONNECTED) {
         m_networkIp = (uint32_t) WiFi.localIP();
         changeState( STATE_CONNECTING);
+      } else if(m_requestOff) {
+        changeState( STATE_TURN_OFF);
       } else if( m_timer.hasIntervalElapsed()) {
         changeState( STATE_NEXT_NETWORK);
       } 
@@ -232,7 +237,9 @@ void WifiConnection::slice( ) {
     break;
 
     case STATE_CONNECTED:
-      if( m_timer.isNextInterval() ) {
+      if(m_requestOff) {
+        changeState( STATE_TURN_OFF);
+      } else if( m_timer.isNextInterval() ) {
         if(WiFi.status() != WL_CONNECTED) {
             if( m_log) {
               m_log->print( __FILE__, __LINE__, 1,  getNetworkName( m_currentAp ), "WifiConnection::slice_disconnected: networkName" );
@@ -333,7 +340,25 @@ void WifiConnection::slice( ) {
         m_led->off();
       }
     break;
+    case STATE_TURN_OFF:
+      if(WiFi.status() == WL_CONNECTED) {
+          WiFi.disconnect();
+      }
+      if(m_hostActive) {
+        WiFi.softAPdisconnect();
+        m_hostActive = false;
+      }
+
+      changeState( STATE_WAIT_OFF);
+    break;
+    case STATE_WAIT_OFF:
+      if(WiFi.status() == WL_DISCONNECTED || WiFi.status() == WL_STOPPED) {
+          m_log->print( __FILE__, __LINE__, 1, "WIFI is off");
+          changeState( STATE_OFF);
+      }
+    break;
     case STATE_OFF:
+        m_requestOff = false;
         // Wait for reboot or wake up
     break;
     default:
@@ -345,12 +370,12 @@ void WifiConnection::slice( ) {
   }
 }
 void WifiConnection::off() {
-    if(WiFi.isConnected()) {
-        WiFi.disconnect();
+    if(m_state != STATE_OFF) {
+      m_requestOff = true;
     }
-    WiFi.softAPdisconnect();
-
-    changeState( STATE_OFF);
+}
+bool WifiConnection::isOff() {
+  return m_state == STATE_OFF;
 }
 void WifiConnection::hostConfig( ) {
   uint32_t v;
