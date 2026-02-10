@@ -93,6 +93,7 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_setBleDuration,          "setBleDuration"},
     { SE_CC_setBleScanActively,      "setBleScanActively"},
     { SE_CC_setBleScanStartInterval, "setBleScanStartInterval"},
+    { SE_CC_setBleScanBoot,          "setBleScanBoot"},
     { SE_CC_setBleAddr,              "setBleAddr"},
     { SE_CC_setBleParser,            "setBleParser"},
     { SE_CC_setBleEnable,            "setBleEnable"},
@@ -614,6 +615,12 @@ void YRShellEsp32::executeFunction( uint16_t n) {
               t1 = popParameterStack();
               if( m_bleConnection ) {
                 m_bleConnection->setScanStartInterval(t1);
+              }
+              break;
+          case SE_CC_setBleScanBoot:
+              t1 = popParameterStack();
+              if( m_bleConnection ) {
+                m_bleConnection->setScanStartBoot(t1);
               }
               break;
           case SE_CC_setBleAddr:

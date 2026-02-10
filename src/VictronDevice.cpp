@@ -16,7 +16,7 @@ typedef enum {
 } victronStates_t;
 
 const char VictronDevice::s_PREF_NAMESPACE[] = "vic";
-const unsigned int VictronDevice::s_UPLOAD_TIME_MS = 60000;
+const unsigned int VictronDevice::s_UPLOAD_TIME_MS = 120000;
 const unsigned int VictronDevice::s_STARTUP_OFFSET_MS = 5000;
 char VictronDevice::s_ROUTE[] = "/victron";
 
@@ -27,6 +27,7 @@ VictronDevice::VictronDevice() {
     m_lastUpdate = 0;
     m_state = STATE_RESET;
     m_timer.setInterval(s_STARTUP_OFFSET_MS);
+    m_uploadRequest = false;
 }
 void VictronDevice::setup(Preferences &pref) {
     pref.begin(s_PREF_NAMESPACE, true);
@@ -186,7 +187,9 @@ void VictronDevice::decrypt() {
         #endif
     }
 }
-
+void VictronDevice::scanComplete() {
+    m_uploadRequest = true;
+}
 void VictronDevice::slice( void) {
     switch(m_state) {
         case STATE_RESET:
@@ -196,10 +199,12 @@ void VictronDevice::slice( void) {
             }
         break;
         case STATE_IDLE:
-            if(m_timer.isNextInterval() && m_uploadClient) {
+            if((m_timer.hasIntervalElapsed() || m_uploadRequest) && m_uploadClient) {
+                m_timer.setInterval(s_UPLOAD_TIME_MS);
                 if(m_log) {
                     m_log->print( __FILE__, __LINE__, 1, "uploading data");
                 }
+                m_uploadRequest = false;
                 m_state = STATE_UPLOAD;
             }
         break;

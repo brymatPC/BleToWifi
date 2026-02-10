@@ -16,7 +16,7 @@ typedef enum {
 
 } tempHumStates_t;
 
-const unsigned int TempHumidityParser::s_UPLOAD_TIME_MS = 60000;
+const unsigned int TempHumidityParser::s_UPLOAD_TIME_MS = 120000;
 char TempHumidityParser::s_ROUTE[] = "/sensor";
 
 TempHumidityParser::TempHumidityParser() {
@@ -29,6 +29,7 @@ TempHumidityParser::TempHumidityParser() {
     m_state = STATE_RESET;
     m_additionalLogging = false;
     m_timer.setInterval(s_UPLOAD_TIME_MS);
+    m_uploadRequest = false;
 }
 void TempHumidityParser::parse() {
     if(m_bleData.payloadLen == 0 || m_bleData.payload == nullptr) return;
@@ -185,16 +186,21 @@ void TempHumidityParser::addData(tempHumidityData_t &data) {
     }
 }
 
+void TempHumidityParser::scanComplete() {
+    m_uploadRequest = true;
+}
 void TempHumidityParser::slice( void) {
     switch(m_state) {
         case STATE_RESET:
             m_state = STATE_IDLE;
         break;
         case STATE_IDLE:
-            if(m_timer.isNextInterval() && m_uploadClient) {
+            if((m_timer.hasIntervalElapsed() || m_uploadRequest) && m_uploadClient) {
+                m_timer.setInterval(s_UPLOAD_TIME_MS);
                 if(m_log) {
                     m_log->print( __FILE__, __LINE__, 1, "uploading data");
                 }
+                m_uploadRequest = false;
                 m_uploadIndex = 0;
                 m_state = STATE_UPLOAD;
             }

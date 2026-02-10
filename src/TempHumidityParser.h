@@ -30,6 +30,7 @@ private:
     DebugLog* m_log;
     IntervalTimer m_timer;
     UploadDataClient* m_uploadClient;
+    bool m_uploadRequest;
     bleDeviceData_t m_bleData;
     uint8_t m_state;
     bool m_additionalLogging;
@@ -57,6 +58,7 @@ public:
 
     virtual void setData(bleDeviceData_t &data) {m_bleData = data;}
     virtual void parse();
+    virtual void scanComplete();
 };
 
 #endif // TEMP_HUMIDITY_PARSER_H_

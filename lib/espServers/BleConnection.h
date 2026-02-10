@@ -38,6 +38,7 @@ private:
     static const uint32_t s_DEFAULT_SCAN_DURATION_SEC;
     static const bool s_DEFAULT_SCAN_ACTIVE;
     static const uint32_t s_DEFAULT_SCAN_TIME_MS;
+    static const uint32_t s_DEFAULT_SCAN_BOOT_MS;
 
     static const char parserKeyEnPrefix[];
     static const char parserKeyAddrPrefix[];
@@ -62,6 +63,7 @@ private:
     uint32_t m_scanDuration;
     bool m_scanActively;
     uint32_t m_scanStartInterval;
+    uint32_t m_scanStartBoot;
 
     void changeState( uint8_t state);
     BleParser* getParser(BleParserTypes type);
@@ -83,6 +85,7 @@ public:
     void setScanDuration(uint32_t duration) { m_scanDuration = duration; }
     void setScanActively(bool actively) { m_scanActively = actively; }
     void setScanStartInterval(uint32_t interval) { m_scanStartInterval = interval; }
+    void setScanStartBoot(uint32_t interval) { m_scanStartBoot = interval; }
 
     void requestScan() { m_requestScan = true; }
     void off();

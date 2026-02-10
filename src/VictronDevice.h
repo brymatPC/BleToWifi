@@ -31,6 +31,7 @@ private:
     DebugLog* m_log;
     IntervalTimer m_timer;
     UploadDataClient* m_uploadClient;
+    bool m_uploadRequest;
     bleDeviceData_t m_bleData;
     victronData_t m_data;
     bool m_dataFresh;
@@ -54,6 +55,7 @@ public:
     void setKey(const char *key);
     virtual void setData(bleDeviceData_t &data) {m_bleData = data;}
     virtual void parse();
+    virtual void scanComplete();
 };
 
 #endif // VICTRON_DEVICE_H

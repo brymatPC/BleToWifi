@@ -20,6 +20,7 @@ class BleParser {
 public:
     virtual void setData(bleDeviceData_t &data) = 0;
     virtual void parse() = 0;
+    virtual void scanComplete() = 0;
 };
 
 #endif // BLE_PARSER_H

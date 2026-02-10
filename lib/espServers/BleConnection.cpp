@@ -10,6 +10,7 @@ const uint16_t BleConnection::s_DEFAULT_SCAN_WINDOW_MS = 1000;
 const uint32_t BleConnection::s_DEFAULT_SCAN_DURATION_SEC = 10;
 const bool BleConnection::s_DEFAULT_SCAN_ACTIVE = false;
 const uint32_t BleConnection::s_DEFAULT_SCAN_TIME_MS = 0;
+const uint32_t BleConnection::s_DEFAULT_SCAN_BOOT_MS = 0;
 
 const char BleConnection::parserKeyEnPrefix[] = "parEn";
 const char BleConnection::parserKeyAddrPrefix[] = "parAddr";
@@ -17,10 +18,11 @@ const char BleConnection::parserKeyParserPrefix[] = "parPar";
 
 typedef enum {
   STATE_RESET      = 0,
-  STATE_START_SCAN = 1,
-  STATE_IDLE       = 2,
-  STATE_SCANNING   = 3,
-  STATE_OFF        = 4,
+  STATE_BOOT       = 1,
+  STATE_START_SCAN = 2,
+  STATE_IDLE       = 3,
+  STATE_SCANNING   = 4,
+  STATE_OFF        = 5,
 
 } bleStates_t;
 
@@ -36,7 +38,8 @@ BleConnection::BleConnection(DebugLog* log)
     m_scanDuration = s_DEFAULT_SCAN_DURATION_SEC;
     m_scanActively = s_DEFAULT_SCAN_ACTIVE;
     m_scanStartInterval = s_DEFAULT_SCAN_TIME_MS;
-    m_scanTimer.setInterval(s_DEFAULT_SCAN_TIME_MS);
+    m_scanStartBoot = s_DEFAULT_SCAN_BOOT_MS;
+    m_scanTimer.setInterval(s_DEFAULT_SCAN_BOOT_MS);
 
     for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
         m_deviceParsers[i].enabled = false;
@@ -53,6 +56,7 @@ void BleConnection::setup(Preferences &pref) {
     m_scanDuration      = pref.getULong("scanDur", s_DEFAULT_SCAN_DURATION_SEC);
     m_scanActively      = pref.getBool("scanAct", s_DEFAULT_SCAN_ACTIVE);
     m_scanStartInterval = pref.getULong("scanSInt", s_DEFAULT_SCAN_TIME_MS);
+    m_scanStartBoot     = pref.getULong("scanBoot", s_DEFAULT_SCAN_BOOT_MS);
     for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
         snprintf(parserKey, 16, "%s%d", parserKeyEnPrefix, i);
         m_deviceParsers[i].enabled = pref.getBool(parserKey, false);
@@ -64,7 +68,7 @@ void BleConnection::setup(Preferences &pref) {
     }
     pref.end();
 
-    m_scanTimer.setInterval(m_scanStartInterval);
+    m_scanTimer.setInterval(m_scanStartBoot);
 }
 void BleConnection::save(Preferences &pref) {
     char parserKey[16];
@@ -74,6 +78,7 @@ void BleConnection::save(Preferences &pref) {
     pref.putULong("scanDur", m_scanDuration);
     pref.putBool("scanAct", m_scanActively);
     pref.putULong("scanSInt", m_scanStartInterval);
+    pref.putULong("scanBoot", m_scanStartBoot);
     for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
         snprintf(parserKey, 16, "%s%d", parserKeyEnPrefix, i);
         pref.putBool(parserKey, m_deviceParsers[i].enabled);
@@ -145,7 +150,20 @@ void BleConnection::slice( void) {
             BLEDevice::init("ble_esp32");
             m_pBleScan = BLEDevice::getScan();
             m_pBleScan->setAdvertisedDeviceCallbacks(this, true);
-            changeState( STATE_IDLE);
+            if(m_scanStartBoot != 0) {
+                changeState( STATE_BOOT);
+            } else {
+                changeState( STATE_IDLE);
+            }
+        break;
+        case STATE_BOOT:
+            if(m_scanTimer.hasIntervalElapsed()) {
+                m_scanTimer.setInterval(m_scanStartInterval);
+                if( m_log) {
+                    m_log->print( __FILE__, __LINE__, 1, m_scanStartInterval, "Start scan boot: m_scanStartInterval");
+                }
+                changeState( STATE_START_SCAN);
+            }
         break;
         case STATE_IDLE:
             if( m_requestScan) {
@@ -176,6 +194,10 @@ void BleConnection::slice( void) {
                     m_log->print( __FILE__, __LINE__, 1, m_results.getCount(), "Scan complete: count");
                 }
                 m_resultsReceived = false;
+                for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
+                    if(m_parsers[i] == nullptr) continue;
+                    m_parsers[i]->scanComplete();
+                }
                 changeState( STATE_IDLE);
             }
         break;
