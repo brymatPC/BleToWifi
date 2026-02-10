@@ -79,7 +79,7 @@ void UploadDataClient::sendHeader() {
 }
 void UploadDataClient::sendFile(char *route, char *file, unsigned len) {
     if( m_log != NULL) {
-        m_log->print( __FILE__, __LINE__, 0x100001, (uint32_t) len, "UploadDataClient_sendFile: len");
+        m_log->print( __FILE__, __LINE__, 0x100000, (uint32_t) len, "UploadDataClient_sendFile: len");
     }
     if(route != nullptr && file != nullptr && len > 0) {
         m_routeToSend = route;
@@ -104,7 +104,7 @@ void UploadDataClient::slice() {
         case STATE_CONNECTING:
         {
             int ret = m_client->connect(m_ip, m_port, 100);
-            if(m_log) {
+            if(m_log && ret != 1) {
                 m_log->print( __FILE__, __LINE__, 0x100001, (uint32_t) ret, "UploadDataClient: connect_ret");
             }
             if(m_client->connected()) {
@@ -126,7 +126,7 @@ void UploadDataClient::slice() {
         case STATE_DISCONNECTING:
             m_client->stop();
             if(m_log) {
-                m_log->print( __FILE__, __LINE__, 0x100001, "UploadDataClient: done");
+                m_log->print( __FILE__, __LINE__, 0x100000, "UploadDataClient: done");
             }
             changeState( STATE_IDLE);
         break;

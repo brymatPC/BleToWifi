@@ -24,6 +24,7 @@ VictronDevice::VictronDevice() {
     memset(m_key, 0, VICTRON_KEY_LEN);
     m_bleData = bleDeviceData_t{};
     m_dataFresh = false;
+    m_lastUpdate = 0;
     m_state = STATE_RESET;
     m_timer.setInterval(s_STARTUP_OFFSET_MS);
 }
@@ -65,6 +66,11 @@ void VictronDevice::setKey(const char *key) {
 void VictronDevice::parse() {
     if(m_bleData.payloadLen == 0 || m_bleData.payload == nullptr) return;
 
+    if(m_dataFresh && (millis() < (m_lastUpdate + 30000))) {
+        m_log->print( __FILE__, __LINE__, 0x0001, millis(), m_lastUpdate, "Probable duplicate: millis, m_lastUpdate");
+        return;
+    }
+
     if(m_bleData.payloadLen > 7) {
         uint16_t companyId = (m_bleData.payload[0] << 8) | (m_bleData.payload[1]);
         uint8_t dataRecordType = m_bleData.payload[2];
@@ -73,7 +79,7 @@ void VictronDevice::parse() {
         uint8_t recordType = m_bleData.payload[6];
 
         if(m_log) {
-            m_log->printX( __FILE__, __LINE__, 1, companyId, modelId, "VictronDevice: companyId, modelId");
+            m_log->printX( __FILE__, __LINE__, 0x1000, companyId, modelId, "VictronDevice: companyId, modelId");
             //m_log->printX( __FILE__, __LINE__, 1, dataRecordType, readOutType, recordType, "VictronDevice: dataRecordType, readOutType, recordType");
         }
     }
@@ -154,9 +160,10 @@ void VictronDevice::decrypt() {
         }
 
         if(m_log) {
+            m_log->print( __FILE__, __LINE__, 1, m_bleData.addr, "VictronDevice: addr");
             m_log->printI( __FILE__, __LINE__, 1, batteryVoltage, batteryCurrent, "VictronDevice: batteryVoltage, batteryCurrent");
             //m_log->print( __FILE__, __LINE__, 1, auxVoltage, auxType, "VictronDevice: auxVoltage, auxType");
-            m_log->print( __FILE__, __LINE__, 1, timeToGo, consumed, stateOfCharge, "VictronDevice: timeToGo, consumed, stateOfCharge");
+            //m_log->print( __FILE__, __LINE__, 1, timeToGo, consumed, stateOfCharge, "VictronDevice: timeToGo, consumed, stateOfCharge");
         }
 
         m_data.timeToGo = timeToGo;
@@ -164,6 +171,7 @@ void VictronDevice::decrypt() {
         m_data.batteryCurrent = batteryCurrent;
         m_data.stateOfCharge = stateOfCharge;
         m_dataFresh = true;
+        m_lastUpdate = millis();
 
         #ifdef LOG_OUTPUT_DATA
             if(m_log) {
@@ -190,7 +198,7 @@ void VictronDevice::slice( void) {
         case STATE_IDLE:
             if(m_timer.isNextInterval() && m_uploadClient) {
                 if(m_log) {
-                    m_log->print( __FILE__, __LINE__, 1, "VictronDevice::slice: uploading data");
+                    m_log->print( __FILE__, __LINE__, 1, "uploading data");
                 }
                 m_state = STATE_UPLOAD;
             }
@@ -199,6 +207,9 @@ void VictronDevice::slice( void) {
             if(m_dataFresh) {
                 m_state = STATE_UPLOAD_WAIT;
             } else {
+                if(m_log) {
+                    m_log->print( __FILE__, __LINE__, 1, "No data to upload");
+                }
                 m_state = STATE_IDLE;
             }
         break;

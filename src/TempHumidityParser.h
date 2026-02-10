@@ -36,12 +36,14 @@ private:
 
     tempHumidityData_t m_data[MAX_TEMP_HUM_SENSORS];
     bool m_dataFresh[MAX_TEMP_HUM_SENSORS];
+    uint32_t m_lastUpdate[MAX_TEMP_HUM_SENSORS];
     char m_sendBuf[MAX_SEND_BUF_SIZE];
     uint8_t m_uploadIndex;
 
     uint8_t processBatteryVoltage(uint16_t raw);
     void addData(tempHumidityData_t &data);
     bool compareMacAddr(uint8_t *addr1, uint8_t *addr2);
+    int8_t dataFresh(uint8_t *macAddr);
 
 public:
     TempHumidityParser();

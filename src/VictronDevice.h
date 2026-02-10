@@ -34,6 +34,7 @@ private:
     bleDeviceData_t m_bleData;
     victronData_t m_data;
     bool m_dataFresh;
+    uint32_t m_lastUpdate;
     uint8_t m_state;
     char m_sendBuf[MAX_VIC_SEND_BUF_SIZE];
 

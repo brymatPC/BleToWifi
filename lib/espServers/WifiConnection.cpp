@@ -147,7 +147,7 @@ void WifiConnection::setNetworkPassword( uint8_t index, const char* networkPassw
 }
 void WifiConnection::changeState( uint8_t state) {
   if( m_log) {
-    m_log->print( __FILE__, __LINE__, 1, m_state, state, "WifiConnection::changeState: m_state, state" );
+    m_log->print( __FILE__, __LINE__, 0x100000, m_state, state, "WifiConnection::changeState: m_state, state" );
   }
   m_state = state;
 }

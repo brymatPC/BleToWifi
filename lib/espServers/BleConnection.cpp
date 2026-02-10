@@ -84,7 +84,7 @@ void BleConnection::save(Preferences &pref) {
     }
     pref.end();
     if( m_log) {
-        m_log->print( __FILE__, __LINE__, 1, "BleConnection::save: pref updated" );
+        m_log->print( __FILE__, __LINE__, 1, "Preferences updated" );
     }
 }
 void BleConnection::addParser(BleParserTypes type, BleParser *parser) {
@@ -144,20 +144,20 @@ void BleConnection::slice( void) {
         case STATE_RESET:
             BLEDevice::init("ble_esp32");
             m_pBleScan = BLEDevice::getScan();
-            m_pBleScan->setAdvertisedDeviceCallbacks(this, false);
+            m_pBleScan->setAdvertisedDeviceCallbacks(this, true);
             changeState( STATE_IDLE);
         break;
         case STATE_IDLE:
             if( m_requestScan) {
                 m_requestScan = false;
                 if( m_log) {
-                    m_log->print( __FILE__, __LINE__, 1, "BleConnection: scan requested");
+                    m_log->print( __FILE__, __LINE__, 1, "Start scan request");
                 }
                 changeState( STATE_START_SCAN);
             } else if(m_scanStartInterval != 0 && m_scanTimer.hasIntervalElapsed()) {
                 m_scanTimer.setInterval(m_scanStartInterval);
                 if( m_log) {
-                    m_log->print( __FILE__, __LINE__, 1, "BleConnection: scan start interval");
+                    m_log->print( __FILE__, __LINE__, 1, m_scanStartInterval, "Start scan regular: m_scanStartInterval");
                 }
                 changeState( STATE_START_SCAN);
             }
@@ -173,7 +173,7 @@ void BleConnection::slice( void) {
         case STATE_SCANNING:
             if( m_resultsReceived) {
                 if( m_log) {
-                    m_log->print( __FILE__, __LINE__, 1, m_results.getCount(), "BleConnection: scan result count");
+                    m_log->print( __FILE__, __LINE__, 1, m_results.getCount(), "Scan complete: count");
                 }
                 m_resultsReceived = false;
                 changeState( STATE_IDLE);
@@ -184,7 +184,7 @@ void BleConnection::slice( void) {
         break;
         default:
             if( m_log) {
-                m_log->print( __FILE__, __LINE__, 1, m_state, "BleConnection: invalid state");
+                m_log->print( __FILE__, __LINE__, 1, m_state, "Invalid state: m_state");
             }
             changeState( STATE_RESET);
         break;
