@@ -85,7 +85,7 @@ void LedStripDriver::setLedOnOffMs(uint32_t on, uint32_t off) {
     m_ledOnMs = on;
     m_ledOffMs = off;
     m_ledTimer.setInterval( m_ledOffMs);
-    transmit(m_colour);
+    transmit(0);
     m_ledState = false;
 }
 
@@ -129,13 +129,13 @@ void LedStripDriver::slice() {
             if( m_ledTimer.hasIntervalElapsed()) {
                 m_ledState = false;
                 m_ledTimer.setInterval( m_ledOffMs);
-                transmit(m_colour);
+                transmit(0);
             }
         } else {
             if( m_ledTimer.hasIntervalElapsed()) {
                 m_ledState = true;
                 m_ledTimer.setInterval( m_ledOnMs);
-                transmit(0);
+                transmit(m_colour);
             }
         }
     }
