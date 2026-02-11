@@ -30,6 +30,7 @@ TempHumidityParser::TempHumidityParser() {
     m_additionalLogging = false;
     m_timer.setInterval(s_UPLOAD_TIME_MS);
     m_uploadRequest = false;
+    m_numDuplicates = 0;
 }
 void TempHumidityParser::parse() {
     if(m_bleData.payloadLen == 0 || m_bleData.payload == nullptr) return;
@@ -53,7 +54,8 @@ void TempHumidityParser::parse() {
     if(m_bleData.payloadLen == 20) {
         int8_t index = dataFresh(&m_bleData.payload[4]);
         if(index >= 0 && (millis() < (m_lastUpdate[index] + 30000))) {
-            m_log->print( __FILE__, __LINE__, 0x0001, index, millis(), m_lastUpdate[index], "Probable duplicate: index, millis, m_lastUpdate");
+            m_log->print( __FILE__, __LINE__, 0x10000, index, millis(), m_lastUpdate[index], "Probable duplicate: index, millis, m_lastUpdate");
+            m_numDuplicates++;
             return;
         }
         tempHumidityData_t temp;
@@ -89,7 +91,8 @@ void TempHumidityParser::parse() {
     } else if(m_bleData.payloadLen == 22) {
         int8_t index = dataFresh(&m_bleData.payload[4]);
         if(index >= 0) {
-            m_log->print( __FILE__, __LINE__, 0x0001, index, millis(), m_lastUpdate[index], "Probable duplicate: index, millis, m_lastUpdate");
+            m_log->print( __FILE__, __LINE__, 0x10000, index, millis(), m_lastUpdate[index], "Probable duplicate: index, millis, m_lastUpdate");
+            m_numDuplicates++;
             return;
         }
         int16_t highestTemp = (m_bleData.payload[11] << 8) | (m_bleData.payload[10]);
@@ -188,6 +191,8 @@ void TempHumidityParser::addData(tempHumidityData_t &data) {
 
 void TempHumidityParser::scanComplete() {
     m_uploadRequest = true;
+    m_log->print( __FILE__, __LINE__, 0x0001, m_numDuplicates, "scan complete: m_numDuplicates");
+    m_numDuplicates = 0;
 }
 void TempHumidityParser::slice( void) {
     switch(m_state) {
@@ -207,6 +212,9 @@ void TempHumidityParser::slice( void) {
         break;
         case STATE_UPLOAD:
             if(m_uploadIndex >= MAX_TEMP_HUM_SENSORS) {
+                if(m_log) {
+                    m_log->print( __FILE__, __LINE__, 1, "upload complete");
+                }
                 m_state = STATE_IDLE;
             } else if(m_dataFresh[m_uploadIndex]) {
                 m_state = STATE_UPLOAD_WAIT;

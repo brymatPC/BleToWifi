@@ -28,6 +28,7 @@ VictronDevice::VictronDevice() {
     m_state = STATE_RESET;
     m_timer.setInterval(s_STARTUP_OFFSET_MS);
     m_uploadRequest = false;
+    m_numDuplicates = 0;
 }
 void VictronDevice::setup(Preferences &pref) {
     pref.begin(s_PREF_NAMESPACE, true);
@@ -68,7 +69,8 @@ void VictronDevice::parse() {
     if(m_bleData.payloadLen == 0 || m_bleData.payload == nullptr) return;
 
     if(m_dataFresh && (millis() < (m_lastUpdate + 30000))) {
-        m_log->print( __FILE__, __LINE__, 0x0001, millis(), m_lastUpdate, "Probable duplicate: millis, m_lastUpdate");
+        m_log->print( __FILE__, __LINE__, 0x10000, millis(), m_lastUpdate, "Probable duplicate: millis, m_lastUpdate");
+        m_numDuplicates++;
         return;
     }
 
@@ -189,6 +191,8 @@ void VictronDevice::decrypt() {
 }
 void VictronDevice::scanComplete() {
     m_uploadRequest = true;
+    m_log->print( __FILE__, __LINE__, 0x0001, m_numDuplicates, "scan complete: m_numDuplicates");
+    m_numDuplicates = 0;
 }
 void VictronDevice::slice( void) {
     switch(m_state) {
@@ -229,6 +233,9 @@ void VictronDevice::slice( void) {
         break;
         case STATE_SEND_WAIT:
             if(!m_uploadClient->busy()) {
+                if(m_log) {
+                    m_log->print( __FILE__, __LINE__, 1, "upload complete");
+                }
                 m_state = STATE_IDLE;
             }
         break;

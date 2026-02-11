@@ -34,6 +34,7 @@ private:
     bleDeviceData_t m_bleData;
     uint8_t m_state;
     bool m_additionalLogging;
+    uint32_t m_numDuplicates;
 
     tempHumidityData_t m_data[MAX_TEMP_HUM_SENSORS];
     bool m_dataFresh[MAX_TEMP_HUM_SENSORS];

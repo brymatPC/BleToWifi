@@ -37,6 +37,7 @@ private:
     bool m_dataFresh;
     uint32_t m_lastUpdate;
     uint8_t m_state;
+    uint32_t m_numDuplicates;
     char m_sendBuf[MAX_VIC_SEND_BUF_SIZE];
 
     void decrypt();
