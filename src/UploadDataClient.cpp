@@ -62,7 +62,7 @@ void UploadDataClient::setHostPort(unsigned port) {
     m_port = port;
 }
 bool UploadDataClient::busy() {
-    return m_state != STATE_IDLE && !m_sendRequest;
+    return m_state != STATE_IDLE || m_sendRequest;
 }
 void UploadDataClient::changeState( uint8_t newState) {
     if( m_log != NULL) {
