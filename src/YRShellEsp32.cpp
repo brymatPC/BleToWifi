@@ -12,6 +12,8 @@
 #include <BleConnection.h>
 #include <Preferences.h>
 #include <time.h>
+#include <esp_chip_info.h>
+#include <esp_idf_version.h>
 #endif
 
 #define INITIAL_LOAD_FILE "/start.yr"
@@ -106,6 +108,8 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_setUploadPort,          "setUploadPort"},
 
     { SE_CC_flashSize,            "flashSize"},
+    { SE_CC_chipInfo,             "chipInfo"},
+    { SE_CC_sdkVersion,           "sdkVersion"},
     { SE_CC_curTime,              "curTime"},
 		{ SE_CC_setTime,              "setTime"},
 
@@ -684,6 +688,18 @@ void YRShellEsp32::executeFunction( uint16_t n) {
               t2 = LittleFS.usedBytes();
               pushParameterStack( t1);
               pushParameterStack( t2);
+            break;
+          case SE_CC_chipInfo:
+            {
+              esp_chip_info_t chipInfo;
+              esp_chip_info(&chipInfo);
+              m_log->print( __FILE__, __LINE__, 1, chipInfo.model, chipInfo.revision, chipInfo.cores, "Chip: model, revision, cores");
+            }
+            break;
+          case SE_CC_sdkVersion:
+            {
+              m_log->print( __FILE__, __LINE__, 1, esp_get_idf_version(), "SDK: version");
+            }
             break;
           case SE_CC_curTime:
               logTime();

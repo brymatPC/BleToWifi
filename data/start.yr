@@ -62,4 +62,8 @@
 
 : mon 1 { bscan 10000 delay 10000 delay 10000 delay esc? } drop
 
+chipInfo
+sdkVersion
+curTime
+
 mainIO

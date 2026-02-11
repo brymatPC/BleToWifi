@@ -102,6 +102,8 @@ typedef enum {
     SE_CC_setUploadPort,
 
     SE_CC_flashSize,
+    SE_CC_chipInfo,
+    SE_CC_sdkVersion,
     SE_CC_curTime,
     SE_CC_setTime,
 
