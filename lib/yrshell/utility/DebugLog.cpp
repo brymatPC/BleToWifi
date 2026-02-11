@@ -68,7 +68,7 @@ void DebugLog::outPaddedStr( const char* p, uint32_t len) {
     }  
 }
 void DebugLog::printh( const char* file, uint32_t line) {
-    uint32_t t = (uint32_t) millis();
+    uint32_t t = (uint32_t) HW_getMillis();
     out( t);
     out( ' ');
     out( t - m_lastTime);
@@ -245,7 +245,4 @@ void DebugLog::printHex( const char* P, int len) {
     for(  ; len > 0; P += 16, len -= 16) {
       printHexLine( P, len);
     }
-}
-void DebugLog::printHex( String &s) {
-    printHex( s.c_str(), s.length());
 }

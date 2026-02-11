@@ -3,6 +3,7 @@
 #include "HttpExecServer.h"
 #include <utility/LedBlink.h>
 #include <utility/IntervalTimer.h>
+#include <utility/BufferedSerial.h>
 #include "TelnetServer.h"
 #include "UploadDataClient.h"
 #include <Preferences.h>

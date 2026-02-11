@@ -2,10 +2,11 @@
 #define BufferedSerial_h
 
 #include "HardwareSpecific.h"
-
-#ifdef PLATFORM_ARDUINO
-
 #include "CircularQ.h"
+
+#include <driver/uart.h>
+#include <HardwareSerial.h>
+#include <HWCDC.h>
 
 /** \brief BufferedSerial - wrapper arouns the Arduino HardwareSerial class to interface to queues
 
@@ -15,7 +16,7 @@
 class BufferedSerial : public Sliceable {
 protected:
   HardwareSerial *m_hs; /**< Pointer to the HardwareSerial object */
-#ifdef ESP32
+#ifdef HWCDC_SERIAL_IS_DEFINED
   HWCDC *m_hwcdc;
 #endif
   CircularQBase<char>* m_nextQ; /**< Pointer to the queue which will receive data from the HardwareSerial object */
@@ -29,7 +30,7 @@ public:
 
  */
   BufferedSerial( HardwareSerial* hs);
-#ifdef ESP32
+#ifdef HWCDC_SERIAL_IS_DEFINED
   BufferedSerial( HWCDC* hwcdc);
 #endif
 /** \brief init - sets up the queues
@@ -51,19 +52,15 @@ public:
 };
 
 
-
-extern BufferedSerial BSerial;  
+extern BufferedSerial BSerial;
 #ifdef ENABLE_SERIAL1
-extern BufferedSerial BSerial1;  
+extern BufferedSerial BSerial1;
 #endif
 #ifdef ENABLE_SERIAL2
-extern BufferedSerial BSerial2;  
+extern BufferedSerial BSerial2;
 #endif
 #ifdef ENABLE_SERIAL3
-extern BufferedSerial BSerial3;  
-#endif
-
-
+extern BufferedSerial BSerial3;
 #endif
 
 #endif

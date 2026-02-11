@@ -1,11 +1,12 @@
 #include "LedBlink.h"
 
+#include <driver/gpio.h>
 
 void LedBlink::setLedOnOffMs( uint32_t on, uint32_t off) {
   m_ledOnMs = on;
   m_ledOffMs = off;
   m_ledTimer.setInterval( m_ledOffMs);
-  digitalWrite( m_ledPin, 1);
+  gpio_set_level( (gpio_num_t) m_ledPin, 1);
   m_ledState = false;
 }
 
@@ -20,7 +21,7 @@ LedBlink::LedBlink( ) {
 void LedBlink::setLedPin( int8_t ledPin) {
   if( ledPin > 0) {
     m_ledPin = ledPin;
-    pinMode( m_ledPin, OUTPUT);
+    gpio_set_direction( (gpio_num_t) m_ledPin, GPIO_MODE_OUTPUT);
   }
 }
 
@@ -30,13 +31,13 @@ void LedBlink::slice() {
       if( m_ledTimer.hasIntervalElapsed()) {
         m_ledState = false;
         m_ledTimer.setInterval( m_ledOffMs);
-        digitalWrite( m_ledPin, 1);
+        gpio_set_level( (gpio_num_t) m_ledPin, 1);
       }
     } else {
       if( m_ledTimer.hasIntervalElapsed()) {
         m_ledState = true;
         m_ledTimer.setInterval( m_ledOnMs);
-        digitalWrite( m_ledPin, 0);
+        gpio_set_level( (gpio_num_t) m_ledPin, 0);
       }
     }
   }

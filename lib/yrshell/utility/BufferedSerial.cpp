@@ -1,10 +1,10 @@
 #include "BufferedSerial.h"
 #include "YRShellInterpreter.h"
-#ifdef PLATFORM_ARDUINO
+
 BufferedSerial::BufferedSerial( HardwareSerial* hs) {
 	m_hs = hs;
 }
-#ifdef ESP32
+#ifdef HWCDC_SERIAL_IS_DEFINED
 BufferedSerial::BufferedSerial( HWCDC* hwcdc) {
 	m_hs = nullptr;
 	m_hwcdc = hwcdc; 
@@ -18,7 +18,7 @@ void BufferedSerial::slice( void) {
 	int c;
 	if( m_nextQ != NULL) {
 		while( m_nextQ->spaceAvailable()) {
-#ifdef ESP32
+#ifdef HWCDC_SERIAL_IS_DEFINED
 			c = m_hwcdc->read();
 #else
 			c = m_hs->read();
@@ -30,7 +30,7 @@ void BufferedSerial::slice( void) {
 		}
 	}	
 	if( m_previousQ != NULL) {
-#ifdef ESP32
+#ifdef HWCDC_SERIAL_IS_DEFINED
 		while( m_previousQ->valueAvailable() && m_hwcdc->availableForWrite() > 0) {
 			m_hwcdc->write( m_previousQ->get());
 		}
@@ -41,7 +41,7 @@ void BufferedSerial::slice( void) {
 #endif
 	}
 }
-#ifdef ESP32
+#ifdef HWCDC_SERIAL_IS_DEFINED
 void BufferedSerial::begin( uint32_t baud) {
 	if(m_hs) {
 		m_hs->begin( baud);
@@ -88,4 +88,3 @@ BufferedSerial BSerial2( &Serial2);
 BufferedSerial BSerial3( &Serial3);  
 #endif
 
-#endif

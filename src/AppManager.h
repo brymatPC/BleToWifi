@@ -4,6 +4,8 @@
 #include <utility/IntervalTimer.h>
 #include <utility/Sliceable.h>
 
+#include <esp_system.h>
+
 class DebugLog;
 class Preferences;
 
