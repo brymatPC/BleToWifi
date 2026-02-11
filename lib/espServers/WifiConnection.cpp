@@ -226,8 +226,9 @@ void WifiConnection::slice( ) {
 
     case STATE_CONNECTING:
       p = getNetworkName( m_currentAp );
+      q = getNetworkIp();
       if( m_log) {
-        m_log->print( __FILE__, __LINE__, 1,  p, "WifiConnection::slice_connected: networkName" );
+        m_log->print( __FILE__, __LINE__, 1,  p, q, "WifiConnection::slice_connected: networkName, networkIp" );
       }
       m_timer.setInterval( 500);
       changeState( STATE_CONNECTED);
