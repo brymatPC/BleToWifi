@@ -80,6 +80,7 @@ void AppManager::slice( void) {
             m_log->print(__FILE__, __LINE__, 1, m_appVersion, "s_appVersion");
             m_log->print(__FILE__, __LINE__, 1, m_bootCount, "bootCount");
             m_log->print(__FILE__, __LINE__, 1, resetReasonStartup, resetStr, "Reset Reason - resetReasonStartup, resetReasonStartupStr");
+            m_log->printX(__FILE__, __LINE__, 1, 0xA5, "Hex test");
         }
     }
 

@@ -420,7 +420,7 @@ static char charToHex( char c) {
     }
     return value;
 }
-static bool stringToUnsignedX( const char* P, uint32_t* V){
+bool YRShellInterpreter::stringToUnsignedX( const char* P, uint32_t* V) {
     bool rc = false;
     uint32_t value = 0, numDigits = 0;
     if( (*P != '0') || (*(P+1) != 'x')) {
@@ -504,7 +504,7 @@ static const char* stringToUnsignedInternal( const char* P, uint32_t* V) {
     }
     return rc;
 }
-static bool stringToUnsigned( const char* P, uint32_t* V){
+bool YRShellInterpreter::stringToUnsigned( const char* P, uint32_t* V) {
     bool rc = false;
     if( *P == '\0') {
         rc = 0;

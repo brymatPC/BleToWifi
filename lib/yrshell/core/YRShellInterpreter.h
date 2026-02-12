@@ -411,6 +411,9 @@ public:
     bool getCommandEcho( void) { return m_commandEcho; }
     void setPromptEnable( bool s) { m_promptEnable = s; }
     bool getPromptEnable( void) { return m_promptEnable; }
+
+    static bool stringToUnsignedX( const char* P, uint32_t* V);
+    static bool stringToUnsigned( const char* P, uint32_t* V);
 };
 
 #endif

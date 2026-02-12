@@ -1,5 +1,4 @@
 #include "BleConnection.h"
-#include <utility/String.h>
 
 static bool m_resultsReceived = false;
 static BLEScanResults m_results;

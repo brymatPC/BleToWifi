@@ -6,7 +6,6 @@
 #include "WifiConnection.h"
 #include "VictronDevice.h"
 #include "UploadDataClient.h"
-#include <utility/String.h>
 
 #ifdef ESP32
 #include <BleConnection.h>
@@ -862,7 +861,7 @@ void YRShellEsp32::executeFunction( uint16_t n) {
 
 void YRShellEsp32::outUInt8( int8_t v) {
     char buf[ 5];
-    unsignedToString(v, 3, buf);
+    snprintf(buf, 5, "%3d", v);
     outString( buf);
 }
 

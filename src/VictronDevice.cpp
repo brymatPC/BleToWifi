@@ -2,7 +2,6 @@
 #include "UploadDataClient.h"
 
 #include <utility/DebugLog.h>
-#include <utility/String.h>
 
 #include <aes/esp_aes.h>
 
@@ -19,6 +18,18 @@ const char VictronDevice::s_PREF_NAMESPACE[] = "vic";
 const unsigned int VictronDevice::s_UPLOAD_TIME_MS = 120000;
 const unsigned int VictronDevice::s_STARTUP_OFFSET_MS = 5000;
 char VictronDevice::s_ROUTE[] = "/victron";
+
+static char charToHex( char c) {
+    char value = '\0';
+    if(  c >= '0' && c <= '9' ) {
+        value |= c - '0';
+    } else if(  c >= 'a' && c <= 'f' ) {
+        value |= c - 'a' + 10;
+    } else if(  c >= 'A' && c <= 'F') {
+        value |= c - 'A' + 10;
+    }
+    return value;
+}
 
 VictronDevice::VictronDevice() {
     memset(m_key, 0, VICTRON_KEY_LEN);

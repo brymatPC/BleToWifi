@@ -1,5 +1,4 @@
 #include "WifiConnection.h"
-#include <utility/String.h>
 
 #define BLINK_SPEED_CONNECTING_MS 200
 #define BLINK_SPEED_SCANNING_MS 400
@@ -31,6 +30,36 @@ typedef enum {
   STATE_OFF               = 14,
 
 } wifiStates_t;
+
+static char charToHex( char c) {
+    char value = '\0';
+    if(  c >= '0' && c <= '9' ) {
+        value |= c - '0';
+    } else if(  c >= 'a' && c <= 'f' ) {
+        value |= c - 'a' + 10;
+    } else if(  c >= 'A' && c <= 'F') {
+        value |= c - 'A' + 10;
+    }
+    return value;
+}
+static bool stringToUnsignedX( const char* P, uint32_t* V) {
+    bool rc = false;
+    uint32_t value = 0, numDigits = 0;
+    if( (*P != '0') || (*(P+1) != 'x')) {
+        rc = false;
+    } else {
+        P +=2;
+        while( ((*P >= '0' && *P <= '9') ||  (*P >= 'a' && *P <= 'f')  ||  (*P >= 'A' && *P <= 'F'))  && numDigits++ < 16 ) {
+            value <<= 4;
+            value |= charToHex( *P++);
+        }
+        if( *P == '\0') {
+            rc = true;
+        }
+        *V = value;
+    }
+    return rc;
+}
 
 WifiConnection::WifiConnection( LedDriver* led, DebugLog* log, uint32_t connectTimeout) {
   m_led = led;

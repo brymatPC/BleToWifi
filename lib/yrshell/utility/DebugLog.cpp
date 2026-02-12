@@ -1,5 +1,53 @@
 #include "DebugLog.h"
 #include "String.h"
+#include <stdio.h>
+
+static void unsignedToStringZero(uint32_t num, uint8_t numDigits, char *s) {
+    char *P = s + numDigits;
+    *P-- = '\0';
+    while( P >= s) {
+        *P-- = '0' + (num % 10);
+        num /= 10;
+    }
+}
+static void unsignedToString(uint32_t num, uint8_t numDigits, char *s) {
+    unsignedToStringZero( num, numDigits, s);
+    while( *s == '0' && numDigits-- > 1) {
+        *s++ = ' ';
+    }
+}
+static void intToString(int32_t num, uint8_t numDigits, char *s) {
+    *s++ = ' ';
+    if( num < 0) {
+        unsignedToString( (unsigned) (0 - num), numDigits, s);
+        while( *s == ' ') {
+            s++;
+        }
+        s--;
+        *s = '-';
+    } else {
+        unsignedToString( (unsigned) num, numDigits, s);
+    }
+}
+
+static void unsignedToStringX(uint32_t num, uint8_t numDigits, char *s){
+    *s++ = '0';
+    *s++ = 'x';
+    char *P = s + numDigits;
+    char c;
+    *P-- = '\0';
+    while( P >= s) {
+        c = num & 0xF;
+        if( c > 9) {
+            c += '7';
+        } else {
+            c += '0';
+        }
+        *P-- =  c;
+        num >>= 4;
+    }
+}
+
 
 void DebugLog::printHexLine( const char* P, int len) {
     int i, j;
@@ -22,7 +70,7 @@ void DebugLog::printHexLine( const char* P, int len) {
             c_buf[ j++] = ' ';
         }
     }
-    print( c_buf);      
+    print( c_buf);
     print( "\r\n");
 }
   

@@ -2,7 +2,6 @@
 #include "UploadDataClient.h"
 
 #include <utility/DebugLog.h>
-#include <utility/String.h>
 
 // Credit to: https://github.com/Bluetooth-Devices/thermobeacon-ble/blob/main/src/thermobeacon_ble/parser.py
 

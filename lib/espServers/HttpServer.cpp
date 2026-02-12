@@ -1,7 +1,6 @@
 #include "HttpServer.h"
 #include <utility/DebugLog.h>
 #include <utility/LedBlink.h>
-#include <utility/String.h>
 
 #if defined (ESP32)
   #include <Wifi.h>
@@ -29,6 +28,18 @@ typedef enum {
   STATE_FINISH_CMD      = 10,
 
 } httpServerStates_t;
+
+static char charToHex( char c) {
+    char value = '\0';
+    if(  c >= '0' && c <= '9' ) {
+        value |= c - '0';
+    } else if(  c >= 'a' && c <= 'f' ) {
+        value |= c - 'a' + 10;
+    } else if(  c >= 'A' && c <= 'F') {
+        value |= c - 'A' + 10;
+    }
+    return value;
+}
 
 HttpServer::HttpServer( void) {
   m_server = NULL;
