@@ -3,7 +3,6 @@
 #include "HttpExecServer.h"
 #include <utility/LedBlink.h>
 #include <core/IntervalTimer.h>
-#include <utility/BufferedSerial.h>
 #include "TelnetServer.h"
 #include "UploadDataClient.h"
 #include <Preferences.h>
@@ -105,7 +104,7 @@ void setup(){
   resetReasonStartup = esp_reset_reason();
 
   // BAM - 20260108 - ESP32 uses a USB interface and doesn't support different baud rates
-  BSerial.begin( 115200);
+  Serial.begin( 115200);
 
   dbg.print( __FILE__, __LINE__, 1, "\r\n\n");
 
