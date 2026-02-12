@@ -5,7 +5,7 @@
 #define DEBUG_LOG_BUFFER_SIZE 8192
 #endif
 
-#include "CircularQ.h"
+#include "../core/CircularQ.h"
 
 class DebugLog {
 protected:

@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 #include <BleParser.h>
-#include <utility/Sliceable.h>
-#include <utility/IntervalTimer.h>
+#include <core/Sliceable.h>
+#include <core/IntervalTimer.h>
 
 #define TEMP_HUMIDITY_MAC_LEN 6
 #define MAX_TEMP_HUM_SENSORS 8

@@ -7,8 +7,8 @@
 #else
   #warning "WiFi is not supported on the selected target"
 #endif
-#include <utility/Sliceable.h>
-#include <utility/IntervalTimer.h>
+#include <core/Sliceable.h>
+#include <core/IntervalTimer.h>
 #include <utility/DebugLog.h>
 #include <utility/LedDriver.h>
 

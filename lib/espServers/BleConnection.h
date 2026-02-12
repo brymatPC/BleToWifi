@@ -10,8 +10,8 @@
 
 #include "BleParser.h"
 
-#include <utility/Sliceable.h>
-#include <utility/IntervalTimer.h>
+#include <core/Sliceable.h>
+#include <core/IntervalTimer.h>
 #include <utility/DebugLog.h>
 
 #define MAX_BLE_DEVICE_DATA 1

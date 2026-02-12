@@ -1,7 +1,7 @@
 #ifndef UPLOAD_DATA_CLIENT_H_
 #define UPLOAD_DATA_CLIENT_H_
 
-#include <utility/Sliceable.h>
+#include <core/Sliceable.h>
 #include <Preferences.h>
 
 class DebugLog;

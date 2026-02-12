@@ -1,12 +1,8 @@
 #ifndef YRShellDefines_h
 #define YRShellDefines_h
 
-#include "HardwareSpecific.h"
-
-
 // #define INPUT_BUFFER_EDITING
 #define YRSHELL_INTERPRETER_FLOATING_POINT
-
 
 #ifndef YRSHELL_VERSION
 #define YRSHELL_VERSION "\rYRShell Version 0.2 " // make sure this string length is less than YRShell outq size

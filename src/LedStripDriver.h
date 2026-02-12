@@ -3,9 +3,9 @@
 
 #include <stdint.h>
 #include <driver/rmt_tx.h>
-#include <utility/Sliceable.h>
+#include <core/Sliceable.h>
 #include <utility/LedDriver.h>
-#include <utility/IntervalTimer.h>
+#include <core/IntervalTimer.h>
 
 // Code copied from esp-idf examples: https://github.com/espressif/esp-idf/blob/release/v6.0/examples/peripherals/rmt/led_strip_simple_encoder/main/led_strip_example_main.c
 

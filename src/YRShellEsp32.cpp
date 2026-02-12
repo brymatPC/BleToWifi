@@ -110,6 +110,8 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_flashSize,            "flashSize"},
     { SE_CC_chipInfo,             "chipInfo"},
     { SE_CC_sdkVersion,           "sdkVersion"},
+    { SE_CC_numTasks,             "numTasks"},
+    { SE_CC_cpuPerf,              "cpuPerf"},
     { SE_CC_curTime,              "curTime"},
 		{ SE_CC_setTime,              "setTime"},
 
@@ -125,6 +127,119 @@ static FunctionDictionary dictionaryExtensionFunction( yr8266ShellExtensionFunct
 CompiledDictionary compiledExtensionDictionary( NULL, 0xFFFF , 0x0000 , YRSHELL_DICTIONARY_EXTENSION_COMPILED);
 
 static char s_uploadData[] = "{\"data\":32}";
+
+/**
+ * @brief   Function to print the CPU usage of tasks over a given duration.
+ *
+ * This function will measure and print the CPU usage of tasks over a specified
+ * number of ticks (i.e. real time stats). This is implemented by simply calling
+ * uxTaskGetSystemState() twice separated by a delay, then calculating the
+ * differences of task run times before and after the delay.
+ *
+ * @note    If any tasks are added or removed during the delay, the stats of
+ *          those tasks will not be printed.
+ * @note    This function should be called from a high priority task to minimize
+ *          inaccuracies with delays.
+ * @note    When running in dual core mode, each core will correspond to 50% of
+ *          the run time.
+ *
+ * @param   xTicksToWait    Period of stats measurement
+ *
+ * @return
+ *  - ESP_OK                Success
+ *  - ESP_ERR_NO_MEM        Insufficient memory to allocated internal arrays
+ *  - ESP_ERR_INVALID_SIZE  Insufficient array size for uxTaskGetSystemState. Trying increasing ARRAY_SIZE_OFFSET
+ *  - ESP_ERR_INVALID_STATE Delay duration too short
+ */
+#define ARRAY_SIZE_OFFSET   5   //Increase this if print_real_time_stats returns ESP_ERR_INVALID_SIZE
+#define MAX_TASKS_TO_TRACK  20
+static char s_espBuf[128];
+static esp_err_t print_real_time_stats(TickType_t xTicksToWait, DebugLog *dbg)
+{
+    TaskStatus_t start_array[MAX_TASKS_TO_TRACK];
+    TaskStatus_t end_array[MAX_TASKS_TO_TRACK];
+    UBaseType_t start_array_size, end_array_size;
+    configRUN_TIME_COUNTER_TYPE start_run_time, end_run_time;
+    esp_err_t ret;
+
+    if(uxTaskGetNumberOfTasks() + ARRAY_SIZE_OFFSET >= MAX_TASKS_TO_TRACK) {
+      dbg->print(__FILE__, __LINE__, 1, uxTaskGetNumberOfTasks(), ARRAY_SIZE_OFFSET, "cpu stats: numTasks, array offset");
+      return ESP_ERR_NO_MEM;
+    }
+
+    //Allocate array to store current task states
+    start_array_size = uxTaskGetNumberOfTasks() + ARRAY_SIZE_OFFSET;
+    // start_array = malloc(sizeof(TaskStatus_t) * start_array_size);
+    // if (start_array == NULL) {
+    //     ret = ESP_ERR_NO_MEM;
+    //     goto exit;
+    // }
+    //Get current task states
+    start_array_size = uxTaskGetSystemState(start_array, start_array_size, &start_run_time);
+    if (start_array_size == 0) {
+        dbg->print(__FILE__, __LINE__, 1, "cpu stats: start array size is 0");
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    vTaskDelay(xTicksToWait);
+
+    //Allocate array to store tasks states post delay
+    end_array_size = uxTaskGetNumberOfTasks() + ARRAY_SIZE_OFFSET;
+    // end_array = malloc(sizeof(TaskStatus_t) * end_array_size);
+    // if (end_array == NULL) {
+    //     ret = ESP_ERR_NO_MEM;
+    //     goto exit;
+    // }
+    //Get post delay task states
+    end_array_size = uxTaskGetSystemState(end_array, end_array_size, &end_run_time);
+    if (end_array_size == 0) {
+      dbg->print(__FILE__, __LINE__, 1, "cpu stats: end array size is 0");
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    //Calculate total_elapsed_time in units of run time stats clock period.
+    uint32_t total_elapsed_time = (end_run_time - start_run_time);
+    if (total_elapsed_time == 0) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    dbg->print(__FILE__, __LINE__, 1, "| Task | Run Time | Core | Percentage");
+    //Match each task in start_array to those in the end_array
+    for (int i = 0; i < start_array_size; i++) {
+        int k = -1;
+        for (int j = 0; j < end_array_size; j++) {
+            if (start_array[i].xHandle == end_array[j].xHandle) {
+                k = j;
+                //Mark that task have been matched by overwriting their handles
+                start_array[i].xHandle = NULL;
+                end_array[j].xHandle = NULL;
+                break;
+            }
+        }
+        //Check if matching task found
+        if (k >= 0) {
+            uint32_t task_elapsed_time = end_array[k].ulRunTimeCounter - start_array[i].ulRunTimeCounter;
+            uint32_t percentage_time = (task_elapsed_time * 100UL) / (total_elapsed_time * CONFIG_FREERTOS_NUMBER_OF_CORES);
+            snprintf(s_espBuf, 128, "| %s | %" PRIu32" | %d | %" PRIu32"%%", start_array[i].pcTaskName, task_elapsed_time, start_array[i].xCoreID, percentage_time);
+            dbg->print(__FILE__, __LINE__, 1, s_espBuf);
+        }
+    }
+
+    //Print unmatched tasks
+    for (int i = 0; i < start_array_size; i++) {
+        if (start_array[i].xHandle != NULL) {
+            snprintf(s_espBuf, 128, "| %s | Deleted", start_array[i].pcTaskName);
+            dbg->print(__FILE__, __LINE__, 1, s_espBuf);
+        }
+    }
+    for (int i = 0; i < end_array_size; i++) {
+        if (end_array[i].xHandle != NULL) {
+            snprintf(s_espBuf, 128, "| %s | Created", end_array[i].pcTaskName);
+            dbg->print(__FILE__, __LINE__, 1, s_espBuf);
+        }
+    }
+    return ESP_OK;
+}
 
 YRShellEsp32::YRShellEsp32() {
   m_telnetLogServer = NULL;
@@ -700,6 +815,14 @@ void YRShellEsp32::executeFunction( uint16_t n) {
             {
               m_log->print( __FILE__, __LINE__, 1, esp_get_idf_version(), "SDK: version");
             }
+            break;
+          case SE_CC_numTasks:
+            t1 = uxTaskGetNumberOfTasks();
+            pushParameterStack( t1);
+            break;
+          case SE_CC_cpuPerf:
+            t1 = popParameterStack();
+            print_real_time_stats(t1, m_log);
             break;
           case SE_CC_curTime:
               logTime();

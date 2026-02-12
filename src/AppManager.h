@@ -1,8 +1,8 @@
 #ifndef APP_MANAGER_H_
 #define APP_MANAGER_H_
 
-#include <utility/IntervalTimer.h>
-#include <utility/Sliceable.h>
+#include <core/IntervalTimer.h>
+#include <core/Sliceable.h>
 
 #include <esp_system.h>
 

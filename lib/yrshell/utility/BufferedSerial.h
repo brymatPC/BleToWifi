@@ -1,8 +1,8 @@
 #ifndef BufferedSerial_h
 #define BufferedSerial_h
 
-#include "HardwareSpecific.h"
-#include "CircularQ.h"
+#include "../core/HardwareSpecific.h"
+#include "../core/CircularQ.h"
 
 #include <driver/uart.h>
 #include <HardwareSerial.h>

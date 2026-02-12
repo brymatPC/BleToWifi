@@ -3,8 +3,8 @@
 
 #include <LittleFS.h>
 
-#include <utility/Sliceable.h>
-#include <utility/IntervalTimer.h>
+#include <core/Sliceable.h>
+#include <core/IntervalTimer.h>
 
 class DebugLog;
 class LedDriver;

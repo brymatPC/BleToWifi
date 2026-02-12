@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <BleParser.h>
 #include <Preferences.h>
-#include <utility/Sliceable.h>
-#include <utility/IntervalTimer.h>
+#include <core/Sliceable.h>
+#include <core/IntervalTimer.h>
 
 #define MAX_VIC_SEND_BUF_SIZE 128
 #define VICTRON_KEY_LEN 16

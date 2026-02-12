@@ -2,7 +2,7 @@
 #include "WifiConnection.h"
 #include "HttpExecServer.h"
 #include <utility/LedBlink.h>
-#include <utility/IntervalTimer.h>
+#include <core/IntervalTimer.h>
 #include <utility/BufferedSerial.h>
 #include "TelnetServer.h"
 #include "UploadDataClient.h"

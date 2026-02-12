@@ -1,5 +1,4 @@
 #include "BufferedSerial.h"
-#include "YRShellInterpreter.h"
 
 BufferedSerial::BufferedSerial( HardwareSerial* hs) {
 	m_hs = hs;

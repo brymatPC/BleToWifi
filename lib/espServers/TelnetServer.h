@@ -2,7 +2,7 @@
 #define TelnetServer_h
 
 #include <utility/DebugLog.h>
-#include <utility/IntervalTimer.h>
+#include <core/IntervalTimer.h>
 
 class NetworkServer;
 class NetworkClient;

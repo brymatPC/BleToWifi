@@ -7,6 +7,7 @@
 
 #include "YRShellExec.h"
 
+class DebugLog;
 class Preferences;
 class AppManager;
 class LedDriver;
@@ -104,6 +105,8 @@ typedef enum {
     SE_CC_flashSize,
     SE_CC_chipInfo,
     SE_CC_sdkVersion,
+    SE_CC_numTasks,
+    SE_CC_cpuPerf,
     SE_CC_curTime,
     SE_CC_setTime,
 
@@ -119,6 +122,7 @@ protected:
   char m_auxBuf[ 128];
   uint8_t m_auxBufIndex;
 
+  DebugLog* m_log;
   Preferences* m_pref;
   TelnetLogServer* m_telnetLogServer;
   AppManager* m_appMgr;

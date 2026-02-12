@@ -12,8 +12,6 @@
 #include "math.h"
 #endif
 
-class DebugLog;
-
 /** \brief YRShellInterpreter - interactive
  
  Details on what YRShellInterpreter is
@@ -232,8 +230,6 @@ protected:
     Dictionary                              *m_dictionaryList[ YRSHELL_DICTIONARY_LAST_INDEX];
     CircularQBase<char>                     *m_Inq, *m_AuxInq, *m_Outq, *m_AuxOutq;
 
-    DebugLog                                *m_log;
-    
 #ifdef YRSHELL_DEBUG
     unsigned    m_debugFlags;
 #endif

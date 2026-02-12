@@ -1,10 +1,8 @@
 #ifndef YRShell_h
 #define YRShell_h
 
-#include "utility/HardwareSpecific.h"
-#include "utility/BufferedSerial.h"
-
-#include "utility/YRShellInterpreter.h"
+#include "core/HardwareSpecific.h"
+#include "core/YRShellInterpreter.h"
 
 /** \brief YRShellBase - interactive
  
