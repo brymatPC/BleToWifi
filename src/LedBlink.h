@@ -1,9 +1,9 @@
 #ifndef LedBlink_h
 #define LedBlink_h
 
-#include "core/Sliceable.h"
-#include "utility/LedDriver.h"
-#include "core/IntervalTimer.h"
+#include <core/Sliceable.h>
+#include <core/IntervalTimer.h>
+#include <LedDriver.h>
 
 class LedBlink : public Sliceable, public LedDriver {
 protected:

@@ -10,7 +10,7 @@
 #include <core/Sliceable.h>
 #include <core/IntervalTimer.h>
 #include <utility/DebugLog.h>
-#include <utility/LedDriver.h>
+#include "LedDriver.h"
 
 #define MAX_WIFI_ENTRY_LEN 32
 #define MAX_WIFI_NETWORKS  4

@@ -1,6 +1,5 @@
 #include "HttpServer.h"
 #include <utility/DebugLog.h>
-#include <utility/LedBlink.h>
 
 #if defined (ESP32)
   #include <Wifi.h>
@@ -46,7 +45,6 @@ HttpServer::HttpServer( void) {
   m_client = NULL;
 
   m_log = NULL;
-  m_led = NULL;
 
   m_port = 0;
   m_state = STATE_STARTUP;
@@ -188,10 +186,6 @@ void HttpServer::slice() {
           m_log->print( __FILE__, __LINE__, 0x020000, "HttpServer_slice_Connected:");
         }
         changeState( STATE_CONNECTING);
-        if( m_led) {
-          m_led->push();
-          m_led->blink( 50);
-        }
       }
     break;
     case STATE_PROCESS_REQUEST:
@@ -266,9 +260,6 @@ void HttpServer::slice() {
         uint32_t et = HW_getMicros() - m_requestStart;
         et = (et + 500)/1000;
         m_log->printLog( __FILE__, __LINE__, 0x200000, m_responseCode, et, m_url);
-        if( m_led) {
-          m_led->pop();
-        }
       }
       changeState( STATE_DISCONNECT_WAIT);
     break;

@@ -7,7 +7,6 @@
 #include <core/IntervalTimer.h>
 
 class DebugLog;
-class LedDriver;
 class NetworkServer;
 class NetworkClient;
 
@@ -27,7 +26,6 @@ protected:
   NetworkClient* m_client;
 
   DebugLog* m_log;
-  LedDriver* m_led;
 
   void sendExec( uint8_t offset);
   void sendFile( const char* type);
@@ -49,7 +47,6 @@ public:
   virtual ~HttpServer( );
   virtual const char* sliceName( ) { return "HttpServer"; }
   virtual void init( unsigned port, DebugLog* log = NULL);
-  void setLedDriver(LedDriver *led) { m_led = led; }
   virtual void slice( void);
   static char hexToAscii( const char* h);
 };
