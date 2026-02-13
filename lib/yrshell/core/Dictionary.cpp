@@ -18,7 +18,7 @@ Dictionary::~Dictionary( ) {
     shellERROR(__FILE__, __LINE__);
 }
 void Dictionary::setDictionaryError( DictionaryError* e){
-	s_DictionaryError = e;
+    s_DictionaryError = e;
 }
 
 uint16_t Dictionary::getFirstEntry( ) {

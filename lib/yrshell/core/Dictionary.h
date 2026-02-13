@@ -13,10 +13,9 @@ class YRShellInterpreter;
 
 class DictionaryError {
 public:
-	DictionaryError( void);
-	virtual ~DictionaryError( void);
+    DictionaryError( void);
+    virtual ~DictionaryError( void);
     virtual void shellERROR( const char* name, unsigned line);
-
 };
 
 /** \brief Base class for all the dictionaries used by the interpreter
@@ -26,7 +25,6 @@ This class is not meant to be instatiated.
 class Dictionary {
 protected:
     uint16_t                m_mask;             /**< The mask applied to the tokens in this dictionary. */
-    
 public:
     static  DictionaryError*    s_DictionaryError; /**< The global error reporting object for dictionaires. */
     
