@@ -1,10 +1,7 @@
 #include "TempHumidityParser.h"
 #include "UploadDataClient.h"
 
-#include <utility/DebugLog.h>
-
 // Credit to: https://github.com/Bluetooth-Devices/thermobeacon-ble/blob/main/src/thermobeacon_ble/parser.py
-
 
 typedef enum {
   STATE_RESET       = 0,
@@ -14,6 +11,8 @@ typedef enum {
   STATE_SEND_WAIT   = 4,
 
 } tempHumStates_t;
+
+static const char* TAG = "THParse";
 
 const unsigned int TempHumidityParser::s_UPLOAD_TIME_MS = 120000;
 char TempHumidityParser::s_ROUTE[] = "/sensor";
@@ -37,15 +36,15 @@ void TempHumidityParser::parse() {
     if(m_bleData.payloadLen > 7) {
         uint16_t companyId = (m_bleData.payload[1] << 8) | (m_bleData.payload[0]);
 
-        if(m_log && m_additionalLogging) {
+        if(m_additionalLogging) {
             char outStr[20];
             outStr[0] = '0';
             outStr[1] = 'x';
             for(int i=0; i < TEMP_HUMIDITY_MAC_LEN; i++) {
                 sprintf(&outStr[2+i*2], "%02X", m_bleData.payload[i+4]);
             }
-            m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: macAddr");
-            m_log->printX( __FILE__, __LINE__, 1, companyId, m_bleData.payloadLen, "TempHumiditySensor: companyId, payloadLen");
+            ESP_LOGI(TAG, "macAddr=%s", outStr);
+            ESP_LOGI(TAG, "companyId=0x%04X, payloadLen=%lu", companyId, m_bleData.payloadLen);
         }
     }
 
@@ -53,7 +52,7 @@ void TempHumidityParser::parse() {
     if(m_bleData.payloadLen == 20) {
         int8_t index = dataFresh(&m_bleData.payload[4]);
         if(index >= 0 && (millis() < (m_lastUpdate[index] + 30000))) {
-            m_log->print( __FILE__, __LINE__, 0x10000, index, millis(), m_lastUpdate[index], "Probable duplicate: index, millis, m_lastUpdate");
+            ESP_LOGD(TAG, "Probable duplicate: index=%u millis=%u m_lastUpdate=%u", index, (unsigned)millis(), (unsigned)m_lastUpdate);
             m_numDuplicates++;
             return;
         }
@@ -69,28 +68,27 @@ void TempHumidityParser::parse() {
         temp.temperature = (temp.temperature * 10) / 16;
         temp.humidity = (temp.humidity * 10) / 16;
 
-        if(m_log) {
-            if(m_additionalLogging) {
-                char outStr[128];
-                outStr[0] = '0';
-                outStr[1] = 'x';
-                for(int i=0; i < 10; i++) {
-                    sprintf(&outStr[2+i*2], "%02X", m_bleData.payload[i+10]);
-                }
-                m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: outputData");
+        if(m_additionalLogging) {
+            char outStr[128];
+            outStr[0] = '0';
+            outStr[1] = 'x';
+            for(int i=0; i < 10; i++) {
+                sprintf(&outStr[2+i*2], "%02X", m_bleData.payload[i+10]);
             }
-            m_log->print( __FILE__, __LINE__, 1, m_bleData.addr, "TempHumidityParser: addr");
-            m_log->printI( __FILE__, __LINE__, 1, temp.temperature, temp.humidity, "TempHumidityParser: temperature, humidity");
-            //m_log->print( __FILE__, __LINE__, 1, temp.batteryVoltage, temp.temperature, temp.humidity, "TempHumidityParser: batteryVoltage, temperature, humidity");
-            //m_log->print( __FILE__, __LINE__, 1, temp.upTime, "TempHumidityParser: upTime");
+            ESP_LOGI(TAG, "outputData=%s", outStr);
         }
+        ESP_LOGI(TAG, "addr=%s", m_bleData.addr);
+        ESP_LOGI(TAG, "temperature=%d humidity=%d", temp.temperature, temp.humidity);
+
+        //m_log->print( __FILE__, __LINE__, 1, temp.batteryVoltage, temp.temperature, temp.humidity, "TempHumidityParser: batteryVoltage, temperature, humidity");
+        //m_log->print( __FILE__, __LINE__, 1, temp.upTime, "TempHumidityParser: upTime");
 
         addData(temp);
 
     } else if(m_bleData.payloadLen == 22) {
         int8_t index = dataFresh(&m_bleData.payload[4]);
         if(index >= 0) {
-            m_log->print( __FILE__, __LINE__, 0x10000, index, millis(), m_lastUpdate[index], "Probable duplicate: index, millis, m_lastUpdate");
+            ESP_LOGD(TAG, "Probable duplicate: index=%u millis=%u m_lastUpdate=%u", index, (unsigned)millis(), (unsigned)m_lastUpdate);
             m_numDuplicates++;
             return;
         }
@@ -102,24 +100,20 @@ void TempHumidityParser::parse() {
         highestTemp = (highestTemp * 10) / 16;
         lowestTemp = (lowestTemp * 10) / 16;
 
-        if(m_log) {
-            if(m_additionalLogging) {
-                char outStr[128];
-                outStr[0] = '0';
-                outStr[1] = 'x';
-                for(int i=0; i < 12; i++) {
-                    sprintf(&outStr[2+i*2], "%02X", m_bleData.payload[i+10]);
-                }
-                m_log->print( __FILE__, __LINE__, 1, outStr, "TempHumiditySensor: outputData22");
+        if(m_additionalLogging) {
+            char outStr[128];
+            outStr[0] = '0';
+            outStr[1] = 'x';
+            for(int i=0; i < 12; i++) {
+                sprintf(&outStr[2+i*2], "%02X", m_bleData.payload[i+10]);
             }
-            m_log->print( __FILE__, __LINE__, 1, m_bleData.addr, "TempHumidityParser: addr");
-            m_log->printI( __FILE__, __LINE__, 1, highestTemp, highestTempRuntime, "TempHumidityParser: highestTemp, highestTempRuntime");
-            m_log->printI( __FILE__, __LINE__, 1, lowestTemp, lowestTempRuntime, "TempHumidityParser: lowestTemp, lowestTempRuntime");
+            ESP_LOGI(TAG, "outputData22=%s", outStr);
         }
+        ESP_LOGI(TAG, "addr=%s", m_bleData.addr);
+        ESP_LOGI(TAG, "highestTemp=%d runTime=%lu", highestTemp, highestTempRuntime);
+        ESP_LOGI(TAG, "lowestTemp=%d runTime=%lu", lowestTemp, lowestTempRuntime);
     } else {
-        if(m_log) {
-            m_log->print( __FILE__, __LINE__, 1, m_bleData.payloadLen, "TempHumidityParser - insufficient bytes to parse: payloadLen");
-        }
+        ESP_LOGW(TAG, "insufficient bytes to parse: payloadLen=%u", m_bleData.payloadLen);
     }
 }
 
@@ -176,21 +170,17 @@ void TempHumidityParser::addData(tempHumidityData_t &data) {
     }
     if(index >= 0) {
         m_data[index] = data;
-        if(m_log) {
-            m_log->print( __FILE__, __LINE__, 1, index, m_dataFresh[index], "TempHumidityParser::addData: index, dataFresh");
-        }
+        ESP_LOGI(TAG, "Found index: %u, %u", index, m_dataFresh[index]);
         m_dataFresh[index] = true;
         m_lastUpdate[index] = millis();
     } else {
-        if(m_log) {
-            m_log->print( __FILE__, __LINE__, 1, index, "TempHumidityParser::addData: failed to find empty index");
-        }
+        ESP_LOGW(TAG, "Failed to find empty index");
     }
 }
 
 void TempHumidityParser::scanComplete() {
     m_uploadRequest = true;
-    m_log->print( __FILE__, __LINE__, 0x0001, m_numDuplicates, "scan complete: m_numDuplicates");
+    ESP_LOGI(TAG, "ScanComplete: m_numDuplicates=%u", m_numDuplicates);
     m_numDuplicates = 0;
 }
 void TempHumidityParser::slice( void) {
@@ -201,9 +191,7 @@ void TempHumidityParser::slice( void) {
         case STATE_IDLE:
             if((m_timer.hasIntervalElapsed() || m_uploadRequest) && m_uploadClient) {
                 m_timer.setInterval(s_UPLOAD_TIME_MS);
-                if(m_log) {
-                    m_log->print( __FILE__, __LINE__, 1, "uploading data");
-                }
+                ESP_LOGD(TAG, "uploading data");
                 m_uploadRequest = false;
                 m_uploadIndex = 0;
                 m_state = STATE_UPLOAD;
@@ -211,9 +199,7 @@ void TempHumidityParser::slice( void) {
         break;
         case STATE_UPLOAD:
             if(m_uploadIndex >= MAX_TEMP_HUM_SENSORS) {
-                if(m_log) {
-                    m_log->print( __FILE__, __LINE__, 1, "upload complete");
-                }
+                ESP_LOGD(TAG, "upload complete");
                 m_state = STATE_IDLE;
             } else if(m_dataFresh[m_uploadIndex]) {
                 m_state = STATE_UPLOAD_WAIT;

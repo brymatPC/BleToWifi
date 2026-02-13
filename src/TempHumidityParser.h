@@ -11,7 +11,6 @@
 #define MAX_SEND_BUF_SIZE 128
 #define MAX_ROUTE_LEN     32
 
-class DebugLog;
 class UploadDataClient;
 
 typedef struct {
@@ -27,7 +26,6 @@ private:
     static const unsigned int s_UPLOAD_TIME_MS;
     static char s_ROUTE[];
 
-    DebugLog* m_log;
     IntervalTimer m_timer;
     UploadDataClient* m_uploadClient;
     bool m_uploadRequest;
@@ -52,7 +50,6 @@ public:
     virtual ~TempHumidityParser() { }
     virtual const char* sliceName( ) { return "TempHumidityParser"; }
 
-    void init(DebugLog *log) {m_log = log;}
     void setUploadClient(UploadDataClient *client) { m_uploadClient = client; }
     virtual void slice( void);
     void enableAdditionalLogging(bool enable) { m_additionalLogging = enable; }

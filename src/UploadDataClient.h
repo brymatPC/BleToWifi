@@ -4,7 +4,6 @@
 #include <core/Sliceable.h>
 #include <Preferences.h>
 
-class DebugLog;
 class NetworkClient;
 
 #define MAX_HEADER_BUF_SIZE 128
@@ -24,7 +23,6 @@ private:
     char *m_fileToSend;
     unsigned m_fileLength;
 
-    DebugLog *m_log;
     NetworkClient* m_client;
 
   void changeState( uint8_t newState);
@@ -33,7 +31,7 @@ public:
     UploadDataClient();
     virtual ~UploadDataClient();
     virtual const char* sliceName( ) { return "UploadDataClient"; }
-    void init(DebugLog* log = NULL);
+    void init();
     virtual void slice( void);
     void setup(Preferences &pref);
     void save(Preferences &pref);

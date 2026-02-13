@@ -1,8 +1,10 @@
 #include "LedStripDriver.h"
-#include <utility/DebugLog.h>
+#include <esp_log.h>
 
 #define RMT_LED_STRIP_RESOLUTION_HZ 10000000 // 10MHz resolution, 1 tick = 0.1us (led strip needs a high resolution)
 #define RMT_LED_STRIP_GPIO_NUM      21
+
+static const char* TAG = "LedStr";
 
 // Low intensity blue
 const uint32_t LedStripDriver::s_DEFAULT_COLOUR = 0x00100000;
@@ -89,9 +91,8 @@ void LedStripDriver::setLedOnOffMs(uint32_t on, uint32_t off) {
     m_ledState = false;
 }
 
-void LedStripDriver::setup(DebugLog *log) {
+void LedStripDriver::setup() {
     esp_err_t err;
-    m_log = log;
 
     rmt_tx_channel_config_t tx_chan_config = {
         .gpio_num = (gpio_num_t) RMT_LED_STRIP_GPIO_NUM,
@@ -102,8 +103,8 @@ void LedStripDriver::setup(DebugLog *log) {
     };
     err = rmt_new_tx_channel(&tx_chan_config, &m_ledChan);
 
-    if(err != ESP_OK && m_log) {
-        m_log->print( __FILE__, __LINE__, 1, err, "LedStripDriver::setup - new tx chan, error");
+    if(err != ESP_OK) {
+        ESP_LOGW(TAG, "new tx chan, error: %d", err);
     }
 
     const rmt_simple_encoder_config_t simple_encoder_cfg = {
@@ -112,14 +113,14 @@ void LedStripDriver::setup(DebugLog *log) {
     };
     err = rmt_new_simple_encoder(&simple_encoder_cfg, &m_encoder);
 
-    if(err != ESP_OK && m_log) {
-        m_log->print( __FILE__, __LINE__, 1, err, "LedStripDriver::setup - new encoder, error");
+    if(err != ESP_OK) {
+        ESP_LOGW(TAG, "new encoder, error: %d", err);
     }
 
     err = rmt_enable(m_ledChan);
 
-    if(err != ESP_OK && m_log) {
-        m_log->print( __FILE__, __LINE__, 1, err, "LedStripDriver::setup - enable, error");
+    if(err != ESP_OK) {
+        ESP_LOGW(TAG, "enable, error: %d", err);
     }
 }
 
@@ -150,8 +151,8 @@ void LedStripDriver::transmit(uint32_t pixelVal) {
     led_strip_pixels[2] = (uint8_t) ((pixelVal & 0x00FF0000) >> 16);
     esp_err_t err = rmt_transmit(m_ledChan, m_encoder, led_strip_pixels, sizeof(led_strip_pixels), &tx_config);
     
-    if(err != ESP_OK && m_log) {
-        m_log->print( __FILE__, __LINE__, 1, err, "LedStripDriver::setLed - error");
+    if(err != ESP_OK) {
+        ESP_LOGW(TAG, "rmt_transmit, error: %d", err);
     }
 }
 void LedStripDriver::push() {

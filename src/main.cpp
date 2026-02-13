@@ -11,8 +11,6 @@
 #include "VictronDevice.h"
 #include "AppManager.h"
 
-#include <utility/DebugLog.h>
-
 #ifdef HAS_LED_STRIP
   #include "LedStripDriver.h"
 #endif
@@ -50,9 +48,9 @@
 
 static char s_appName[] = "ESP32 BLE Test";
 static char s_appVersion[] = "0.9.0";
+static const char* TAG = "Main";
 
 Preferences pref;
-DebugLog dbg;
 CircularQ<char, LOCAL_LOG_BUFFER_SIZE> m_logQ;
 AppManager appMgr(s_appName, s_appVersion);
 YRShellEsp32 shell;
@@ -75,7 +73,7 @@ TempHumidityParser tempHumParser;
 esp_reset_reason_t resetReasonStartup;
 
 void timeSyncNotification(struct timeval *tv) {
-    dbg.print(__FILE__, __LINE__, 1, "Notification of a time synchronization event");
+    ESP_LOGI(TAG, "Time synchronization event");
 }
 
 void startSntp(void) {
@@ -84,9 +82,9 @@ void startSntp(void) {
     config.sync_cb = timeSyncNotification;
     err = esp_netif_sntp_init(&config);
     if(err != ESP_OK) {
-      dbg.print(__FILE__, __LINE__, 1, err, "startSntp:init - error");
+      ESP_LOGW(TAG, "SNTP error: %u", err);
     } else {
-      dbg.print(__FILE__, __LINE__, 1, "startSntp - ntp request started");
+      ESP_LOGI(TAG, "NTP request started");
     }
 }
 
@@ -135,7 +133,6 @@ void setup(){
   unsigned httpPort = 80;
   unsigned telnetPort = 23;
   unsigned telnetLogPort = 2023;
-  dbg.setMask( LOG_MASK);
   
   // Use these to redirect Arduino logging
   ets_install_putc2(&log_char);
@@ -150,6 +147,10 @@ void setup(){
   esp_log_level_set("HttpS", ESP_LOG_WARN);
   esp_log_level_set("TelnetS", ESP_LOG_WARN);
   esp_log_level_set("BleCon", ESP_LOG_INFO);
+  esp_log_level_set("LedStr", ESP_LOG_WARN);
+  esp_log_level_set("Upload", ESP_LOG_WARN);
+  esp_log_level_set("THParse", ESP_LOG_WARN);
+  esp_log_level_set("Victron", ESP_LOG_WARN);
 
   resetReasonStartup = esp_reset_reason();
 
@@ -158,12 +159,10 @@ void setup(){
   // Use this with basic Arduino logging
   //Serial.setDebugOutput(true);
 
-  dbg.print( __FILE__, __LINE__, 1, "\r\n\n");
-
   if(!LittleFS.begin()) {
-    dbg.print( __FILE__, __LINE__, 1, "setup_Could_not_mount_file_system:");
+    ESP_LOGW(TAG, "Could not mount filesystem");
   } else {
-    dbg.print( __FILE__, __LINE__, 1, "setup_Mounted_file_system:");
+    ESP_LOGD(TAG, "Mounted filesystem");
   }
 
   appMgr.init(pref);
@@ -173,7 +172,7 @@ void setup(){
   #ifndef HAS_LED_STRIP
   onBoardLed.setLedPin( LED_PIN);
 #else
-  ledStrip.setup(&dbg);
+  ledStrip.setup();
 #endif
 
   wifiConnection.setup(pref);
@@ -192,7 +191,7 @@ void setup(){
     telnetLogServer.init( telnetLogPort);
   }
 
-  uploadClient.init(&dbg);
+  uploadClient.init();
   uploadClient.setup(pref);
 
 #ifndef YRSHELL_ON_TELNET
@@ -215,14 +214,12 @@ void setup(){
   shell.setLedStrip(&ledStrip);
 #endif
   victronParser.setup(pref);
-  victronParser.init(&dbg);
   victronParser.setUploadClient(&uploadClient);
-  tempHumParser.init(&dbg);
   tempHumParser.setUploadClient(&uploadClient);
   shell.init();
 
   startSntp();
-  dbg.print( __FILE__, __LINE__, 1, "setup_done:");
+  ESP_LOGD(TAG, "Setup complete");
 }
 
 

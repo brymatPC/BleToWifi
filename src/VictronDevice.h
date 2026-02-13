@@ -10,7 +10,6 @@
 #define MAX_VIC_SEND_BUF_SIZE 128
 #define VICTRON_KEY_LEN 16
 
-class DebugLog;
 class UploadDataClient;
 
 typedef struct {
@@ -28,7 +27,6 @@ private:
     static char s_ROUTE[];
     
     uint8_t m_key[VICTRON_KEY_LEN];
-    DebugLog* m_log;
     IntervalTimer m_timer;
     UploadDataClient* m_uploadClient;
     bool m_uploadRequest;
@@ -49,7 +47,6 @@ public:
     void setup(Preferences &pref);
     void save(Preferences &pref);
 
-    void init(DebugLog *log) {m_log = log;}
     void setUploadClient(UploadDataClient *client) { m_uploadClient = client; }
     virtual void slice( void);
 

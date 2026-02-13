@@ -9,16 +9,12 @@
 
 // Code copied from esp-idf examples: https://github.com/espressif/esp-idf/blob/release/v6.0/examples/peripherals/rmt/led_strip_simple_encoder/main/led_strip_example_main.c
 
-class DebugLog;
-
 class LedStripDriver : public Sliceable, public LedDriver {
 private:
     static const uint32_t s_DEFAULT_COLOUR;
 
     rmt_channel_handle_t m_ledChan;
     rmt_encoder_handle_t m_encoder;
-
-    DebugLog* m_log;
 
     uint32_t m_colour;
     int8_t m_tos;
@@ -35,7 +31,7 @@ public:
     virtual ~LedStripDriver();
     virtual const char* sliceName( ) { return "LedStripDriver"; }
     virtual void slice();
-    void setup(DebugLog *log);
+    void setup();
     void setLed(uint32_t pixelVal) {m_colour = pixelVal; }
 
     void setLedOnOffMs( uint32_t on, uint32_t off);

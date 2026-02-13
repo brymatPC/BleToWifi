@@ -1,7 +1,6 @@
 #include "VictronDevice.h"
 #include "UploadDataClient.h"
-
-#include <utility/DebugLog.h>
+#include <esp_log.h>
 
 #include <aes/esp_aes.h>
 
@@ -13,6 +12,8 @@ typedef enum {
   STATE_SEND_WAIT   = 4,
 
 } victronStates_t;
+
+static const char* TAG = "Victron";
 
 const char VictronDevice::s_PREF_NAMESPACE[] = "vic";
 const unsigned int VictronDevice::s_UPLOAD_TIME_MS = 120000;
@@ -51,9 +52,7 @@ void VictronDevice::save(Preferences &pref) {
     pref.begin(s_PREF_NAMESPACE, false);
     pref.putBytes("key", m_key, VICTRON_KEY_LEN);
     pref.end();
-    if( m_log) {
-        m_log->print( __FILE__, __LINE__, 1, "VictronDevice::save: pref updated" );
-    }
+    ESP_LOGI(TAG, "pref updated");
 }
 void VictronDevice::setKey(const char *key) {
     uint8_t tempKey[VICTRON_KEY_LEN];
@@ -71,16 +70,16 @@ void VictronDevice::setKey(const char *key) {
     }
     if(keyValid) {
         memcpy(m_key, tempKey, VICTRON_KEY_LEN);
-        m_log->printX( __FILE__, __LINE__, 1, m_key[0], m_key[1], "VictronDevice: key updated: key_0, key_1");
+        ESP_LOGI(TAG, "key updated: key_0=0x%02X key_1=0x%02X", m_key[0], m_key[1]);
     } else {
-        m_log->print( __FILE__, __LINE__, 1, num, "VictronDevice: key invalid, ignoring: num");
+        ESP_LOGI(TAG, "key invalid, ignoring: num=%u", num);
     }
 }
 void VictronDevice::parse() {
     if(m_bleData.payloadLen == 0 || m_bleData.payload == nullptr) return;
 
     if(m_dataFresh && (millis() < (m_lastUpdate + 30000))) {
-        m_log->print( __FILE__, __LINE__, 0x10000, millis(), m_lastUpdate, "Probable duplicate: millis, m_lastUpdate");
+        ESP_LOGI(TAG, "Probable duplicate: millis=%u m_lastUpdate=%u", (unsigned)millis(), (unsigned)m_lastUpdate);
         m_numDuplicates++;
         return;
     }
@@ -92,10 +91,7 @@ void VictronDevice::parse() {
         uint8_t readOutType = m_bleData.payload[5];
         uint8_t recordType = m_bleData.payload[6];
 
-        if(m_log) {
-            m_log->printX( __FILE__, __LINE__, 0x1000, companyId, modelId, "VictronDevice: companyId, modelId");
-            //m_log->printX( __FILE__, __LINE__, 1, dataRecordType, readOutType, recordType, "VictronDevice: dataRecordType, readOutType, recordType");
-        }
+        ESP_LOGI(TAG, "companyId=0x%04X modelId=0x%04X", companyId, modelId);
     }
 
     if(m_bleData.payloadLen >= 25) {
@@ -110,15 +106,11 @@ void VictronDevice::parse() {
             // payload 10-25 are the encrypted bytes
             decrypt();
         } else {
-            if(m_log) {
-                m_log->print( __FILE__, __LINE__, 1, "VictronDevice - key not valid, can't decrypt");
-            }
+            ESP_LOGW(TAG, "key not valid, can't decrypt");
         }
 
     } else {
-        if(m_log) {
-            m_log->print( __FILE__, __LINE__, 1, m_bleData.payloadLen, "VictronDevice - insufficient bytes to parse: payloadLen");
-        }
+        ESP_LOGW(TAG, "insufficient bytes to parse: payloadLen=%u", m_bleData.payloadLen);
     }
 }
 void VictronDevice::decrypt() {
@@ -131,9 +123,7 @@ void VictronDevice::decrypt() {
     esp_aes_init(&ctx);
     int status = esp_aes_setkey(&ctx, m_key, 128);
     if(status != 0) {
-        if(m_log) {
-            m_log->print( __FILE__, __LINE__, 1, status, "VictronDevice - failed to start aes: status");
-        }
+        ESP_LOGW(TAG, "failed to start aes: status=%d", status);
         return;
     }
     // construct the 16-byte nonce counter array by piecing it together byte-by-byte.
@@ -144,9 +134,7 @@ void VictronDevice::decrypt() {
     esp_aes_free(&ctx);
 
     if (status != 0) {
-        if(m_log) {
-            m_log->print( __FILE__, __LINE__, 1, status, "VictronDevice - failed to decrypt: status");
-        }
+        ESP_LOGW(TAG, "failed to decrypt: status=%d", status);
     } else {
         // Bits 15:0 - TTG (minutes)
         // Bits 31:16 - Battery voltage (0.01 V)
@@ -173,12 +161,8 @@ void VictronDevice::decrypt() {
             batteryCurrent *= -1;
         }
 
-        if(m_log) {
-            m_log->print( __FILE__, __LINE__, 1, m_bleData.addr, "VictronDevice: addr");
-            m_log->printI( __FILE__, __LINE__, 1, batteryVoltage, batteryCurrent, "VictronDevice: batteryVoltage, batteryCurrent");
-            //m_log->print( __FILE__, __LINE__, 1, auxVoltage, auxType, "VictronDevice: auxVoltage, auxType");
-            //m_log->print( __FILE__, __LINE__, 1, timeToGo, consumed, stateOfCharge, "VictronDevice: timeToGo, consumed, stateOfCharge");
-        }
+        ESP_LOGI(TAG, "addr=%s", m_bleData.addr);
+        ESP_LOGI(TAG, "batteryVoltage=%u batteryCurrent=%d", batteryVoltage, batteryCurrent);
 
         m_data.timeToGo = timeToGo;
         m_data.batteryVoltage = batteryVoltage;
@@ -188,21 +172,19 @@ void VictronDevice::decrypt() {
         m_lastUpdate = millis();
 
         #ifdef LOG_OUTPUT_DATA
-            if(m_log) {
-                char outStr[128];
-                outStr[0] = '0';
-                outStr[1] = 'x';
-                for(int i=0; i < 15; i++) {
-                    sprintf(&outStr[2+i*2], "%02X", outputData[i]);
-                }
-                m_log->print( __FILE__, __LINE__, 1, outStr, "VictronDevice: outputData");
+            char outStr[128];
+            outStr[0] = '0';
+            outStr[1] = 'x';
+            for(int i=0; i < 15; i++) {
+                sprintf(&outStr[2+i*2], "%02X", outputData[i]);
             }
+            ESP_LOGI(TAG, "outputData=%s", outStr);
         #endif
     }
 }
 void VictronDevice::scanComplete() {
     m_uploadRequest = true;
-    m_log->print( __FILE__, __LINE__, 0x0001, m_numDuplicates, "scan complete: m_numDuplicates");
+    ESP_LOGI(TAG, "ScanComplete: m_numDuplicates=%u", m_numDuplicates);
     m_numDuplicates = 0;
 }
 void VictronDevice::slice( void) {
@@ -216,9 +198,7 @@ void VictronDevice::slice( void) {
         case STATE_IDLE:
             if((m_timer.hasIntervalElapsed() || m_uploadRequest) && m_uploadClient) {
                 m_timer.setInterval(s_UPLOAD_TIME_MS);
-                if(m_log) {
-                    m_log->print( __FILE__, __LINE__, 1, "uploading data");
-                }
+                ESP_LOGD(TAG, "uploading data");
                 m_uploadRequest = false;
                 m_state = STATE_UPLOAD;
             }
@@ -227,9 +207,7 @@ void VictronDevice::slice( void) {
             if(m_dataFresh) {
                 m_state = STATE_UPLOAD_WAIT;
             } else {
-                if(m_log) {
-                    m_log->print( __FILE__, __LINE__, 1, "No data to upload");
-                }
+                ESP_LOGD(TAG, "No data to upload");
                 m_state = STATE_IDLE;
             }
         break;
@@ -244,9 +222,7 @@ void VictronDevice::slice( void) {
         break;
         case STATE_SEND_WAIT:
             if(!m_uploadClient->busy()) {
-                if(m_log) {
-                    m_log->print( __FILE__, __LINE__, 1, "upload complete");
-                }
+                ESP_LOGD(TAG, "upload complete");
                 m_state = STATE_IDLE;
             }
         break;

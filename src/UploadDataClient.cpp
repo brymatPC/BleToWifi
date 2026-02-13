@@ -1,15 +1,16 @@
 #include "UploadDataClient.h"
 
-#include <utility/DebugLog.h>
-
 #if defined (ESP32)
   #include <Wifi.h>
+  #include <esp_log.h>
   #define WIFI_MODE_UNAVAILABLE (WIFI_MODE_NULL)
 #else
   #warning "WiFi is not supported on the selected target"
 #endif
 
 #include <NetworkClient.h>
+
+static const char* TAG = "Upload";
 
 typedef enum {
   STATE_STARTUP         = 0,
@@ -37,8 +38,7 @@ UploadDataClient::UploadDataClient() {
 UploadDataClient::~UploadDataClient( void) {
 }
 
-void UploadDataClient::init(DebugLog* log) {
-    m_log = log;
+void UploadDataClient::init() {
 }
 void UploadDataClient::setup(Preferences &pref) {
     pref.begin(s_PREF_NAMESPACE, true);
@@ -51,9 +51,7 @@ void UploadDataClient::save(Preferences &pref) {
     pref.putString("ip", m_ip);
     pref.putULong("port", m_port);
     pref.end();
-    if( m_log) {
-        m_log->print( __FILE__, __LINE__, 1, "UploadDataClient::save: pref updated" );
-    }
+    ESP_LOGI(TAG, "pref updated");
 }
 void UploadDataClient::setHostIp(const char *ip) {
     strncpy(m_ip, ip, UDC_IP_LEN);
@@ -65,9 +63,7 @@ bool UploadDataClient::busy() {
     return m_state != STATE_IDLE || m_sendRequest;
 }
 void UploadDataClient::changeState( uint8_t newState) {
-    if( m_log != NULL) {
-        m_log->print( __FILE__, __LINE__, 0x100000, (uint32_t) m_state, (uint32_t) newState, "UploadDataClient_changeState: state, newState");
-    }
+    ESP_LOGI(TAG, "change state from%u to %u", m_state, newState);
     m_state = newState;
 }
 void UploadDataClient::sendHeader() {
@@ -78,9 +74,7 @@ void UploadDataClient::sendHeader() {
     }
 }
 void UploadDataClient::sendFile(char *route, char *file, unsigned len) {
-    if( m_log != NULL) {
-        m_log->print( __FILE__, __LINE__, 0x100000, (uint32_t) len, "UploadDataClient_sendFile: len");
-    }
+    ESP_LOGI(TAG, "File len: %u", len);
     if(route != nullptr && file != nullptr && len > 0) {
         m_routeToSend = route;
         m_fileToSend = file;
@@ -104,8 +98,8 @@ void UploadDataClient::slice() {
         case STATE_CONNECTING:
         {
             int ret = m_client->connect(m_ip, m_port, 100);
-            if(m_log && ret != 1) {
-                m_log->print( __FILE__, __LINE__, 0x100001, (uint32_t) ret, "UploadDataClient: connect_ret");
+            if(ret != 1) {
+                ESP_LOGI(TAG, "Connect failed: %d", ret);
             }
             if(m_client->connected()) {
                 changeState( STATE_CONNECTED);
@@ -125,9 +119,7 @@ void UploadDataClient::slice() {
         break;
         case STATE_DISCONNECTING:
             m_client->stop();
-            if(m_log) {
-                m_log->print( __FILE__, __LINE__, 0x100000, "UploadDataClient: done");
-            }
+            ESP_LOGD(TAG, "Done");
             changeState( STATE_IDLE);
         break;
     }

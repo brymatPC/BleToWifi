@@ -76,7 +76,6 @@ void AppManager::slice( void) {
         ESP_LOGI(TAG, "AppName: %s; AppVersion: %s", m_appName, m_appVersion);
         ESP_LOGI(TAG, "bootCount: %d", m_bootCount);
         ESP_LOGI(TAG, "Reset Reason: %d, %s", resetReasonStartup, resetStr);
-        ESP_LOGI(TAG, "Hex test: %02X", 0xA5);
     }
 
     switch(m_state) {
