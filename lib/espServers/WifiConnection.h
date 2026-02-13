@@ -9,7 +9,6 @@
 #endif
 #include <core/Sliceable.h>
 #include <core/IntervalTimer.h>
-#include <utility/DebugLog.h>
 #include "LedDriver.h"
 
 #define MAX_WIFI_ENTRY_LEN 32
@@ -40,7 +39,6 @@ protected:
   uint32_t m_connectTimeout;
   int32_t m_maxRssi;
   uint8_t m_maxRssiIndex;
-  DebugLog* m_log;
   LedDriver* m_led;
   bool m_enable;
   bool m_requestOff;
@@ -50,7 +48,7 @@ protected:
   void hostConfig( void);
 
 public:
-  WifiConnection( LedDriver* led, DebugLog* log = NULL, uint32_t connectTimeout = 5000); 
+  WifiConnection( LedDriver* led, uint32_t connectTimeout = 5000); 
   virtual ~WifiConnection() { }
   virtual const char* sliceName( void) { return "WifiConnection"; }
   virtual void slice( void);

@@ -61,7 +61,7 @@ YRShellEsp32 shell;
   LedStripDriver ledStrip;
   LedDriver* ledDriver = &ledStrip;
 #endif
-WifiConnection wifiConnection(ledDriver, &dbg);
+WifiConnection wifiConnection(ledDriver);
 HttpExecServer httpServer;
 TelnetServer telnetServer;
 TelnetLogServer telnetLogServer;
@@ -133,6 +133,7 @@ void setup(){
   esp_log_set_vprintf(custom_log_handler);
   esp_log_level_set("*", ESP_LOG_WARN);
   esp_log_level_set("AppMgr", ESP_LOG_INFO);
+  esp_log_level_set("WifiCon", ESP_LOG_INFO);
 
   resetReasonStartup = esp_reset_reason();
 

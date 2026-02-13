@@ -3,6 +3,8 @@
 #define BLINK_SPEED_CONNECTING_MS 200
 #define BLINK_SPEED_SCANNING_MS 400
 
+static const char* TAG = "WifiCon";
+
 const char WifiConnection::s_PREF_NAMESPACE[] = "wifi";
 const char WifiConnection::s_DEFAULT_HOST_NAME[] = "esp32";
 const char WifiConnection::s_DEFAULT_HOST_PASSWORD[] = "espPassword";
@@ -61,9 +63,8 @@ static bool stringToUnsignedX( const char* P, uint32_t* V) {
     return rc;
 }
 
-WifiConnection::WifiConnection( LedDriver* led, DebugLog* log, uint32_t connectTimeout) {
+WifiConnection::WifiConnection( LedDriver* led, uint32_t connectTimeout) {
   m_led = led;
-  m_log = log;
   m_connectTimeout = connectTimeout;
   m_currentAp = 0;
   m_state = STATE_RESET;
@@ -137,9 +138,7 @@ void WifiConnection::save(Preferences &pref) {
         pref.putString(parserKey, m_networkPassword[i]);
     }
     pref.end();
-    if( m_log) {
-        m_log->print( __FILE__, __LINE__, 1, "WifiConnection::save: pref updated" );
-    }
+    ESP_LOGI(TAG, "Preferences updated");
 }
 const char* WifiConnection::getNetworkIp( void) {
     static char ipStr[MAX_WIFI_ENTRY_LEN];
@@ -178,9 +177,7 @@ void WifiConnection::setNetworkPassword( uint8_t index, const char* networkPassw
     strncpy(m_networkPassword[index], networkPassword, MAX_WIFI_ENTRY_LEN);
 }
 void WifiConnection::changeState( uint8_t state) {
-  if( m_log) {
-    m_log->print( __FILE__, __LINE__, 0x100000, m_state, state, "WifiConnection::changeState: m_state, state" );
-  }
+  ESP_LOGI(TAG, "Change state from %u to %u", m_state, state);
   m_state = state;
 }
 
@@ -221,16 +218,13 @@ void WifiConnection::slice( ) {
       }
       p = getNetworkName( m_currentAp );
       q = getNetworkPassword( m_currentAp );
-      m_log->print( __FILE__, __LINE__, 1, m_currentAp, "WifiConnection::slice_connecting: currentAp" );
-      m_log->print( __FILE__, __LINE__, 1, p, q, "WifiConnection::slice_connecting: p, q" );
+      ESP_LOGI(TAG, "Connecting %u, %s, %s", m_currentAp, p, q);
       if( *p == '\0' || *q == '\0') {
         changeState( STATE_WAIT_CONNECT);
       } else {
         WiFi.begin( (char*)p,  q);
         changeState( STATE_WAIT_CONNECT);
-        if( m_log) {
-          m_log->print( __FILE__, __LINE__, 1, p, "WifiConnection::slice_connecting: networkName" );
-        }
+        ESP_LOGI(TAG, "Connecting %s", p);
       }
     break;
 
@@ -256,9 +250,7 @@ void WifiConnection::slice( ) {
     case STATE_CONNECTING:
       p = getNetworkName( m_currentAp );
       q = getNetworkIp();
-      if( m_log) {
-        m_log->print( __FILE__, __LINE__, 1,  p, q, "WifiConnection::slice_connected: networkName, networkIp" );
-      }
+      ESP_LOGI(TAG, "Connected %s, %s", p, q);
       m_timer.setInterval( 500);
       changeState( STATE_CONNECTED);
       if( m_led) {
@@ -271,9 +263,7 @@ void WifiConnection::slice( ) {
         changeState( STATE_TURN_OFF);
       } else if( m_timer.isNextInterval() ) {
         if(WiFi.status() != WL_CONNECTED) {
-            if( m_log) {
-              m_log->print( __FILE__, __LINE__, 1,  getNetworkName( m_currentAp ), "WifiConnection::slice_disconnected: networkName" );
-            }
+          ESP_LOGI(TAG, "Disconnected %s", getNetworkName( m_currentAp ));
           changeState( STATE_NEXT_NETWORK);
         }
       }
@@ -296,9 +286,7 @@ void WifiConnection::slice( ) {
       if( m_timer.hasIntervalElapsed() ) {
         WiFi.scanNetworks( true);
         m_timer.setInterval( m_connectTimeout * 2);
-        if( m_log) {
-          m_log->print( __FILE__, __LINE__, 1, "WifiConnection_slice_scanStarted: " );
-        }
+        ESP_LOGI(TAG, "Start scan");
         changeState( STATE_PARSE_NETWORKS);
       }
     break;
@@ -307,9 +295,7 @@ void WifiConnection::slice( ) {
       i = WiFi.scanComplete();
       if( i > 0) {
         m = getNumberOfNetworks();
-        if( m_log) {
-          m_log->print( __FILE__, __LINE__, 1, i, m, "WifiConnection_slice_scan: numberOfNetworks, lastIndex" );
-        }
+        ESP_LOGI(TAG, "Parse %d, %d network", i, m);
         for( int j = 0; j < i; j++ ) {
           for( k = 0; k < m; k++ ) {
             if( !strcmp( WiFi.SSID( j).c_str(), getNetworkName( k)) ) {
@@ -319,18 +305,14 @@ void WifiConnection::slice( ) {
                 m_maxRssi = RSSI;
                 m_maxRssiIndex = k;
               }
-              if( m_log) {
-                m_log->print( __FILE__, __LINE__, 1, m_maxRssiIndex, 0 - m_maxRssi, WiFi.SSID( j).c_str(), "WifiConnection::slice_scan: maxRssiIndex, maxRssi, networkName");
-              }
+              ESP_LOGI(TAG, "Max RSSI index %d, max RSSI %d, network %s", m_maxRssiIndex, 0 - m_maxRssi, WiFi.SSID( j).c_str());
             }
           }
         }
         WiFi.scanDelete( );
         changeState( STATE_CONFIGURE_AP);
       } else if( m_timer.hasIntervalElapsed()) {
-        if( m_log) {
-          m_log->print( __FILE__, __LINE__, 1, i, "WifiConnection::slice_scan_timeout:" );
-        }
+        ESP_LOGW(TAG, "Scan timeout");
         WiFi.scanDelete( );
         changeState( STATE_CONFIGURE_AP);
       }
@@ -339,24 +321,18 @@ void WifiConnection::slice( ) {
     case STATE_CONFIGURE_AP:
       p = m_hostName;
       q = m_hostPassword;
-      m_log->print( __FILE__, __LINE__, 1, p, q, "WifiConnection::slice_host: p, q" );
+      ESP_LOGI(TAG, "Host: %s, %s", p, q);
       if( *p == '\0' || *q == '\0') {
-        if( m_log) {
-          m_log->print( __FILE__, __LINE__, 1, p, q, "WifiConnection::slice_no_host_notConnecting: p, q" );
-        }
+        ESP_LOGI(TAG, "No Host: %s, %s", p, q);
       } else {
         hostConfig( );
         if( WiFi.softAP( p, q) ) {
             m_hostActive = true;
-          if( m_log) {
-            m_log->print( __FILE__, __LINE__, 1, p, q, "WifiConnection_slice_host_up: networkName, networkPassword" );
-            m_log->print( __FILE__, __LINE__, 1, WiFi.softAPIP().toString().c_str(), WiFi.softAPmacAddress().c_str(), "WifiConnection_slice_host_up: softApIp, softApMac" );
-          }
+            ESP_LOGI(TAG, "Host Up: %s, %s", p, q);
+            ESP_LOGI(TAG, "Host: IP %s, Mac %s", WiFi.softAPIP().toString().c_str(), WiFi.softAPmacAddress().c_str());
         } else {
           m_hostActive = false;
-          if( m_log) {
-            m_log->print( __FILE__, __LINE__, 1, p, q, "WifiConnection::slice_host_not_up: p, q" );
-          }
+          ESP_LOGI(TAG, "Host not up: %s, %s", p, q);
         }
       }
       changeState( STATE_AP_READY);
@@ -364,7 +340,7 @@ void WifiConnection::slice( ) {
 
     case STATE_AP_READY:
       m_currentAp = m_maxRssiIndex == 0 ? 0 : m_maxRssiIndex;
-      m_log->print( __FILE__, __LINE__, 1, m_enable,  m_currentAp, getNumberOfNetworks(), "WifiConnection::slice_scan_done: enable, m_currentAp, numberOfNetworks" );
+      ESP_LOGI(TAG, "AP ready: %u, %u, %d", m_enable,  m_currentAp, getNumberOfNetworks());
       changeState( STATE_INIT_CONNECT);
       if( m_led) {
         m_led->off();
@@ -383,7 +359,7 @@ void WifiConnection::slice( ) {
     break;
     case STATE_WAIT_OFF:
       if(WiFi.status() == WL_DISCONNECTED || WiFi.status() == WL_STOPPED) {
-          m_log->print( __FILE__, __LINE__, 1, "WIFI is off");
+          ESP_LOGI(TAG, "WIFI off");
           changeState( STATE_OFF);
       }
     break;
@@ -392,9 +368,7 @@ void WifiConnection::slice( ) {
         // Wait for reboot or wake up
     break;
     default:
-        if( m_log) {
-            m_log->print( __FILE__, __LINE__, 1, m_state, "WifiConnection: invalid state");
-        }
+        ESP_LOGW(TAG, "Invalid state: %u", m_state);
         changeState( STATE_RESET);
     break;
   }
@@ -423,8 +397,6 @@ void WifiConnection::hostConfig( ) {
     mask = v;
   }
   if( !WiFi.softAPConfig( IPAddress(ip), IPAddress(gw) , IPAddress( mask))) {
-    if( m_log) {
-      m_log->print( __FILE__, __LINE__, 1, "WifiConnection_hostConfig_failed" );
-    }
+    ESP_LOGW(TAG, "Host config failed");
   }
 }
