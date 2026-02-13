@@ -1,7 +1,7 @@
 #ifndef TelnetServer_h
 #define TelnetServer_h
 
-#include <utility/DebugLog.h>
+#include <core/CircularQ.h>
 #include <core/IntervalTimer.h>
 
 class NetworkServer;
@@ -16,7 +16,6 @@ protected:
 
   CircularQBase<char>* m_fromTelnetQ;
   CircularQBase<char>* m_toTelnetQ; 
-  DebugLog* m_log;
 
   IntervalTimer m_timer;
   uint8_t m_data0, m_data1, m_state;
@@ -28,7 +27,7 @@ public:
   TelnetServer(void);
   virtual ~TelnetServer();
   virtual const char* sliceName( ) { return "TelnetServer"; }
-  void init( unsigned port, CircularQBase<char> *in, CircularQBase<char>* out, DebugLog* log );
+  void init( unsigned port, CircularQBase<char> *in, CircularQBase<char>* out);
   void slice( void);
 };
 

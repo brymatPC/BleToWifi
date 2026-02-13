@@ -1,5 +1,4 @@
 #include "HttpServer.h"
-#include <utility/DebugLog.h>
 
 #if defined (ESP32)
   #include <Wifi.h>
@@ -28,6 +27,8 @@ typedef enum {
 
 } httpServerStates_t;
 
+static const char* TAG = "HttpS";
+
 static char charToHex( char c) {
     char value = '\0';
     if(  c >= '0' && c <= '9' ) {
@@ -44,8 +45,6 @@ HttpServer::HttpServer( void) {
   m_server = NULL;
   m_client = NULL;
 
-  m_log = NULL;
-
   m_port = 0;
   m_state = STATE_STARTUP;
   m_urlIndex = 0;
@@ -60,15 +59,13 @@ HttpServer::~HttpServer( void) {
     delete m_client;
     m_client = NULL;
   }
-  m_log = NULL;
   m_state = STATE_STARTUP;
   m_responseCode = 0;
   m_urlIndex = 0;
 }
 
-void HttpServer::init(unsigned port, DebugLog* log) {
+void HttpServer::init(unsigned port) {
     m_port = port;
-    m_log = log;
     m_client = NULL;
     m_state = STATE_STARTUP;
     m_urlIndex = 0;
@@ -77,17 +74,17 @@ unsigned HttpServer::readFile( char* P, unsigned len) {
   uint32_t start = HW_getMicros();
   unsigned rc =  m_sendFile.readBytes( m_buf, len);
   unsigned et =  HW_getMicros() - start;
-  if( m_log != NULL && et > 900) {
-    m_log->print( __FILE__, __LINE__, 0x010000, rc, len, et, "readFile: rc, len, time");
+  if( et > 900) {
+    ESP_LOGI(TAG, "Slow file read: rc %lu, len %lu, time %lu", rc, len , time);
   }
   return rc;
 }
 int HttpServer::clientRead( char* P, unsigned len) {
   uint32_t start = HW_getMicros();
-  int rc = m_client->read((uint8_t*) P, len);    
+  int rc = m_client->read((uint8_t*) P, len);
   unsigned et =  HW_getMicros() - start;
-  if( m_log != NULL && rc  && et > 900) {
-    m_log->print( __FILE__, __LINE__, 0x010000, rc, len, et, "clientRead: rc, len, time");
+  if( rc  && et > 900) {
+    ESP_LOGI(TAG, "Slow client read: rc %lu, len %lu, time %lu", rc, len , time);
   }
   return rc;
 }
@@ -98,11 +95,11 @@ void HttpServer::clientWrite( const char* P, unsigned len){
   uint32_t start = HW_getMicros();
   size_t numWritten = m_client->write( P, len);
   if(numWritten != len) {
-    m_log->print( __FILE__, __LINE__, 0x010000, len, numWritten, "clientWrite: len, numWritten");
+    ESP_LOGI(TAG, "Not all written: len %lu, numWritten %lu", len , numWritten);
   }
   unsigned et =  HW_getMicros() - start;
-  if( m_log != NULL  && et > 900) {
-    m_log->print( __FILE__, __LINE__, 0x010000, len, et, "clientWrite: len, time");
+  if(et > 900) {
+    ESP_LOGI(TAG, "Slow client write: len %lu, time %lu", len , time);
   }
 }
 char HttpServer::hexToAscii( const char* h) {
@@ -118,9 +115,6 @@ void HttpServer::sendExec(  uint8_t offset ) {
   }
   m_url[ offset + i] = '\0';
   const char*p = &m_url[ offset];
-  if( m_log != NULL) {
-    m_log->print( __FILE__, __LINE__, 0x080000, p, "HttpServer_sendExec: exec");
-  }
   startExec();
   exec( p);
 }
@@ -130,9 +124,6 @@ void HttpServer::sendFile( const char* type) {
   if( !m_sendFile) {
     send404();
   } else if( m_client != NULL) {
-    if( m_log != NULL) {
-      m_log->print( __FILE__, __LINE__, 0x080000, m_url, "httpServer_sendFile: url");
-    }
     clientWrite("HTTP/1.0 200 OK\r\nContent-type: ");
     clientWrite(type);
     clientWrite("\r\nCache-Control: max-age=3600\r\n\r\n");
@@ -143,9 +134,6 @@ void HttpServer::sendFile( const char* type) {
 
 void HttpServer::send404(  ) {
   if( m_client != NULL) {
-    if( m_log != NULL) {
-      m_log->print( __FILE__, __LINE__, 0x080000, m_url, "httpServer_send404: url");
-    }
     m_responseCode = 404;
     clientWrite("HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nCache-Control: no-cache\r\n\r\n<!DOCTYPE HTML>\r\n<html><head><title>404 Error</title></head><body><h1>404 Error</h1></body></html>");
   }
@@ -153,9 +141,7 @@ void HttpServer::send404(  ) {
 }
 
 void HttpServer::changeState( uint8_t newState) {
-  if( m_log != NULL) {
-    m_log->print( __FILE__, __LINE__, 0x100000, (uint32_t) m_state, (uint32_t) newState, "httpServer_changeState: state, newState");
-  }
+  ESP_LOGI(TAG, "Change state from %u to %u", m_state, newState);
   m_state = newState;
 }
 
@@ -182,18 +168,14 @@ void HttpServer::slice() {
       *m_client = m_server->accept();
       if( *m_client) {
         m_timer.setInterval( 100);
-        if( m_log != NULL) {
-          m_log->print( __FILE__, __LINE__, 0x020000, "HttpServer_slice_Connected:");
-        }
+        ESP_LOGD(TAG, "Connected");
         changeState( STATE_CONNECTING);
       }
     break;
     case STATE_PROCESS_REQUEST:
     {
       m_timer.setInterval( 20000);
-      if( m_log != NULL) {
-        m_log->print( __FILE__, __LINE__, 0x040000, m_url, "HttpServer_slice: req");
-      }
+      ESP_LOGD(TAG, "Request url: %s", m_url);
 
       if( strncmp( m_url, "GET ", 4) && strncmp( m_url, "GET ", 4)) {
         send404();
@@ -249,17 +231,15 @@ void HttpServer::slice() {
         delete m_client;
         m_client = NULL;
       }
-      if( m_log != NULL) {
-        m_log->print( __FILE__, __LINE__, 0x020000, "HttpServer_slice_Disconnected:");
-      }
+      ESP_LOGD(TAG, "Disconnect");
       m_timer.setInterval( 1);
       changeState( STATE_LOG_DISCONNECT);
     break;
     case STATE_LOG_DISCONNECT:
-      if( m_log !=  NULL) {
+      {
         uint32_t et = HW_getMicros() - m_requestStart;
         et = (et + 500)/1000;
-        m_log->printLog( __FILE__, __LINE__, 0x200000, m_responseCode, et, m_url);
+        ESP_LOGD(TAG, "Request took %lu us to process, ret %lu, url %s", et, m_responseCode, m_url);
       }
       changeState( STATE_DISCONNECT_WAIT);
     break;
@@ -347,7 +327,7 @@ void HttpServer::slice() {
     break;
   }
   unsigned et =  HW_getMicros() - start;
-  if( m_log != NULL &&  et > 900) {
-    m_log->print( __FILE__, __LINE__, 0x100000, startState, m_state, et, "HttpServer_slice: startState, m_state, time");
+  if( et > 900) {
+    ESP_LOGI(TAG, "Slow slice, startState: %lu, state %lu, time %lu", startState, m_state, et);
   }
 }

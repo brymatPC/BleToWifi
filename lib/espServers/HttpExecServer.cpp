@@ -1,8 +1,6 @@
 #include "HttpExecServer.h"
 #include "YRShellExec.h"
 
-#include <utility/DebugLog.h>
-
 void HttpExecServer::exec( const char *p) {
   if( m_shell) {
     m_shell->execString( p);
@@ -38,9 +36,6 @@ bool HttpExecServer::sendExecReply( void) {
           if( *p != ' ' && *p != '\r' && *p != '\n' && *p != '\t') {
             flag = false;
           }
-        }
-        if( !flag && m_log != NULL) {
-          m_log->print( __FILE__, __LINE__, 4, m_auxBuf, "HttpExecServer_sendExecReply: auxBuf");
         }
         if( c == '\r' || c == '\n' ) {
           m_auxBuf[ m_auxBufIndex++] = c;

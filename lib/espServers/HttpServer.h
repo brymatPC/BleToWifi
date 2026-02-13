@@ -6,7 +6,6 @@
 #include <core/Sliceable.h>
 #include <core/IntervalTimer.h>
 
-class DebugLog;
 class NetworkServer;
 class NetworkClient;
 
@@ -24,8 +23,6 @@ protected:
   File m_sendFile;
   NetworkServer* m_server;
   NetworkClient* m_client;
-
-  DebugLog* m_log;
 
   void sendExec( uint8_t offset);
   void sendFile( const char* type);
@@ -46,7 +43,7 @@ public:
   HttpServer(void);
   virtual ~HttpServer( );
   virtual const char* sliceName( ) { return "HttpServer"; }
-  virtual void init( unsigned port, DebugLog* log = NULL);
+  virtual void init( unsigned port);
   virtual void slice( void);
   static char hexToAscii( const char* h);
 };

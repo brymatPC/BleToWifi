@@ -8,6 +8,9 @@
 #endif
 #include <NetworkServer.h>
 #include <NetworkClient.h>
+#include <esp_log.h>
+
+static const char* TAG = "TelnetS";
 
 typedef enum {
   STATE_STARTUP   = 10,
@@ -31,7 +34,6 @@ TelnetServer::TelnetServer() {
 
   m_server = NULL;
   m_client = NULL;
-  m_log = NULL;
   m_data0 = m_data1 = 0;
   m_state = STATE_STARTUP;
   m_lastCharWasNull =  m_flipFlop = m_lastConnected =  false;
@@ -48,24 +50,20 @@ TelnetServer::~TelnetServer() {
   }
   m_fromTelnetQ = NULL;
   m_toTelnetQ = NULL;
-  m_log = NULL;
   m_state = STATE_STARTUP;
   m_server = NULL;
   m_client = NULL;
 }
 
-void TelnetServer::init( unsigned port, CircularQBase<char> *in, CircularQBase<char>* out, DebugLog* log) {
+void TelnetServer::init( unsigned port, CircularQBase<char> *in, CircularQBase<char>* out) {
     m_fromTelnetQ = in;
     m_toTelnetQ = out;
     m_port = port;
-    m_log = log;
     m_timer.setInterval( 10);
 }
 
 void TelnetServer::changeState( uint8_t newState) {
-  if( m_log != NULL) {
-    m_log->print( __FILE__, __LINE__, 0x1000, (uint32_t) m_state, (uint32_t) newState, "TelnetServer_changeState: state, newState");
-  }
+  ESP_LOGI(TAG, "Change state from %u to %u", m_state, newState);
   m_state = newState;
 }
 
@@ -76,9 +74,7 @@ void TelnetServer::slice() {
     uint8_t data;
 
     if( m_lastConnected && m_client && !m_client->connected()) {
-      if( m_log != NULL) {
-        m_log->print( __FILE__, __LINE__, 0x0200, "TelnetServer_client_disconnected:");
-      }
+      ESP_LOGD(TAG, "Disconnect");
       m_lastConnected = false;
       changeState( STATE_IDLE);
     } else {
@@ -96,9 +92,7 @@ void TelnetServer::slice() {
           *m_client = m_server->accept();
           if( *m_client) {
             m_lastConnected = true;
-            if( m_log != NULL) {
-              m_log->print( __FILE__, __LINE__, 0x0200, "TelnetServer_client_connected:");
-            }
+            ESP_LOGD(TAG, "Connected");
             changeState( STATE_CONNECTED);
           }
         break;
@@ -109,9 +103,7 @@ void TelnetServer::slice() {
             if( m_fromTelnetQ) {
               if( m_client->available() && m_fromTelnetQ->spaceAvailable()) {
                 data =  m_client->read( );
-                if( m_log != NULL) {
-                  m_log->print( __FILE__, __LINE__, 0x0400, data, "TelnetServer: charReceived");
-                }
+                ESP_LOGD(TAG, "CharReceived: 0x%02X", data);
                 if( data != 0xFF) {
                   if( data || m_lastCharWasNull ) {
                     m_fromTelnetQ->put( data);
@@ -157,9 +149,7 @@ void TelnetServer::slice() {
         case STATE_CONVERT:
           if( m_client->available() && m_fromTelnetQ->spaceAvailable()) {
             data = m_client->read();
-            if( m_log != NULL) {
-              m_log->printX( __FILE__, __LINE__, 0x0800, m_data0, m_data1, data,  "TelnetServer_slice_request: m_data0, m_data1, data");
-            }
+            ESP_LOGV(TAG, "Request: m_data0=0x%02X, m_data1=0x%02X, data=0x%02X", m_data0, m_data1, data);
             if( m_data1 == 0xFB && data == 0x03) {
               m_data1 = 0xFD;
             } else if( m_data1 == 0xFD && data == 0x03) {
@@ -177,9 +167,7 @@ void TelnetServer::slice() {
               m_client->write( m_data0);
               m_client->write( m_data1);
               m_client->write( data );
-              if( m_log != NULL) {
-                m_log->printX( __FILE__, __LINE__, 0x0800, m_data0, m_data1, data,  "TelnetServer_slice_response: m_data0, m_data1, data");
-              }
+              ESP_LOGV(TAG, "Response: m_data0=0x%02X, m_data1=0x%02X, data=0x%02X", m_data0, m_data1, data);
               m_data0 = m_data1 = 0;
             }
             changeState( STATE_CONNECTED);
@@ -189,8 +177,8 @@ void TelnetServer::slice() {
     }
 
     unsigned et =  HW_getMicros() - start;
-    if(  m_log != NULL && et > 900) {
-      m_log->print( __FILE__, __LINE__, 0x0100, startState, m_state, et, "TelnetServer_slice: startState, m_state, time");
+    if( et > 900) {
+      ESP_LOGD(TAG, "Slow slice: startState=%u, m_state=%u, time=%lu", startState, m_state, et);
     }
   }
 }

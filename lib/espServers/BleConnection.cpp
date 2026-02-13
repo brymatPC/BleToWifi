@@ -1,4 +1,7 @@
 #include "BleConnection.h"
+#include <esp_log.h>
+
+static const char* TAG = "ble";
 
 static bool m_resultsReceived = false;
 static BLEScanResults m_results;
@@ -25,9 +28,8 @@ typedef enum {
 
 } bleStates_t;
 
-BleConnection::BleConnection(DebugLog* log)
+BleConnection::BleConnection()
 {
-    m_log = log;
     m_state = STATE_RESET;
     m_requestScan = false;
     m_requestOff = false;
@@ -88,9 +90,7 @@ void BleConnection::save(Preferences &pref) {
         pref.putUShort(parserKey, static_cast<uint16_t>(m_deviceParsers[i].parserType));
     }
     pref.end();
-    if( m_log) {
-        m_log->print( __FILE__, __LINE__, 1, "Preferences updated" );
-    }
+    ESP_LOGI(TAG, "Preferences updated");
 }
 void BleConnection::addParser(BleParserTypes type, BleParser *parser) {
     bool found = false;
@@ -129,17 +129,14 @@ void BleConnection::setBleEnable(uint8_t index, bool enable) {
     m_deviceParsers[index].enabled = enable;
 }
 void BleConnection::logParsers() {
-    if(!m_log) return;
     for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
         if(m_deviceParsers[i].enabled) {
-            m_log->print( __FILE__, __LINE__, 1, i, static_cast<uint32_t>(m_deviceParsers[i].parserType), m_deviceParsers[i].addr, "BleConnection::logParsers: i, type, addr" );
+            ESP_LOGI(TAG, "logParsers: i=%u type=%u addr=%s", i, static_cast<uint32_t>(m_deviceParsers[i].parserType), m_deviceParsers[i].addr);
         }
     }
 }
 void BleConnection::changeState( uint8_t state) {
-    if( m_log) {
-        m_log->print( __FILE__, __LINE__, 0x100000, m_state, state, "BleConnection::changeState: m_state, state" );
-    }
+    ESP_LOGI(TAG, "state changed from %u to %u", m_state, state);
     m_state = state;
 }
 
@@ -159,9 +156,7 @@ void BleConnection::slice( void) {
         case STATE_BOOT:
             if(m_scanTimer.hasIntervalElapsed()) {
                 m_scanTimer.setInterval(m_scanStartInterval);
-                if( m_log) {
-                    m_log->print( __FILE__, __LINE__, 1, m_scanStartInterval, "Start scan boot: m_scanStartInterval");
-                }
+                ESP_LOGI(TAG, "Start scan boot: m_scanStartInterval=%u", m_scanStartInterval);
                 changeState( STATE_START_SCAN);
             }
         break;
@@ -171,15 +166,11 @@ void BleConnection::slice( void) {
                 changeState( STATE_OFF);
             } else if( m_requestScan) {
                 m_requestScan = false;
-                if( m_log) {
-                    m_log->print( __FILE__, __LINE__, 1, "Start scan request");
-                }
+                ESP_LOGI(TAG, "Start scan request");
                 changeState( STATE_START_SCAN);
             } else if(m_scanStartInterval != 0 && m_scanTimer.hasIntervalElapsed()) {
                 m_scanTimer.setInterval(m_scanStartInterval);
-                if( m_log) {
-                    m_log->print( __FILE__, __LINE__, 1, m_scanStartInterval, "Start scan regular: m_scanStartInterval");
-                }
+                ESP_LOGI(TAG, "Start scan regular: m_scanStartInterval=%u", m_scanStartInterval);
                 changeState( STATE_START_SCAN);
             }
         break;
@@ -196,9 +187,7 @@ void BleConnection::slice( void) {
                 // Should trigger scan complete
                 m_pBleScan->stop();
             } else if( m_resultsReceived) {
-                if( m_log) {
-                    m_log->print( __FILE__, __LINE__, 1, m_results.getCount(), "Scan complete: count");
-                }
+                ESP_LOGI(TAG, "Scan complete: count=%u", m_results.getCount());
                 m_resultsReceived = false;
                 for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
                     if(m_parsers[i] == nullptr) continue;
@@ -212,9 +201,7 @@ void BleConnection::slice( void) {
             // Wait for reboot or wake up
         break;
         default:
-            if( m_log) {
-                m_log->print( __FILE__, __LINE__, 1, m_state, "Invalid state: m_state");
-            }
+            ESP_LOGI(TAG, "Invalid state: m_state=%u", m_state);
             changeState( STATE_RESET);
         break;
     }
@@ -244,27 +231,24 @@ void BleConnection::onResult(BLEAdvertisedDevice advertisedDevice) {
                     parser->parse();
                 }
             } else {
-                if(m_log) {
-                    m_log->print( __FILE__, __LINE__, 1, address.toString().c_str(), "match but no mfg data, address");
-                }
+                ESP_LOGI(TAG, "match but no mfg data, address=%s", address.toString().c_str());
             }
         }
     }
 
-    if(m_log && m_bleLogState != BLE_LOG_NONE) {
-        m_log->print( __FILE__, __LINE__, 1, (uint32_t) address.getType(), address.toString().c_str(), "BleConnection: type, address");
+    if(m_bleLogState != BLE_LOG_NONE) {
+        ESP_LOGI(TAG, "BleConnection: type=%u address=%s", (uint32_t) address.getType(), address.toString().c_str());
         if (advertisedDevice.haveName()) {
-            m_log->print( __FILE__, __LINE__, 1, advertisedDevice.getName().c_str(), "BleConnection: name");
+            ESP_LOGI(TAG, "BleConnection: name=%s", advertisedDevice.getName().c_str());
         }
 
         if(m_bleLogState == BLE_LOG_ALL) {
             if (advertisedDevice.haveRSSI()) {
                 int rssi = advertisedDevice.getRSSI();
-                rssi *= -1;
-                m_log->print( __FILE__, __LINE__, 1, rssi, "BleConnection: -RSSI");
+                ESP_LOGI(TAG, "BleConnection: RSSI=%d", rssi);
             }
             if (advertisedDevice.haveTXPower()) {
-                m_log->print( __FILE__, __LINE__, 1, advertisedDevice.getTXPower(), "BleConnection: TxPower");
+                ESP_LOGI(TAG, "BleConnection: TxPower=%d", advertisedDevice.getTXPower());
             }
             if (advertisedDevice.haveManufacturerData()) {
                 int len = advertisedDevice.getManufacturerData().length();
@@ -276,16 +260,13 @@ void BleConnection::onResult(BLEAdvertisedDevice advertisedDevice) {
                     for(int i=0; i < len; i++) {
                         sprintf(&outStr[2+i*2], "%02X", data[i]);
                     }
-                    if( m_log) {
-                        m_log->print( __FILE__, __LINE__, 1, outStr, "BleConnection: mfdata");
-                    }
+                    ESP_LOGI(TAG, "BleConnection: mfdata=%s", outStr);
                 #endif
             }
-            m_log->print( __FILE__, __LINE__, 1, advertisedDevice.getPayloadLength(), "BleConnection: payloadLen");
+            ESP_LOGI(TAG, "BleConnection: payloadLen=%u", advertisedDevice.getPayloadLength());
 
             if (advertisedDevice.getServiceDataUUIDCount()) {
-                //Serial.printf("  ServiceData(%d):\n", advertisedDevice.getServiceDataUUIDCount());
-                m_log->print( __FILE__, __LINE__, 1, advertisedDevice.getServiceDataUUIDCount(), "BleConnection: Service data UUID count");
+                ESP_LOGI(TAG, "ServiceData count: %d", advertisedDevice.getServiceDataUUIDCount());
                 // for (int i = 0; i < advertisedDevice.getServiceDataUUIDCount(); i++) {
                 //     std::string data = advertisedDevice.getServiceData(i);
                 //     Serial.printf("    %s %3d ", advertisedDevice.getServiceDataUUID(i).toString().c_str(), data.length());

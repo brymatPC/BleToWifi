@@ -12,7 +12,6 @@
 
 #include <core/Sliceable.h>
 #include <core/IntervalTimer.h>
-#include <utility/DebugLog.h>
 
 #define MAX_BLE_DEVICE_DATA 1
 #define MAX_BLE_DEVICES     4
@@ -49,7 +48,6 @@ private:
     bool m_requestOff;
     bleLogState m_bleLogState;
 
-    DebugLog* m_log;
     IntervalTimer m_scanTimer;
     BLEScan* m_pBleScan;
     bleDeviceData_t m_devices[MAX_BLE_DEVICE_DATA];
@@ -70,7 +68,7 @@ private:
     BleParser* getParser(BleParserTypes type);
 protected:
 public:
-    BleConnection(DebugLog* log = nullptr);
+    BleConnection();
     virtual ~BleConnection() { }
     virtual const char* sliceName( void) { return "BleConnection"; }
     virtual void slice( void);

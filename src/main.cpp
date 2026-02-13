@@ -66,7 +66,7 @@ HttpExecServer httpServer;
 TelnetServer telnetServer;
 TelnetLogServer telnetLogServer;
 UploadDataClient uploadClient;
-BleConnection bleConnection(&dbg);
+BleConnection bleConnection;
 VictronDevice victronParser;
 TempHumidityParser tempHumParser;
 
@@ -134,6 +134,10 @@ void setup(){
   esp_log_level_set("*", ESP_LOG_WARN);
   esp_log_level_set("AppMgr", ESP_LOG_INFO);
   esp_log_level_set("WifiCon", ESP_LOG_INFO);
+  esp_log_level_set("HttpS", ESP_LOG_WARN);
+  esp_log_level_set("TelnetS", ESP_LOG_WARN);
+  esp_log_level_set("ble", ESP_LOG_INFO);
+
 
   resetReasonStartup = esp_reset_reason();
 
@@ -162,12 +166,12 @@ void setup(){
   wifiConnection.enable();
 
   if( httpPort != 0) {
-    httpServer.init( httpPort, &dbg);
+    httpServer.init( httpPort);
     httpServer.setYRShell(&shell);
   }
 #ifdef YRSHELL_ON_TELNET
   if( telnetPort != 0) {
-    telnetServer.init( telnetPort, &shell.getInq(), &shell.getOutq(), &dbg);
+    telnetServer.init( telnetPort, &shell.getInq(), &shell.getOutq());
   }
 #endif
   if( telnetLogPort != 0) {
