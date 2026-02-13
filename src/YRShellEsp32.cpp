@@ -41,6 +41,7 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_wifiConnected,        "wifiConnected"},
     { SE_CC_setTelnetLogEnable,   "setTelnetLogEnable"},
     { SE_CC_deepSleep,            "deepSleep"},
+    { SE_CC_eLogLevel,            "eLogLevel"},
 
     { SE_CC_setRunTimeMs,         "setRunTime"},
     { SE_CC_setSleepTimeMs,       "setSleepTime"},
@@ -452,6 +453,12 @@ void YRShellEsp32::executeFunction( uint16_t n) {
               }
               esp_deep_sleep(1000LL * t1);
               break;
+          case SE_CC_eLogLevel:
+              t1 = popParameterStack();
+              if(t1 >=ESP_LOG_NONE && t1<=ESP_LOG_MAX) {
+                esp_log_level_set("*", static_cast<esp_log_level_t>(t1));
+              }
+          break;
           case SE_CC_setRunTimeMs:
               t1 = popParameterStack();
               if(m_appMgr) {

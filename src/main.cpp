@@ -44,13 +44,15 @@
 #define LED_PIN 21
 
 #define YRSHELL_ON_TELNET
+#define LOCAL_LOG_BUFFER_SIZE 8192
 
 static char s_appName[] = "ESP32 BLE Test";
 static char s_appVersion[] = "0.9.0";
 
 Preferences pref;
 DebugLog dbg;
-AppManager appMgr(s_appName, s_appVersion, &dbg);
+CircularQ<char, LOCAL_LOG_BUFFER_SIZE> m_logQ;
+AppManager appMgr(s_appName, s_appVersion);
 YRShellEsp32 shell;
 #ifndef HAS_LED_STRIP
   LedBlink onBoardLed;
@@ -95,11 +97,42 @@ bool sleepReady(void) {
    return bleConnection.isOff() && wifiConnection.isOff();
 }
 
+bool logOut(char c) {
+  static char logOverflow[] = "\r\n\nLOG DATA DROPPED\r\n\n";
+  bool ret = true;
+    if( m_logQ.spaceAvailable( 24)) {
+      m_logQ.put( c);
+    } else {
+      char *s = logOverflow;
+      ret = false;
+      m_logQ.reset();
+      while( *s != '\0') {
+        m_logQ.put( *s++);
+      }
+    }
+    return ret;
+}
+int custom_log_handler(const char* format, va_list args) {
+    // Format the message into a buffer
+    char buf[128];
+    int ret = vsnprintf(buf, sizeof(buf), format, args);
+    char *s = buf;
+    while( *s != '\0') {
+      if(!logOut( *s++)) {
+        break;
+      }
+    }
+    return ret; 
+}
+
 void setup(){
   unsigned httpPort = 80;
   unsigned telnetPort = 23;
   unsigned telnetLogPort = 2023;
   dbg.setMask( LOG_MASK);
+  esp_log_set_vprintf(custom_log_handler);
+  esp_log_level_set("*", ESP_LOG_WARN);
+  esp_log_level_set("AppMgr", ESP_LOG_INFO);
 
   resetReasonStartup = esp_reset_reason();
 
@@ -179,10 +212,10 @@ void loop() {
 
   bool telnetSpaceAvailable = telnetLogServer.spaceAvailable( 32);
   bool serialSpaceAvailable = (Serial.availableForWrite() > 32);
-  if( dbg.valueAvailable() && (telnetSpaceAvailable || serialSpaceAvailable)) {
+  if( m_logQ.valueAvailable() && (telnetSpaceAvailable || serialSpaceAvailable)) {
     char c;
-    for( uint8_t i = 0; i < 32 && dbg.valueAvailable(); i++) {
-      c = dbg.get();
+    for( uint8_t i = 0; i < 32 && m_logQ.valueAvailable(); i++) {
+      c = m_logQ.get();
       if(telnetSpaceAvailable) {
         telnetLogServer.put( c);
       }

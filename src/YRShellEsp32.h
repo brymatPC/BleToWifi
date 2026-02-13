@@ -38,6 +38,8 @@ typedef enum {
     SE_CC_setTelnetLogEnable,
     SE_CC_deepSleep,
 
+    SE_CC_eLogLevel,
+
     SE_CC_setRunTimeMs,
     SE_CC_setSleepTimeMs,
     SE_CC_setSleepEnable,

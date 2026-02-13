@@ -1,5 +1,4 @@
 #include "AppManager.h"
-#include <utility/DebugLog.h>
 
 #include <Preferences.h>
 
@@ -20,6 +19,8 @@ static char s_resetEFuseStr[]       = "efuse";
 static char s_resetPowerGlitchStr[] = "power glitch";
 static char s_resetCpuLockupStr[]   = "cpu lockup";
 
+static const char* TAG = "AppMgr";
+
 const char AppManager::s_PREF_NAMESPACE[] = "sys";
 const uint32_t AppManager::s_DEFAULT_RUN_TIME_MS = 0;
 const uint32_t AppManager::s_DEFAULT_SLEEP_TIME_MS = 0;
@@ -36,10 +37,9 @@ typedef enum {
 
 } appStates_t;
 
-AppManager::AppManager(const char* appName, const char* appVersion, DebugLog *dbg) :
+AppManager::AppManager(const char* appName, const char* appVersion) :
     m_appName(appName),
     m_appVersion(appVersion),
-    m_log(dbg),
     m_runTimeMs(s_DEFAULT_RUN_TIME_MS),
     m_sleepTimeMs(s_DEFAULT_SLEEP_TIME_MS),
     m_sleepEnabled(true),
@@ -65,23 +65,18 @@ void AppManager::save(Preferences &pref) {
     pref.putULong("runt", m_runTimeMs);
     pref.putULong("slpt", m_sleepTimeMs);
     pref.end();
-    if( m_log) {
-        m_log->print( __FILE__, __LINE__, 1, "AppManager::save: pref updated" );
-    }
+    ESP_LOGI(TAG, "AppManager::save: pref updated");
 }
 
 void AppManager::slice( void) {
     if(m_timer.hasIntervalElapsed()) {
         m_timer.setInterval(s_STATUS_INTERVAL_MS);
-        if(m_log) {
-            const char *resetStr = resetReasonToString(resetReasonStartup);
-            m_log->print(__FILE__, __LINE__, 1, "System Status Only, not a reboot!");
-            m_log->print(__FILE__, __LINE__, 1, m_appName, "s_appName");
-            m_log->print(__FILE__, __LINE__, 1, m_appVersion, "s_appVersion");
-            m_log->print(__FILE__, __LINE__, 1, m_bootCount, "bootCount");
-            m_log->print(__FILE__, __LINE__, 1, resetReasonStartup, resetStr, "Reset Reason - resetReasonStartup, resetReasonStartupStr");
-            m_log->printX(__FILE__, __LINE__, 1, 0xA5, "Hex test");
-        }
+        const char *resetStr = resetReasonToString(resetReasonStartup);
+        ESP_LOGI(TAG, "System Status Only, not a reboot!");
+        ESP_LOGI(TAG, "AppName: %s; AppVersion: %s", m_appName, m_appVersion);
+        ESP_LOGI(TAG, "bootCount: %d", m_bootCount);
+        ESP_LOGI(TAG, "Reset Reason: %d, %s", resetReasonStartup, resetStr);
+        ESP_LOGI(TAG, "Hex test: %02X", 0xA5);
     }
 
     switch(m_state) {
@@ -90,9 +85,7 @@ void AppManager::slice( void) {
         break;
         case STATE_RUNNING:
             if(m_sleepEnabled && m_runTimeMs > 0 && m_sleepTimeMs > 0 && millis() > m_runTimeMs) {
-                if(m_log) {
-                    m_log->print(__FILE__, __LINE__, 1, m_sleepTimeMs, "Sleep enabled - m_sleepTimeMs");
-                }
+                ESP_LOGI(TAG, "Sleep enabled - sleepTimeMs: %lu", m_sleepTimeMs);
                 if(preSleep_cb) {
                     preSleep_cb();
                 }

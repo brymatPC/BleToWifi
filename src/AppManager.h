@@ -6,7 +6,6 @@
 
 #include <esp_system.h>
 
-class DebugLog;
 class Preferences;
 
 typedef void (*preSleepNotificationCallback)(void);
@@ -21,7 +20,6 @@ private:
 
     const char* m_appName;
     const char* m_appVersion;
-    DebugLog *m_log;
     esp_reset_reason_t resetReasonStartup;
     IntervalTimer m_timer;
 
@@ -36,7 +34,7 @@ private:
 
     const char *resetReasonToString(esp_reset_reason_t reason);
 public:
-    AppManager(const char* appName, const char* appVersion, DebugLog *dbg);
+    AppManager(const char* appName, const char* appVersion);
     virtual ~AppManager();
     virtual const char* sliceName( void) { return "AppManager"; }
     void init(Preferences &pref);
