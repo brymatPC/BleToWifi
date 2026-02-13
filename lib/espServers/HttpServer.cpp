@@ -141,7 +141,7 @@ void HttpServer::send404(  ) {
 }
 
 void HttpServer::changeState( uint8_t newState) {
-  ESP_LOGI(TAG, "Change state from %u to %u", m_state, newState);
+  ESP_LOGD(TAG, "Change state from %u to %u", m_state, newState);
   m_state = newState;
 }
 
@@ -328,6 +328,6 @@ void HttpServer::slice() {
   }
   unsigned et =  HW_getMicros() - start;
   if( et > 900) {
-    ESP_LOGI(TAG, "Slow slice, startState: %lu, state %lu, time %lu", startState, m_state, et);
+    ESP_LOGD(TAG, "Slow slice, startState: %lu, state %lu, time %lu", startState, m_state, et);
   }
 }

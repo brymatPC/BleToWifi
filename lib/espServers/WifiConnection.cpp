@@ -177,7 +177,7 @@ void WifiConnection::setNetworkPassword( uint8_t index, const char* networkPassw
     strncpy(m_networkPassword[index], networkPassword, MAX_WIFI_ENTRY_LEN);
 }
 void WifiConnection::changeState( uint8_t state) {
-  ESP_LOGI(TAG, "Change state from %u to %u", m_state, state);
+  ESP_LOGD(TAG, "Change state from %u to %u", m_state, state);
   m_state = state;
 }
 

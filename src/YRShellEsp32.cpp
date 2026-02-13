@@ -343,13 +343,13 @@ void YRShellEsp32::slice() {
           }
         }
         if( !flag ) {
-          ESP_LOGI(TAG, "AuxBuf: %s", m_auxBuf);
+          ESP_LOGV(TAG, "AuxBuf: %s", m_auxBuf);
         }
         m_auxBufIndex = 0;
       }
     }
   } else if( m_auxBufIndex > 0) {
-    ESP_LOGI(TAG, "AuxBuf: %s", m_auxBuf);
+    ESP_LOGV(TAG, "AuxBuf: %s", m_auxBuf);
     m_auxBufIndex = 0;
   }
 

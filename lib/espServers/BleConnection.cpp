@@ -136,7 +136,7 @@ void BleConnection::logParsers() {
     }
 }
 void BleConnection::changeState( uint8_t state) {
-    ESP_LOGI(TAG, "state changed from %u to %u", m_state, state);
+    ESP_LOGD(TAG, "state changed from %u to %u", m_state, state);
     m_state = state;
 }
 

@@ -16,8 +16,8 @@ This library is configured for use with platform.io within vscode.
 
 Commands are added to the YRShell Dictionary in 3 different ways:
 
-1. Built-in commands are contained with the file `utility/YRShellInterpreter.cpp`
-1. Additional default commands are added using a pre-compiled dictionary array in `utility/compile/compiledDictionary.h`
+1. Built-in commands are contained with the file `core/YRShellInterpreter.cpp`
+1. Additional default commands are added using a pre-compiled dictionary array in `core/compile/compiledDictionary.h`
 1. Custom commands can be created during run-time using the `: ` operator
     * NOTE: These commands are not stored anywhere and will be lost on a power cycle
 
@@ -26,10 +26,10 @@ Commands are added to the YRShell Dictionary in 3 different ways:
 Since YRShell provides scripting capabilities, it itself is used to generate the pre-compiled dictionary array.
 
 1. Install and run an example YRShell on the target of your choice
-1. Modify `utility/compile/YRShellInterpreter.yr` as desired
-1. Copy and paste the contents of `utility/compile/YRShellInterpreter.yr` into the YRShell terminal started in step 1
+1. Modify `core/compile/YRShellInterpreter.yr` as desired
+1. Copy and paste the contents of `core/compile/YRShellInterpreter.yr` into the YRShell terminal started in step 1
 1. Wait for YRShell to finish processing the input
-1. Copy and paste the full results to `utility/compile/compileOutput.txt`
+1. Copy and paste the full results to `core/compile/compileOutput.txt`
     * NOTE: This file is only used for future reference
-1. Copy and paste the dictionary array to `utility/compile/compiledDictionary.h`
+1. Copy and paste the dictionary array to `core/compile/compiledDictionary.h`
     * Dictionary starts with `static const uint16_t compiledDictionaryData[] = {`
