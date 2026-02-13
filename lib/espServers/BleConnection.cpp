@@ -1,7 +1,7 @@
 #include "BleConnection.h"
 #include <esp_log.h>
 
-static const char* TAG = "ble";
+static const char* TAG = "BleCon";
 
 static bool m_resultsReceived = false;
 static BLEScanResults m_results;

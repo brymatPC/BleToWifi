@@ -2,7 +2,6 @@
 #define YRSHELL_ESP32_H_
 
 #include <YRShell.h>
-#include <utility/DebugLog.h>
 #include <LittleFS.h>
 
 #include "YRShellExec.h"
@@ -124,7 +123,6 @@ protected:
   char m_auxBuf[ 128];
   uint8_t m_auxBufIndex;
 
-  DebugLog* m_log;
   Preferences* m_pref;
   TelnetLogServer* m_telnetLogServer;
   AppManager* m_appMgr;
@@ -149,7 +147,7 @@ protected:
 public:
   YRShellEsp32( );
   virtual ~YRShellEsp32( );
-  void init( DebugLog* log);
+  void init();
 
   // Provide object instances to drive testing, can be nullptr
   void setPreferences(Preferences *pref) { m_pref = pref; }

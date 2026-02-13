@@ -11,6 +11,8 @@
 #include "VictronDevice.h"
 #include "AppManager.h"
 
+#include <utility/DebugLog.h>
+
 #ifdef HAS_LED_STRIP
   #include "LedStripDriver.h"
 #endif
@@ -125,24 +127,36 @@ int custom_log_handler(const char* format, va_list args) {
     return ret; 
 }
 
+static void log_char(char c) {
+  logOut(c);
+}
+
 void setup(){
   unsigned httpPort = 80;
   unsigned telnetPort = 23;
   unsigned telnetLogPort = 2023;
   dbg.setMask( LOG_MASK);
-  esp_log_set_vprintf(custom_log_handler);
+  
+  // Use these to redirect Arduino logging
+  ets_install_putc2(&log_char);
+  ets_install_putc1(NULL);  // closes UART log output
+  // Use this to redirect Espressif logging (If enabled)
+  //esp_log_set_vprintf(custom_log_handler);
+
+
   esp_log_level_set("*", ESP_LOG_WARN);
   esp_log_level_set("AppMgr", ESP_LOG_INFO);
   esp_log_level_set("WifiCon", ESP_LOG_INFO);
   esp_log_level_set("HttpS", ESP_LOG_WARN);
   esp_log_level_set("TelnetS", ESP_LOG_WARN);
-  esp_log_level_set("ble", ESP_LOG_INFO);
-
+  esp_log_level_set("BleCon", ESP_LOG_INFO);
 
   resetReasonStartup = esp_reset_reason();
 
   // BAM - 20260108 - ESP32 uses a USB interface and doesn't support different baud rates
   Serial.begin( 115200);
+  // Use this with basic Arduino logging
+  //Serial.setDebugOutput(true);
 
   dbg.print( __FILE__, __LINE__, 1, "\r\n\n");
 
@@ -205,7 +219,7 @@ void setup(){
   victronParser.setUploadClient(&uploadClient);
   tempHumParser.init(&dbg);
   tempHumParser.setUploadClient(&uploadClient);
-  shell.init( &dbg);
+  shell.init();
 
   startSntp();
   dbg.print( __FILE__, __LINE__, 1, "setup_done:");

@@ -13,7 +13,10 @@
 #include <time.h>
 #include <esp_chip_info.h>
 #include <esp_idf_version.h>
+#include <esp_log.h>
 #endif
+
+static const char* TAG = "YRShell";
 
 #define INITIAL_LOAD_FILE "/start.yr"
 
@@ -154,7 +157,7 @@ static char s_uploadData[] = "{\"data\":32}";
 #define ARRAY_SIZE_OFFSET   5   //Increase this if print_real_time_stats returns ESP_ERR_INVALID_SIZE
 #define MAX_TASKS_TO_TRACK  20
 static char s_espBuf[128];
-static esp_err_t print_real_time_stats(TickType_t xTicksToWait, DebugLog *dbg)
+static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
 {
     TaskStatus_t start_array[MAX_TASKS_TO_TRACK];
     TaskStatus_t end_array[MAX_TASKS_TO_TRACK];
@@ -163,7 +166,7 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait, DebugLog *dbg)
     esp_err_t ret;
 
     if(uxTaskGetNumberOfTasks() + ARRAY_SIZE_OFFSET >= MAX_TASKS_TO_TRACK) {
-      dbg->print(__FILE__, __LINE__, 1, uxTaskGetNumberOfTasks(), ARRAY_SIZE_OFFSET, "cpu stats: numTasks, array offset");
+      ESP_LOGI(TAG, "cpu stats: numTasks=%u, array offset=%u", uxTaskGetNumberOfTasks(), (unsigned)ARRAY_SIZE_OFFSET);
       return ESP_ERR_NO_MEM;
     }
 
@@ -177,7 +180,7 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait, DebugLog *dbg)
     //Get current task states
     start_array_size = uxTaskGetSystemState(start_array, start_array_size, &start_run_time);
     if (start_array_size == 0) {
-        dbg->print(__FILE__, __LINE__, 1, "cpu stats: start array size is 0");
+        ESP_LOGI(TAG, "cpu stats: start array size is 0");
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -193,7 +196,7 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait, DebugLog *dbg)
     //Get post delay task states
     end_array_size = uxTaskGetSystemState(end_array, end_array_size, &end_run_time);
     if (end_array_size == 0) {
-      dbg->print(__FILE__, __LINE__, 1, "cpu stats: end array size is 0");
+      ESP_LOGI(TAG, "cpu stats: end array size is 0");
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -203,7 +206,7 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait, DebugLog *dbg)
         return ESP_ERR_INVALID_STATE;
     }
 
-    dbg->print(__FILE__, __LINE__, 1, "| Task | Run Time | Core | Percentage");
+    ESP_LOGI(TAG, "| Task | Run Time | Core | Percentage");
     //Match each task in start_array to those in the end_array
     for (int i = 0; i < start_array_size; i++) {
         int k = -1;
@@ -221,7 +224,7 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait, DebugLog *dbg)
             uint32_t task_elapsed_time = end_array[k].ulRunTimeCounter - start_array[i].ulRunTimeCounter;
             uint32_t percentage_time = (task_elapsed_time * 100UL) / (total_elapsed_time * CONFIG_FREERTOS_NUMBER_OF_CORES);
             snprintf(s_espBuf, 128, "| %s | %" PRIu32" | %d | %" PRIu32"%%", start_array[i].pcTaskName, task_elapsed_time, start_array[i].xCoreID, percentage_time);
-            dbg->print(__FILE__, __LINE__, 1, s_espBuf);
+            ESP_LOGI(TAG, "%s", s_espBuf);
         }
     }
 
@@ -229,13 +232,13 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait, DebugLog *dbg)
     for (int i = 0; i < start_array_size; i++) {
         if (start_array[i].xHandle != NULL) {
             snprintf(s_espBuf, 128, "| %s | Deleted", start_array[i].pcTaskName);
-            dbg->print(__FILE__, __LINE__, 1, s_espBuf);
+            ESP_LOGI(TAG, "%s", s_espBuf);
         }
     }
     for (int i = 0; i < end_array_size; i++) {
         if (end_array[i].xHandle != NULL) {
             snprintf(s_espBuf, 128, "| %s | Created", end_array[i].pcTaskName);
-            dbg->print(__FILE__, __LINE__, 1, s_espBuf);
+            ESP_LOGI(TAG, "%s", s_espBuf);
         }
     }
     return ESP_OK;
@@ -252,11 +255,10 @@ YRShellEsp32::YRShellEsp32() {
 YRShellEsp32::~YRShellEsp32() {
 }
 
-void YRShellEsp32::init( DebugLog* log) {
+void YRShellEsp32::init() {
   YRShellBase::init();
   m_dictionaryList[ YRSHELL_DICTIONARY_EXTENSION_COMPILED_INDEX] = &compiledExtensionDictionary;
   m_dictionaryList[ YRSHELL_DICTIONARY_EXTENSION_FUNCTION_INDEX] = &dictionaryExtensionFunction;
-  m_log = log;
   m_exec = false;
   m_initialized = true;
 }
@@ -274,7 +276,7 @@ void YRShellEsp32::endExec( void) {
 }
 void YRShellEsp32::execString( const char* p) {
   if( m_exec) {
-      m_log->print( __FILE__, __LINE__, 1, "YRShellEsp32_execString_failed: ");
+      ESP_LOGI(TAG, "ExecString Failed");
   } else {
     requestUseAuxQueues();
     for( ; *p != '\0'; p++ ) {
@@ -290,26 +292,20 @@ void YRShellEsp32::execString( const char* p) {
 
 void YRShellEsp32::loadFile( const char* fname, bool exec) {
   if( m_fileOpen) {
-    if( m_log != NULL) {
-      m_log->print( __FILE__, __LINE__, 1, "YRShellEsp32_loadFile_Failed: ");
-    }
+    ESP_LOGI(TAG, "File already open");
   } else {
     if( fname == NULL || fname[0] == '\0') {
-      m_log->print( __FILE__, __LINE__, 1, "YRShellEsp32_loadFile_no_valid_file: ");
+      ESP_LOGI(TAG, "no_valid_file");
     } else {
       m_file = LittleFS.open(fname, "r");
       if( !m_file) {
-        if( m_log != NULL) {
-          m_log->print( __FILE__, __LINE__, 1, fname, "YRShellEsp32_loadFile_Failed: fname");
-        }
+        ESP_LOGI(TAG, "Failed: %s", fname);
       } else {
         if( exec) {
           requestUseAuxQueues();
         }
         m_fileOpen = true;
-        if( m_log != NULL) {
-          m_log->print( __FILE__, __LINE__, 1, fname, "YRShellEsp32_loadFile_loading: fname");
-        }
+        ESP_LOGI(TAG, "Loading: %s", fname);
       }
     }
   }
@@ -324,7 +320,7 @@ void YRShellEsp32::slice() {
     } else {
       m_file.close();
       m_fileOpen = false;
-      m_log->print( __FILE__, __LINE__, 1, "YRShellEsp32_slice_closing_file");
+      ESP_LOGI(TAG, "Closing File");
     } 
   }
 
@@ -346,16 +342,14 @@ void YRShellEsp32::slice() {
             flag = false;
           }
         }
-        if( !flag && m_log != NULL) {
-          m_log->print( __FILE__, __LINE__, 8, m_auxBuf, "YRShellEsp32_slice: auxBuf");
+        if( !flag ) {
+          ESP_LOGI(TAG, "AuxBuf: %s", m_auxBuf);
         }
         m_auxBufIndex = 0;
       }
     }
   } else if( m_auxBufIndex > 0) {
-    if( m_log != NULL) {
-      m_log->print( __FILE__, __LINE__, 8, m_auxBuf, "YRShellEsp32_slice: auxBuf");
-    }
+    ESP_LOGI(TAG, "AuxBuf: %s", m_auxBuf);
     m_auxBufIndex = 0;
   }
 
@@ -424,9 +418,7 @@ void YRShellEsp32::executeFunction( uint16_t n) {
               break;
           case SE_CC_setLogMask:
               t1 = popParameterStack();
-              if( m_log != NULL) {
-                m_log->setMask( t1);
-              }
+              // TODO: Update esp log level
               break;
           case SE_CC_hexModeQ:
               pushParameterStack( m_hexMode);
@@ -442,9 +434,7 @@ void YRShellEsp32::executeFunction( uint16_t n) {
               break;
           case SE_CC_deepSleep:
               t1 = popParameterStack();
-              if(m_log) {
-                m_log->print(__FILE__, __LINE__, 1, t1, "Entering deep sleep, timeMs");
-              }
+              ESP_LOGI(TAG, "Entering deep sleep, timeMs=%u", (unsigned)t1);
               if(m_bleConnection) {
                 m_bleConnection->off();
               }
@@ -627,35 +617,25 @@ void YRShellEsp32::executeFunction( uint16_t n) {
               loadFile( getAddressFromToken(popParameterStack()), false );
               break;
           case SE_CC_dbgM:
-              if( m_log) {
-                m_log->print( __FILE__, __LINE__, 1, getAddressFromToken(popParameterStack()) );
-              }
+              ESP_LOGI(TAG, "%s", getAddressFromToken(popParameterStack()) );
               break;
           case SE_CC_dbgDM:
               t1 = popParameterStack();
-              if( m_log) {
-                m_log->print( __FILE__, __LINE__, 1, t1, getAddressFromToken(popParameterStack()) );
-              }
+              ESP_LOGI(TAG, "%u %s", (unsigned)t1, getAddressFromToken(popParameterStack()) );
               break;
           case SE_CC_dbgDDM:
               t1 = popParameterStack();
               t2 = popParameterStack();
-              if( m_log) {
-                m_log->print( __FILE__, __LINE__, 1, t2, t1,  getAddressFromToken(popParameterStack()) );
-              }
+              ESP_LOGI(TAG, "%u %u %s", (unsigned)t2, (unsigned)t1,  getAddressFromToken(popParameterStack()) );
               break;
           case SE_CC_dbgXM:
               t1 = popParameterStack();
-              if( m_log) {
-                m_log->printX( __FILE__, __LINE__, 1, t1, getAddressFromToken(popParameterStack()) );
-              }
+              ESP_LOGI(TAG, "%u %s", (unsigned)t1, getAddressFromToken(popParameterStack()) );
               break;
           case SE_CC_dbgXXM:
               t1 = popParameterStack();
               t2 = popParameterStack();
-              if( m_log) {
-                m_log->printX( __FILE__, __LINE__, 1, t2, t1,  getAddressFromToken(popParameterStack()) );
-              }
+              ESP_LOGI(TAG, "%u %u %s", (unsigned)t2, (unsigned)t1,  getAddressFromToken(popParameterStack()) );
               break;
 
           case SE_CC_hardReset:
@@ -814,12 +794,12 @@ void YRShellEsp32::executeFunction( uint16_t n) {
             {
               esp_chip_info_t chipInfo;
               esp_chip_info(&chipInfo);
-              m_log->print( __FILE__, __LINE__, 1, chipInfo.model, chipInfo.revision, chipInfo.cores, "Chip: model, revision, cores");
+              ESP_LOGI(TAG, "Chip: model=%u revision=%u cores=%u", (unsigned)chipInfo.model, (unsigned)chipInfo.revision, (unsigned)chipInfo.cores);
             }
             break;
           case SE_CC_sdkVersion:
             {
-              m_log->print( __FILE__, __LINE__, 1, esp_get_idf_version(), "SDK: version");
+              ESP_LOGI(TAG, "SDK: version=%s", esp_get_idf_version());
             }
             break;
           case SE_CC_numTasks:
@@ -828,7 +808,7 @@ void YRShellEsp32::executeFunction( uint16_t n) {
             break;
           case SE_CC_cpuPerf:
             t1 = popParameterStack();
-            print_real_time_stats(t1, m_log);
+            print_real_time_stats(t1);
             break;
           case SE_CC_curTime:
               logTime();
@@ -878,8 +858,6 @@ void YRShellEsp32::logTime() {
     time_t now;
     time(&now);
     localtime_r(&now, &timeinfo);
-    //time_t tt = mktime (&timeinfo);
-
     strftime(s, 50, "%FT%H:%M:%SZ", &timeinfo);
-    m_log->print( __FILE__, __LINE__, 1, s, "logTime: rtc");
+    ESP_LOGI(TAG, "RTC: %s", s);
 }
