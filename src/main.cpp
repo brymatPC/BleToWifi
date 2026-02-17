@@ -12,6 +12,7 @@
 #include "AppManager.h"
 #include <Wire.h>
 #include <SensirionI2cSen66.h>
+#include "Sen66Device.h"
 
 #ifdef HAS_LED_STRIP
   #include "LedStripDriver.h"
@@ -51,12 +52,6 @@
 #define I2C_SDA_PIN 1
 #define I2C_SCL_PIN 2
 
-// Used by Sensirion Library
-#ifdef NO_ERROR
-#undef NO_ERROR
-#endif
-#define NO_ERROR 0
-
 static char s_appName[] = "ESP32 BLE Test";
 static char s_appVersion[] = "0.9.0";
 static const char* TAG = "Main";
@@ -82,6 +77,7 @@ VictronDevice victronParser;
 TempHumidityParser tempHumParser;
 
 SensirionI2cSen66 sensor;
+Sen66Device sen66Device(sensor);
 
 esp_reset_reason_t resetReasonStartup;
 
@@ -190,9 +186,9 @@ void setup(){
   ledStrip.setup();
 #endif
 
-  // sensirion_i2c_hal_init();
-  // sen66_init(SEN66_I2C_ADDR_6B);
   sensor.begin(Wire, SEN66_I2C_ADDR_6B);
+  sen66Device.setup(pref);
+  sen66Device.setUploadClient(&uploadClient);
 
   wifiConnection.setup(pref);
   wifiConnection.enable();
@@ -241,99 +237,8 @@ void setup(){
   ESP_LOGD(TAG, "Setup complete");
 }
 
-uint8_t sensironState = 0;
-uint32_t sensironTimer = 0;
-int8_t sensironSN[32] = {0};
-uint16_t mass_concentration_pm1p0 = 0;
-uint16_t mass_concentration_pm2p5 = 0;
-uint16_t mass_concentration_pm4p0 = 0;
-uint16_t mass_concentration_pm10p0 = 0;
-int16_t ambient_humidity = 0;
-int16_t ambient_temperature = 0;
-int16_t voc_index = 0;
-int16_t nox_index = 0;
-uint16_t co2 = 0;
-void sensironUpdate() {
-  int16_t error;
-  
-  switch(sensironState) {
-    case 0:
-      error = sensor.deviceReset();
-      if (error != NO_ERROR) {
-          ESP_LOGW(TAG, "error executing device_reset(): %i", error);
-          sensironState = 0xFF;
-      } else {
-        sensironTimer = millis();
-        sensironState = 0x01;
-      }
-      break;
-    case 1:
-      if(millis() > sensironTimer + 1200) {
-        ESP_LOGI(TAG, "Starting sensiron");
-        sensironState = 0x02;
-      }
-    break;
-    case 2:
-      error = sensor.getSerialNumber(sensironSN, 32);
-      if (error != NO_ERROR) {
-          ESP_LOGW(TAG, "error executing get_serial_number(): %i", error);
-          sensironState = 0xFF;
-      } else {
-        ESP_LOGI(TAG, "serial_number: %s", sensironSN);
-        error = sensor.startContinuousMeasurement();
-        if (error != NO_ERROR) {
-            ESP_LOGW(TAG, "error executing start_continuous_measurement(): %i", error);
-            sensironState = 0xFF;
-        } else {
-          sensironTimer = millis();
-          sensironState = 0x03;
-        }
-    }
-    break;
-    case 3:
-      if(millis() > sensironTimer + 10000) {
-        sensironTimer = millis();
-        error = sensor.readMeasuredValuesAsIntegers(
-            mass_concentration_pm1p0, mass_concentration_pm2p5,
-            mass_concentration_pm4p0, mass_concentration_pm10p0,
-            ambient_humidity, ambient_temperature, voc_index, nox_index,
-            co2);
-        if (error != NO_ERROR) {
-            ESP_LOGW(TAG, "error executing read_measured_values_as_integers(): %i", error);
-        } else {
-          ESP_LOGI(TAG, "mass_concentration_pm1p0: %u ", mass_concentration_pm1p0);
-          ESP_LOGI(TAG, "mass_concentration_pm2p5: %u ", mass_concentration_pm2p5);
-          ESP_LOGI(TAG, "mass_concentration_pm4p0: %u ", mass_concentration_pm4p0);
-          ESP_LOGI(TAG, "mass_concentration_pm10p0: %u ", mass_concentration_pm10p0);
-          ESP_LOGI(TAG, "ambient_humidity: %i ", ambient_humidity);
-          ESP_LOGI(TAG, "ambient_temperature: %i ", ambient_temperature);
-          ESP_LOGI(TAG, "voc_index: %i ", voc_index);
-          ESP_LOGI(TAG, "nox_index: %i ", nox_index);
-          ESP_LOGI(TAG, "co2: %u", co2);
-        }
-
-      }
-    break;
-    case 0xFE:
-      if(millis() > sensironTimer + 10000) {
-        ESP_LOGI(TAG, "Sensiron retry");
-        sensironState = 0x00;
-      }
-    break;
-    case 0xFF:
-      // Error
-      sensironTimer = millis();
-      sensironState = 0xFE;
-    break;
-  }
-
-}
-
-
 void loop() {
   Sliceable::sliceAll( );
-
-  sensironUpdate();
 
   bool telnetSpaceAvailable = telnetLogServer.spaceAvailable( 32);
   bool serialSpaceAvailable = (Serial.availableForWrite() > 32);
