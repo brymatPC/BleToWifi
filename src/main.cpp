@@ -10,6 +10,14 @@
 #include "TempHumidityParser.h"
 #include "VictronDevice.h"
 #include "AppManager.h"
+#include <Wire.h>
+
+#include "sense.h"
+#include <sen66_i2c.h>
+#include <sensirion_common.h>
+#include <sensirion_i2c_hal.h>
+
+#define sensirion_hal_sleep_us sensirion_i2c_hal_sleep_usec
 
 #ifdef HAS_LED_STRIP
   #include "LedStripDriver.h"
@@ -45,6 +53,9 @@
 
 #define YRSHELL_ON_TELNET
 #define LOCAL_LOG_BUFFER_SIZE 8192
+
+#define I2C_SDA_PIN 1
+#define I2C_SCL_PIN 2
 
 static char s_appName[] = "ESP32 BLE Test";
 static char s_appVersion[] = "0.9.0";
@@ -175,6 +186,9 @@ void setup(){
   ledStrip.setup();
 #endif
 
+  sensirion_i2c_hal_init();
+  sen66_init(SEN66_I2C_ADDR_6B);
+
   wifiConnection.setup(pref);
   wifiConnection.enable();
 
@@ -222,9 +236,100 @@ void setup(){
   ESP_LOGD(TAG, "Setup complete");
 }
 
+uint8_t sensironState = 0;
+uint32_t sensironTimer = 0;
+int8_t sensironSN[32] = {0};
+uint16_t mass_concentration_pm1p0 = 0;
+uint16_t mass_concentration_pm2p5 = 0;
+uint16_t mass_concentration_pm4p0 = 0;
+uint16_t mass_concentration_pm10p0 = 0;
+int16_t ambient_humidity = 0;
+int16_t ambient_temperature = 0;
+int16_t voc_index = 0;
+int16_t nox_index = 0;
+uint16_t co2 = 0;
+uint16_t repetition = 0;
+void sensironUpdate() {
+  int16_t error;
+  
+  switch(sensironState) {
+    case 0:
+      error = sen66_device_reset();
+      if (error != NO_ERROR) {
+          ESP_LOGW(TAG, "error executing device_reset(): %i", error);
+          sensironState = 0xFF;
+      } else {
+        sensironTimer = millis();
+        sensironState = 0x01;
+      }
+      break;
+    case 1:
+      if(millis() > sensironTimer + 1200) {
+        ESP_LOGI(TAG, "Starting sensiron");
+        sensironState = 0x02;
+      }
+    break;
+    case 2:
+      error = sen66_get_serial_number(sensironSN, 32);
+      if (error != NO_ERROR) {
+          ESP_LOGW(TAG, "error executing get_serial_number(): %i", error);
+          sensironState = 0xFF;
+      } else {
+        ESP_LOGI(TAG, "serial_number: %s", sensironSN);
+        error = sen66_start_continuous_measurement();
+        if (error != NO_ERROR) {
+            ESP_LOGW(TAG, "error executing start_continuous_measurement(): %i", error);
+            sensironState = 0xFF;
+        } else {
+          sensironTimer = millis();
+          sensironState = 0x03;
+        }
+    }
+    break;
+    case 3:
+      if(millis() > sensironTimer + 10000) {
+        sensironTimer = millis();
+        error = sen66_read_measured_values_as_integers(
+            &mass_concentration_pm1p0, &mass_concentration_pm2p5,
+            &mass_concentration_pm4p0, &mass_concentration_pm10p0,
+            &ambient_humidity, &ambient_temperature, &voc_index, &nox_index,
+            &co2);
+        if (error != NO_ERROR) {
+            ESP_LOGW(TAG, "error executing read_measured_values_as_integers(): %i", error);
+        } else {
+          ESP_LOGI(TAG, "mass_concentration_pm1p0: %u ", mass_concentration_pm1p0);
+          ESP_LOGI(TAG, "mass_concentration_pm2p5: %u ", mass_concentration_pm2p5);
+          ESP_LOGI(TAG, "mass_concentration_pm4p0: %u ", mass_concentration_pm4p0);
+          ESP_LOGI(TAG, "mass_concentration_pm10p0: %u ", mass_concentration_pm10p0);
+          ESP_LOGI(TAG, "ambient_humidity: %i ", ambient_humidity);
+          ESP_LOGI(TAG, "ambient_temperature: %i ", ambient_temperature);
+          ESP_LOGI(TAG, "voc_index: %i ", voc_index);
+          ESP_LOGI(TAG, "nox_index: %i ", nox_index);
+          ESP_LOGI(TAG, "co2: %u", co2);
+        }
+
+      }
+    break;
+    case 0xFE:
+      if(millis() > sensironTimer + 10000) {
+        ESP_LOGI(TAG, "Sensiron retry");
+        sensironState = 0x00;
+      }
+    break;
+    case 0xFF:
+      // Error
+      sensironTimer = millis();
+      sensironState = 0xFE;
+    break;
+  }
+
+}
+
 
 void loop() {
   Sliceable::sliceAll( );
+
+  sensironUpdate();
 
   bool telnetSpaceAvailable = telnetLogServer.spaceAvailable( 32);
   bool serialSpaceAvailable = (Serial.availableForWrite() > 32);
@@ -242,4 +347,68 @@ void loop() {
 #endif
     }
   }
+}
+
+
+void sensirion_i2c_hal_init_ext(void) {
+  Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+}
+
+/**
+ * Execute one read transaction on the I2C bus, reading a given number of bytes.
+ * If the device does not acknowledge the read command, an error shall be
+ * returned.
+ *
+ * @param address 7-bit I2C address to read from
+ * @param data    pointer to the buffer where the data is to be stored
+ * @param count   number of bytes to read from I2C and store in the buffer
+ * @returns 0 on success, error code otherwise
+ */
+int8_t sensirion_i2c_hal_read_ext(uint8_t address, uint8_t* data, uint16_t count) {
+    ESP_LOGI(TAG, "sensirion_i2c_hal_read: len: %d", count);
+    // dev.addr = address;
+    // I2C_DEV_TAKE_MUTEX(&dev);
+    // I2C_DEV_CHECK(&dev, i2c_dev_read(&dev, NULL, 0, data, count));
+    // I2C_DEV_GIVE_MUTEX(&dev);
+    uint8_t bytesReceived = Wire.requestFrom(address, count);
+    uint16_t i = 0;
+    //Serial.printf("Received bytes: %u\n", bytesReceived);
+
+    if ((bool)bytesReceived) {
+        while (Wire.available() && i < count) {
+            char c = Wire.read();
+            data[i] = (uint8_t) c;
+            i++;
+        }
+    }
+
+    ESP_LOGI(TAG, "sensirion_i2c_hal_read: len: %d", i);
+
+    ESP_LOGI(TAG, "READ OK");
+    return (int8_t)ESP_OK;
+}
+
+/**
+ * Execute one write transaction on the I2C bus, sending a given number of
+ * bytes. The bytes in the supplied buffer must be sent to the given address. If
+ * the slave device does not acknowledge any of the bytes, an error shall be
+ * returned.
+ *
+ * @param address 7-bit I2C address to write to
+ * @param data    pointer to the buffer containing the data to write
+ * @param count   number of bytes to read from the buffer and send over I2C
+ * @returns 0 on success, error code otherwise
+ */
+int8_t sensirion_i2c_hal_write_ext(uint8_t address, const uint8_t* data, uint16_t count) {
+    ESP_LOGI(TAG, "sensirion_i2c_hal_write: len: %d", count);
+
+    Wire.beginTransmission(address);
+    Wire.write(data, count);
+    Wire.endTransmission(true);
+    // dev.addr = address;
+    // I2C_DEV_TAKE_MUTEX(&dev);
+    // I2C_DEV_CHECK(&dev, i2c_dev_write(&dev, NULL, 0, data, count));
+    // I2C_DEV_GIVE_MUTEX(&dev);
+    ESP_LOGI(TAG, "WRITE OK");
+    return (int8_t)ESP_OK;
 }
