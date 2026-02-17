@@ -63,7 +63,7 @@ bool UploadDataClient::busy() {
     return m_state != STATE_IDLE || m_sendRequest;
 }
 void UploadDataClient::changeState( uint8_t newState) {
-    ESP_LOGI(TAG, "change state from%u to %u", m_state, newState);
+    ESP_LOGI(TAG, "change state from %u to %u", m_state, newState);
     m_state = newState;
 }
 void UploadDataClient::sendHeader() {
