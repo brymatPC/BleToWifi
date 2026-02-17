@@ -30,6 +30,8 @@ private:
     uint32_t m_numDuplicates;
 
     int8_t m_serialNumber[SENSIRION_SN_LEN];
+    uint8_t m_majorVer;
+    uint8_t m_minorVer;
     uint16_t pm1p0 = 0;
     uint16_t pm2p5 = 0;
     uint16_t pm4p0 = 0;
@@ -41,6 +43,7 @@ private:
     uint16_t co2 = 0;
 
     void read();
+    void logReadings();
 
 public:
     Sen66Device(SensirionI2cSen66 &sensor);

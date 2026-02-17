@@ -10,12 +10,14 @@
 typedef enum {
   STATE_RESET       = 0,
   STATE_RESET_WAIT  = 1,
-  STATE_START       = 2,
-  STATE_IDLE        = 3,
-  STATE_UPLOAD      = 4,
-  STATE_UPLOAD_WAIT = 5,
-  STATE_SEND_WAIT   = 6,
-  STATE_READ        = 7,
+  STATE_SERIAL_NUM  = 2,
+  STATE_VERSION     = 3,
+  STATE_START       = 4,
+  STATE_IDLE        = 5,
+  STATE_UPLOAD      = 6,
+  STATE_UPLOAD_WAIT = 7,
+  STATE_SEND_WAIT   = 8,
+  STATE_READ        = 9,
   STATE_ERROR       = 10,
   STATE_ERROR_WAIT  = 11,
 
@@ -58,10 +60,13 @@ void Sen66Device::read() {
     if (error != NO_ERROR) {
         ESP_LOGW(TAG, "error executing read_measured_values_as_integers(): %i", error);
     } else {
-        ESP_LOGI(TAG, "pm1p0: %u, pm2p5: %u, pm4p0: %u, pm10p0: %u", pm1p0, pm2p5, pm4p0, pm10p0);
-        ESP_LOGI(TAG, "temperature: %i, humidity: %i", temperature, humidity);
-        ESP_LOGI(TAG, "vocIndex: %i, noxIndex: %i, co2: %u", vocIndex, noxIndex, co2);
+        logReadings();
     }
+}
+void Sen66Device::logReadings() {
+    ESP_LOGI(TAG, "pm1p0: %u.%u, pm2p5: %u.%u, pm4p0: %u.%u, pm10p0: %u.%u", pm1p0/10, pm1p0%10, pm2p5/10, pm2p5%10, pm4p0/10, pm4p0%10, pm10p0/10, pm10p0%10);
+    ESP_LOGI(TAG, "temperature: %i.%u, humidity: %i.%u", temperature/200, temperature%200, humidity/100, humidity%100);
+    ESP_LOGI(TAG, "vocIndex: %i, noxIndex: %i, co2: %u ppm", vocIndex/10, noxIndex/10, co2);
 }
 void Sen66Device::slice( void) {
     int16_t error;
@@ -78,26 +83,40 @@ void Sen66Device::slice( void) {
         break;
         case STATE_RESET_WAIT:
             if(m_timer.hasIntervalElapsed()) {
-                ESP_LOGI(TAG, "Starting sensiron");
+                ESP_LOGI(TAG, "Starting sensirion");
+                m_state = STATE_SERIAL_NUM;
+            }
+        break;
+        case STATE_SERIAL_NUM:
+            error = m_sensor.getSerialNumber(m_serialNumber, SENSIRION_SN_LEN);
+            if (error != NO_ERROR) {
+                ESP_LOGW(TAG, "error executing getSerialNumber(): %i", error);
+                m_state = STATE_ERROR;
+            } else {
+                ESP_LOGI(TAG, "serial_number: %s", m_serialNumber);
+                m_state = STATE_VERSION;
+            }
+        break;
+        case STATE_VERSION:
+            error = m_sensor.getVersion(m_majorVer, m_minorVer);
+            if (error != NO_ERROR) {
+                ESP_LOGW(TAG, "error executing getVersion(): %i", error);
+                m_state = STATE_ERROR;
+            } else {
+                ESP_LOGI(TAG, "version: %u.%u", m_majorVer, m_minorVer);
                 m_state = STATE_START;
             }
         break;
         case STATE_START:
-            error = m_sensor.getSerialNumber(m_serialNumber, SENSIRION_SN_LEN);
+            error = m_sensor.startContinuousMeasurement();
             if (error != NO_ERROR) {
-                ESP_LOGW(TAG, "error executing get_serial_number(): %i", error);
+                ESP_LOGW(TAG, "error executing startContinuousMeasurement(): %i", error);
                 m_state = STATE_ERROR;
             } else {
-                ESP_LOGI(TAG, "serial_number: %s", m_serialNumber);
-                error = m_sensor.startContinuousMeasurement();
-                if (error != NO_ERROR) {
-                    ESP_LOGW(TAG, "error executing start_continuous_measurement(): %i", error);
-                    m_state = STATE_ERROR;
-                } else {
-                    m_timer.setInterval(s_SAMPLE_TIME_MS);
-                    m_uploadTimer.setInterval(s_UPLOAD_TIME_MS);
-                    m_state = STATE_IDLE;
-                }
+                ESP_LOGI(TAG, "Sensirion started");
+                m_timer.setInterval(s_SAMPLE_TIME_MS);
+                m_uploadTimer.setInterval(s_UPLOAD_TIME_MS);
+                m_state = STATE_IDLE;
             }
         break;
         case STATE_IDLE:
