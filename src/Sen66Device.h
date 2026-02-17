@@ -8,6 +8,7 @@
 #include <SensirionI2cSen66.h>
 
 #define SENSIRION_SN_LEN (32)
+#define MAX_SEN66_SEND_BUF_SIZE 128
 
 class UploadDataClient;
 
@@ -41,9 +42,13 @@ private:
     int16_t vocIndex = 0;
     int16_t noxIndex = 0;
     uint16_t co2 = 0;
+    uint32_t m_resetTimeMs = 0;
+
+    char m_sendBuf[MAX_SEN66_SEND_BUF_SIZE];
 
     void read();
     void logReadings();
+    void uploadReadings();
 
 public:
     Sen66Device(SensirionI2cSen66 &sensor);

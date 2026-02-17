@@ -25,9 +25,10 @@ typedef enum {
 
 static const char* TAG = "Sen66";
 
-const char Sen66Device::s_PREF_NAMESPACE[] = "vic";
+const char Sen66Device::s_PREF_NAMESPACE[] = "sen66";
 const unsigned int Sen66Device::s_SAMPLE_TIME_MS = 10000;
-const unsigned int Sen66Device::s_UPLOAD_TIME_MS = 120000;
+//const unsigned int Sen66Device::s_UPLOAD_TIME_MS = 120000;
+const unsigned int Sen66Device::s_UPLOAD_TIME_MS = 60000;
 const unsigned int Sen66Device::s_STARTUP_OFFSET_MS = 0;
 char Sen66Device::s_ROUTE[] = "/sen66";
 
@@ -61,12 +62,19 @@ void Sen66Device::read() {
         ESP_LOGW(TAG, "error executing read_measured_values_as_integers(): %i", error);
     } else {
         logReadings();
+        m_dataFresh = true;
     }
 }
 void Sen66Device::logReadings() {
     ESP_LOGI(TAG, "pm1p0: %u.%u, pm2p5: %u.%u, pm4p0: %u.%u, pm10p0: %u.%u", pm1p0/10, pm1p0%10, pm2p5/10, pm2p5%10, pm4p0/10, pm4p0%10, pm10p0/10, pm10p0%10);
     ESP_LOGI(TAG, "temperature: %i.%u, humidity: %i.%u", temperature/200, temperature%200, humidity/100, humidity%100);
     ESP_LOGI(TAG, "vocIndex: %i, noxIndex: %i, co2: %u ppm", vocIndex/10, noxIndex/10, co2);
+}
+void Sen66Device::uploadReadings() {
+    if(!m_uploadClient) return;
+    snprintf(m_sendBuf, MAX_SEN66_SEND_BUF_SIZE, "{\"up\":%u,\"pm1\":%u,\"pm2\":%u,\"pm4\":%u,\"pm10\":%u,\"t\":%d,\"h\":%d, \"voc\":%d,\"nox\":%d,\"co2\":%u}",
+        (millis()-m_resetTimeMs), pm1p0, pm2p5, pm4p0, pm10p0, temperature, humidity, vocIndex, noxIndex, co2);
+    m_uploadClient->sendFile(s_ROUTE, m_sendBuf, strlen(m_sendBuf));
 }
 void Sen66Device::slice( void) {
     int16_t error;
@@ -116,6 +124,7 @@ void Sen66Device::slice( void) {
                 ESP_LOGI(TAG, "Sensirion started");
                 m_timer.setInterval(s_SAMPLE_TIME_MS);
                 m_uploadTimer.setInterval(s_UPLOAD_TIME_MS);
+                m_resetTimeMs = millis();
                 m_state = STATE_IDLE;
             }
         break;
@@ -143,10 +152,7 @@ void Sen66Device::slice( void) {
         break;
         case STATE_UPLOAD_WAIT:
             if(!m_uploadClient->busy()) {
-                // TODO: Add data upload
-                // snprintf(m_sendBuf, MAX_VIC_SEND_BUF_SIZE, "{\"ttg\":%d,\"v\":%d,\"i\":%d,\"soc\":%d}",
-                //     m_data.timeToGo, m_data.batteryVoltage, m_data.batteryCurrent, m_data.stateOfCharge);
-                // m_uploadClient->sendFile(s_ROUTE, m_sendBuf, strlen(m_sendBuf));
+                uploadReadings();
                 m_dataFresh = false;
                 m_state = STATE_SEND_WAIT;
             }
