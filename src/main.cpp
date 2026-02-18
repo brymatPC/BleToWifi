@@ -160,6 +160,7 @@ void setup(){
   esp_log_level_set("Upload", ESP_LOG_WARN);
   esp_log_level_set("THParse", ESP_LOG_WARN);
   esp_log_level_set("Victron", ESP_LOG_WARN);
+  esp_log_level_set("Sen66", ESP_LOG_INFO);
 
   resetReasonStartup = esp_reset_reason();
 

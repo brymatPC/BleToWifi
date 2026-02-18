@@ -8,6 +8,7 @@
 #include <SensirionI2cSen66.h>
 
 #define SENSIRION_SN_LEN (32)
+#define SENSIRION_STATE_LEN (8)
 #define MAX_SEN66_SEND_BUF_SIZE 128
 
 class UploadDataClient;
@@ -33,6 +34,7 @@ private:
     int8_t m_serialNumber[SENSIRION_SN_LEN];
     uint8_t m_majorVer;
     uint8_t m_minorVer;
+    uint8_t m_vocState[SENSIRION_STATE_LEN];
     uint16_t pm1p0 = 0;
     uint16_t pm2p5 = 0;
     uint16_t pm4p0 = 0;

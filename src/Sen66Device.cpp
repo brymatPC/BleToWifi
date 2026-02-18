@@ -18,8 +18,9 @@ typedef enum {
   STATE_UPLOAD_WAIT = 7,
   STATE_SEND_WAIT   = 8,
   STATE_READ        = 9,
-  STATE_ERROR       = 10,
-  STATE_ERROR_WAIT  = 11,
+  STATE_READ_STATE  = 10,
+  STATE_ERROR       = 11,
+  STATE_ERROR_WAIT  = 12,
 
 } sen66States_t;
 
@@ -140,6 +141,15 @@ void Sen66Device::slice( void) {
         break;
         case STATE_READ:
             read();
+            m_state = STATE_READ_STATE;
+        break;
+        case STATE_READ_STATE:
+            error = m_sensor.getVocAlgorithmState(m_vocState, SENSIRION_STATE_LEN);
+            if (error != NO_ERROR) {
+                ESP_LOGW(TAG, "error executing getVocAlgorithmState(): %i", error);
+            } else {
+                ESP_LOGI(TAG, "VocState: 0x%02X%02X%02X%02X%02X%02X%02X%02X", m_vocState[7], m_vocState[6], m_vocState[5], m_vocState[4], m_vocState[3], m_vocState[2], m_vocState[1], m_vocState[0]);
+            }
             m_state = STATE_IDLE;
         break;
         case STATE_UPLOAD:
