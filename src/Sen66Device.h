@@ -9,7 +9,7 @@
 
 #define SENSIRION_SN_LEN (32)
 #define SENSIRION_STATE_LEN (8)
-#define MAX_SEN66_SEND_BUF_SIZE 128
+#define MAX_SEN66_SEND_BUF_SIZE 164
 
 class UploadDataClient;
 

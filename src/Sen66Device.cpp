@@ -73,8 +73,8 @@ void Sen66Device::logReadings() {
 }
 void Sen66Device::uploadReadings() {
     if(!m_uploadClient) return;
-    snprintf(m_sendBuf, MAX_SEN66_SEND_BUF_SIZE, "{\"up\":%u,\"pm1\":%u,\"pm2\":%u,\"pm4\":%u,\"pm10\":%u,\"t\":%d,\"h\":%d, \"voc\":%d,\"nox\":%d,\"co2\":%u}",
-        (millis()-m_resetTimeMs), pm1p0, pm2p5, pm4p0, pm10p0, temperature, humidity, vocIndex, noxIndex, co2);
+    snprintf(m_sendBuf, MAX_SEN66_SEND_BUF_SIZE, "{\"up\":%u,\"sn\":\"%s\",\"pm1\":%u,\"pm2\":%u,\"pm4\":%u,\"pm10\":%u,\"t\":%d,\"h\":%d, \"voc\":%d,\"nox\":%d,\"co2\":%u}",
+        (millis()-m_resetTimeMs), m_serialNumber, pm1p0, pm2p5, pm4p0, pm10p0, temperature, humidity, vocIndex, noxIndex, co2);
     m_uploadClient->sendFile(s_ROUTE, m_sendBuf, strlen(m_sendBuf));
 }
 void Sen66Device::slice( void) {
