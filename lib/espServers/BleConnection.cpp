@@ -219,6 +219,11 @@ void BleConnection::onResult(BLEAdvertisedDevice advertisedDevice) {
         if(memcmp(address.getNative(), addrToParse.getNative(), ESP_BD_ADDR_LEN) == 0) {
             m_devices[0].payloadLen = 0;
             strcpy(m_devices[0].addr, address.toString().c_str());
+            if (advertisedDevice.haveName()) {
+                strncpy(m_devices[0].name, advertisedDevice.getName().c_str(), 32);
+            } else {
+                m_devices[0].name[0] = '\0';
+            }
             if (advertisedDevice.haveManufacturerData()) {
                 int len = advertisedDevice.getManufacturerData().length();
                 const char* data = advertisedDevice.getManufacturerData().c_str();

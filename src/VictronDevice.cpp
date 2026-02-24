@@ -164,6 +164,7 @@ void VictronDevice::decrypt() {
         ESP_LOGI(TAG, "addr=%s", m_bleData.addr);
         ESP_LOGI(TAG, "batteryVoltage=%u batteryCurrent=%d", batteryVoltage, batteryCurrent);
 
+        strncpy(m_data.serial, m_bleData.name, 32);
         m_data.timeToGo = timeToGo;
         m_data.batteryVoltage = batteryVoltage;
         m_data.batteryCurrent = batteryCurrent;
@@ -213,8 +214,8 @@ void VictronDevice::slice( void) {
         break;
         case STATE_UPLOAD_WAIT:
             if(!m_uploadClient->busy()) {
-                snprintf(m_sendBuf, MAX_VIC_SEND_BUF_SIZE, "{\"ttg\":%d,\"v\":%d,\"i\":%d,\"soc\":%d}",
-                    m_data.timeToGo, m_data.batteryVoltage, m_data.batteryCurrent, m_data.stateOfCharge);
+                snprintf(m_sendBuf, MAX_VIC_SEND_BUF_SIZE, "{\"sn\":\"%s\",\"ttg\":%d,\"v\":%d,\"i\":%d,\"soc\":%d}",
+                    m_data.serial, m_data.timeToGo, m_data.batteryVoltage, m_data.batteryCurrent, m_data.stateOfCharge);
                 m_uploadClient->sendFile(s_ROUTE, m_sendBuf, strlen(m_sendBuf));
                 m_dataFresh = false;
                 m_state = STATE_SEND_WAIT;

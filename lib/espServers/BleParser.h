@@ -12,6 +12,7 @@ enum class BleParserTypes: uint16_t {
 typedef struct {
   bool valid = false;
   char addr[20];
+  char name[32];
   uint8_t payloadLen = 0;
   uint8_t payload[50];
 } bleDeviceData_t;

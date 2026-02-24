@@ -13,6 +13,7 @@
 class UploadDataClient;
 
 typedef struct {
+    char serial[32];
     uint16_t timeToGo;
     uint16_t batteryVoltage;
     uint32_t stateOfCharge;
