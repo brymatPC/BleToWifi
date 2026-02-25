@@ -1,6 +1,7 @@
 #include "YRShellEsp32.h"
 #include "AppManager.h"
 #include "LedStripDriver.h"
+#include "Sen66Device.h"
 #include "TelnetServer.h"
 #include "TempHumidityParser.h"
 #include "WifiConnection.h"
@@ -13,7 +14,7 @@
 #include <time.h>
 #include <esp_chip_info.h>
 #include <esp_idf_version.h>
-#include <esp_log.h>
+#include "esp_log_custom.h"
 #endif
 
 static const char* TAG = "YRShell";
@@ -106,6 +107,7 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
 
     { SE_CC_setVicKey,               "svk"},
     { SE_CC_setTempHumidityLogging,  "setTHLogging"},
+    { SE_CC_setSen66Enable,          "setSen66Enable"},
 
     { SE_CC_setUploadIp,            "setUploadIp"},
     { SE_CC_setUploadPort,          "setUploadPort"},
@@ -676,6 +678,9 @@ void YRShellEsp32::executeFunction( uint16_t n) {
                 if(m_victronDevice) {
                   m_victronDevice->save(*m_pref);
                 }
+                if(m_sen66Device) {
+                  m_sen66Device->save(*m_pref);
+                }
                 if(m_uploadClient) {
                   m_uploadClient->save(*m_pref);
                 }
@@ -772,6 +777,12 @@ void YRShellEsp32::executeFunction( uint16_t n) {
                 m_tempHumParser->enableAdditionalLogging(t1);
               }
               break;
+          case SE_CC_setSen66Enable:
+              t1 = popParameterStack();
+              if( m_sen66Device) {
+                m_sen66Device->setEnabled(t1);
+              }
+            break;
           case SE_CC_setUploadIp:
               t1 = popParameterStack();
               if( m_uploadClient) {

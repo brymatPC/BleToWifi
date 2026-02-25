@@ -1,6 +1,6 @@
 #include "Sen66Device.h"
 #include "UploadDataClient.h"
-#include <esp_log.h>
+#include "esp_log_custom.h"
 
 // Used by Sensirion Library
 #ifndef NO_ERROR
@@ -8,23 +8,23 @@
 #endif
 
 typedef enum {
-  STATE_RESET       = 0,
-  STATE_RESET_WAIT  = 1,
-  STATE_SERIAL_NUM  = 2,
-  STATE_VERSION     = 3,
-  STATE_START       = 4,
-  STATE_IDLE        = 5,
-  STATE_UPLOAD      = 6,
-  STATE_UPLOAD_WAIT = 7,
-  STATE_SEND_WAIT   = 8,
-  STATE_READ        = 9,
-  STATE_READ_STATE  = 10,
-  STATE_ERROR       = 11,
-  STATE_ERROR_WAIT  = 12,
-
+    STATE_OFF         = 0,
+    STATE_RESET       = 1,
+    STATE_RESET_WAIT  = 2,
+    STATE_SERIAL_NUM  = 3,
+    STATE_VERSION     = 4,
+    STATE_START       = 5,
+    STATE_IDLE        = 6,
+    STATE_UPLOAD      = 7,
+    STATE_UPLOAD_WAIT = 8,
+    STATE_SEND_WAIT   = 9,
+    STATE_READ        = 10,
+    STATE_READ_STATE  = 11,
+    STATE_ERROR       = 12,
+    STATE_ERROR_WAIT  = 13,
 } sen66States_t;
 
-static const char* TAG = "Sen66";
+static const char* TAG = "Sen66  ";
 
 const char Sen66Device::s_PREF_NAMESPACE[] = "sen66";
 const unsigned int Sen66Device::s_SAMPLE_TIME_MS = 10000;
@@ -36,22 +36,23 @@ char Sen66Device::s_ROUTE[] = "/sen66";
 Sen66Device::Sen66Device(SensirionI2cSen66 &sensor) :
     m_sensor(sensor)
 {
+    m_enabled = false;
     m_dataFresh = false;
     m_lastUpdate = 0;
-    m_state = STATE_RESET;
+    m_state = STATE_OFF;
     m_uploadTimer.setInterval(s_STARTUP_OFFSET_MS);
     m_uploadRequest = false;
     m_numDuplicates = 0;
 }
 void Sen66Device::setup(Preferences &pref) {
     pref.begin(s_PREF_NAMESPACE, true);
-    
+    m_enabled = pref.getBool("en", false);
     pref.end();
 }
 void Sen66Device::save(Preferences &pref) {
     char parserKey[16];
     pref.begin(s_PREF_NAMESPACE, false);
-    
+    pref.putBool("en", m_enabled);
     pref.end();
     ESP_LOGI(TAG, "pref updated");
 }
@@ -80,6 +81,11 @@ void Sen66Device::uploadReadings() {
 void Sen66Device::slice( void) {
     int16_t error;
     switch(m_state) {
+        case STATE_OFF:
+            if(m_enabled) {
+                m_state = STATE_RESET;
+            }
+        break;
         case STATE_RESET:
             error = m_sensor.deviceReset();
             if (error != NO_ERROR) {
@@ -137,6 +143,8 @@ void Sen66Device::slice( void) {
                 ESP_LOGD(TAG, "uploading data");
                 m_uploadRequest = false;
                 m_state = STATE_UPLOAD;
+            } else if(!m_enabled) {
+                m_state = STATE_OFF;
             }
         break;
         case STATE_READ:
@@ -180,11 +188,15 @@ void Sen66Device::slice( void) {
         case STATE_ERROR_WAIT:
             if(m_timer.hasIntervalElapsed()) {
                 ESP_LOGI(TAG, "Sensiron retry");
-                m_state = STATE_RESET;
+                if(m_enabled) {
+                    m_state = STATE_RESET;
+                } else {
+                    m_state = STATE_OFF;
+                }
             }
         break;
         default:
-            m_state = STATE_RESET;
+            m_state = STATE_OFF;
         break;
     }
 }

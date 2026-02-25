@@ -22,6 +22,7 @@ private:
     static char s_ROUTE[];
     
     SensirionI2cSen66 &m_sensor;
+    bool m_enabled;
     IntervalTimer m_timer;
     IntervalTimer m_uploadTimer;
     UploadDataClient* m_uploadClient;
@@ -62,6 +63,8 @@ public:
 
     void setUploadClient(UploadDataClient *client) { m_uploadClient = client; }
     virtual void slice( void);
+
+    void setEnabled(bool enable) { m_enabled = enable; }
 
 };
 
