@@ -1,6 +1,7 @@
 #include "AppManager.h"
 
 #include <Preferences.h>
+#include "esp_log_custom.h"
 
 static char s_resetUnknownStr[]     = "unknown";
 static char s_resetPowerOnStr[]     = "power-on";
@@ -19,7 +20,7 @@ static char s_resetEFuseStr[]       = "efuse";
 static char s_resetPowerGlitchStr[] = "power glitch";
 static char s_resetCpuLockupStr[]   = "cpu lockup";
 
-static const char* TAG = "AppMgr";
+static const char* TAG = "AppMgr ";
 
 const char AppManager::s_PREF_NAMESPACE[] = "sys";
 const uint32_t AppManager::s_DEFAULT_RUN_TIME_MS = 0;

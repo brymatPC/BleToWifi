@@ -1,5 +1,6 @@
 #include "TempHumidityParser.h"
 #include "UploadDataClient.h"
+#include "esp_log_custom.h"
 
 // Credit to: https://github.com/Bluetooth-Devices/thermobeacon-ble/blob/main/src/thermobeacon_ble/parser.py
 

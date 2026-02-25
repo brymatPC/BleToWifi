@@ -9,6 +9,8 @@
 #include <NetworkServer.h>
 #include <NetworkClient.h>
 
+#include "esp_log_custom.h"
+
 typedef enum {
   STATE_STARTUP          = 30,
   STATE_RESET            = 0,
@@ -27,7 +29,7 @@ typedef enum {
 
 } httpServerStates_t;
 
-static const char* TAG = "HttpS";
+static const char* TAG = "HttpS  ";
 
 static char charToHex( char c) {
     char value = '\0';

@@ -1,10 +1,10 @@
 #include "LedStripDriver.h"
-#include <esp_log.h>
+#include "esp_log_custom.h"
 
 #define RMT_LED_STRIP_RESOLUTION_HZ 10000000 // 10MHz resolution, 1 tick = 0.1us (led strip needs a high resolution)
 #define RMT_LED_STRIP_GPIO_NUM      21
 
-static const char* TAG = "LedStr";
+static const char* TAG = "LedStr ";
 
 // Low intensity blue
 const uint32_t LedStripDriver::s_DEFAULT_COLOUR = 0x00100000;

@@ -2,15 +2,15 @@
 
 #if defined (ESP32)
   #include <Wifi.h>
-  #include <esp_log.h>
   #define WIFI_MODE_UNAVAILABLE (WIFI_MODE_NULL)
 #else
   #warning "WiFi is not supported on the selected target"
 #endif
 
 #include <NetworkClient.h>
+#include "esp_log_custom.h"
 
-static const char* TAG = "Upload";
+static const char* TAG = "Upload ";
 
 typedef enum {
   STATE_STARTUP         = 0,

@@ -21,6 +21,8 @@
 #include "esp_netif_sntp.h"
 //#include "esp_sntp.h"
 
+#include "esp_log_custom.h"
+
 //  0x01 - setup log
 //  0x02 - errors
 //  0x04 - exec output
@@ -54,7 +56,7 @@
 
 static char s_appName[] = "ESP32 BLE Test";
 static char s_appVersion[] = "0.9.0";
-static const char* TAG = "Main";
+static const char* TAG = "Main   ";
 
 Preferences pref;
 CircularQ<char, LOCAL_LOG_BUFFER_SIZE> m_logQ;
@@ -144,10 +146,10 @@ void setup(){
   unsigned telnetLogPort = 2023;
   
   // Use these to redirect Arduino logging
-  ets_install_putc2(&log_char);
-  ets_install_putc1(NULL);  // closes UART log output
+  // ets_install_putc2(&log_char);
+  // ets_install_putc1(NULL);  // closes UART log output
   // Use this to redirect Espressif logging (If enabled)
-  //esp_log_set_vprintf(custom_log_handler);
+  esp_log_set_vprintf(custom_log_handler);
 
 
   esp_log_level_set("*", ESP_LOG_WARN);
@@ -158,8 +160,8 @@ void setup(){
   esp_log_level_set("BleCon", ESP_LOG_INFO);
   esp_log_level_set("LedStr", ESP_LOG_WARN);
   esp_log_level_set("Upload", ESP_LOG_WARN);
-  esp_log_level_set("THParse", ESP_LOG_WARN);
-  esp_log_level_set("Victron", ESP_LOG_WARN);
+  esp_log_level_set("THParse", ESP_LOG_INFO);
+  esp_log_level_set("Victron", ESP_LOG_INFO);
   esp_log_level_set("Sen66", ESP_LOG_INFO);
 
   resetReasonStartup = esp_reset_reason();
@@ -226,6 +228,7 @@ void setup(){
   shell.setBleConnection(&bleConnection);
   shell.setVictronDevice(&victronParser);
   shell.setTempHumParser(&tempHumParser);
+  shell.setSen66Device(&sen66Device);
 #ifdef HAS_LED_STRIP
   shell.setLedStrip(&ledStrip);
 #endif

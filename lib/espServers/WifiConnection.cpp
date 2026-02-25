@@ -1,4 +1,5 @@
 #include "WifiConnection.h"
+#include "esp_log_custom.h"
 
 #define BLINK_SPEED_CONNECTING_MS 200
 #define BLINK_SPEED_SCANNING_MS 400

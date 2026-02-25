@@ -8,7 +8,7 @@
 #endif
 #include <NetworkServer.h>
 #include <NetworkClient.h>
-#include <esp_log.h>
+#include "esp_log_custom.h"
 
 static const char* TAG = "TelnetS";
 

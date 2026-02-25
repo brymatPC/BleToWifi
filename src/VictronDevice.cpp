@@ -1,8 +1,8 @@
 #include "VictronDevice.h"
 #include "UploadDataClient.h"
-#include <esp_log.h>
 
 #include <aes/esp_aes.h>
+#include "esp_log_custom.h"
 
 typedef enum {
   STATE_RESET       = 0,
