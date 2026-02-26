@@ -110,6 +110,7 @@ typedef enum {
     SE_CC_sdkVersion,
     SE_CC_numTasks,
     SE_CC_cpuPerf,
+    SE_CC_heapPerf,
     SE_CC_curTime,
     SE_CC_setTime,
 

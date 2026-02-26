@@ -117,6 +117,7 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_sdkVersion,           "sdkVersion"},
     { SE_CC_numTasks,             "numTasks"},
     { SE_CC_cpuPerf,              "cpuPerf"},
+    { SE_CC_heapPerf,             "heapPerf"},
     { SE_CC_curTime,              "curTime"},
 		{ SE_CC_setTime,              "setTime"},
 
@@ -244,6 +245,16 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
         }
     }
     return ESP_OK;
+}
+
+void print_heap_stats() {
+  esp_err_t ret;
+  size_t total = heap_caps_get_total_size(MALLOC_CAP_DEFAULT);
+  size_t free = heap_caps_get_free_size(MALLOC_CAP_DEFAULT);
+  size_t min = heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
+  size_t largest = heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT);
+
+  ESP_LOGI(TAG, "Heap: total %lu, free %lu, min %lu, largest %lu", total, free, min, largest);
 }
 
 YRShellEsp32::YRShellEsp32() {
@@ -820,6 +831,9 @@ void YRShellEsp32::executeFunction( uint16_t n) {
           case SE_CC_cpuPerf:
             t1 = popParameterStack();
             print_real_time_stats(t1);
+            break;
+          case SE_CC_heapPerf:
+            print_heap_stats();
             break;
           case SE_CC_curTime:
               logTime();
