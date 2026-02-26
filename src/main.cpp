@@ -153,16 +153,18 @@ void setup(){
 
 
   esp_log_level_set("*", ESP_LOG_WARN);
-  esp_log_level_set("AppMgr", ESP_LOG_INFO);
-  esp_log_level_set("WifiCon", ESP_LOG_INFO);
-  esp_log_level_set("HttpS", ESP_LOG_WARN);
+  esp_log_level_set("Main   ", ESP_LOG_INFO);
+  esp_log_level_set("AppMgr ", ESP_LOG_INFO);
+  esp_log_level_set("YRShell", ESP_LOG_INFO);
+  esp_log_level_set("WifiCon", ESP_LOG_WARN);
+  esp_log_level_set("HttpS  ", ESP_LOG_WARN);
   esp_log_level_set("TelnetS", ESP_LOG_WARN);
-  esp_log_level_set("BleCon", ESP_LOG_INFO);
-  esp_log_level_set("LedStr", ESP_LOG_WARN);
-  esp_log_level_set("Upload", ESP_LOG_WARN);
+  esp_log_level_set("BleCon ", ESP_LOG_INFO);
+  esp_log_level_set("LedStr ", ESP_LOG_WARN);
+  esp_log_level_set("Upload ", ESP_LOG_WARN);
   esp_log_level_set("THParse", ESP_LOG_INFO);
   esp_log_level_set("Victron", ESP_LOG_INFO);
-  esp_log_level_set("Sen66", ESP_LOG_INFO);
+  esp_log_level_set("Sen66  ", ESP_LOG_INFO);
 
   resetReasonStartup = esp_reset_reason();
 
