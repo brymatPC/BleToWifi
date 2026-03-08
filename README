@@ -4,7 +4,7 @@ This project is based on work done by ssanci in the repository https://github.co
 
 1. Provide a mechanism for using YRShell with Platform.io
 1. Provide another example of how YRShell can be used on a project
-1. Provide a potentially useful project for providing TTL level UARTS over WIFI
+1. Provide a potentially useful project for receiving BLE data and uploading to Server
 
 # Setup Hardware
 This library has been tested on the ESP32.
@@ -16,21 +16,45 @@ This library has been tested on the ESP32.
 * `-DF_CPU=240000000L`
 * `-DARDUINO_USB_CDC_ON_BOOT=1`
 
+```
+ -DPLATFORMIO=60118 
+ -DBOARD_HAS_PSRAM 
+ -DARDUINO_ESP32_S3_ZERO 
+ -DARDUINO_USB_MODE=1 
+ -DARDUINO_USB_CDC_ON_BOOT=1 
+ -DHAS_LED_STRIP 
+ 
+ -DCORE_DEBUG_LEVEL=3 
+ 
+ -DESP32_ARDUINO_LIB_BUILDER -DESP_MDNS_VERSION_NUMBER=\"1.9.1\" -DESP_PLATFORM -DIDF_VER=\"v5.5.2-249-gf56bea3d1f\" -DMBEDTLS_CONFIG_FILE=\"mbedtls/esp_config.h\" -DMD5_ENABLED=1 -DOPENTHREAD_CONFIG_FILE=\"openthread-core-esp32x-spinel-config.h\" -DOPENTHREAD_PROJECT_LIB_CONFIG_FILE=\"openthread-core-esp32x-spinel-config.h\" 
+ 
+ -DSERIAL_FLASHER_BOOT_HOLD_TIME_MS=50 
+ -DSERIAL_FLASHER_RESET_HOLD_TIME_MS=100 
+ -DSOC_MMU_PAGE_SIZE=CONFIG_MMU_PAGE_SIZE 
+ -DSOC_XTAL_FREQ_MHZ=CONFIG_XTAL_FREQ 
+ -DUNITY_INCLUDE_CONFIG_H 
+ -D_GLIBCXX_HAVE_POSIX_SEMAPHORE 
+ -D_GLIBCXX_USE_POSIX_SEMAPHORE 
+ -D_GNU_SOURCE 
+ -D_POSIX_READER_WRITER_LOCKS 
+ -DTF_LITE_STATIC_MEMORY 
+ -DCHIP_CONFIG_SOFTWARE_VERSION_NUMBER=0 
+ -DCHIP_DNSSD_DEFAULT_PLATFORM=true 
+ -DCHIP_DNSSD_DEFAULT_NONE=false 
+ -DCHIP_DNSSD_DEFAULT_MINIMAL=false 
+ 
+ -DARDUINO_ARCH_ESP32 -DCHIP_HAVE_CONFIG_H -DESP32=ESP32 -DF_CPU=240000000L -DARDUINO=10812 -DARDUINO_VARIANT=\"esp32s3\" "-DARDUINO_BOARD=\"Espressif ESP32-S3-Zero\"" -DARDUINO_PARTITION_default_4MB 
+```
+
 # Setup PC Software
 This library is configured for use with platform.io within vscode.
 
 # Todo - Features
-* Add NTP Server?
-* Test with online server
-* Replace WIFI config file with non-volatile preferences
 * Add config for upload rates
 * Add more temp sensors
-* Simplify HTTP server
 * Add BLE config to HTTP server
-* Add low power mode
 * Different sensors?
-* Logging with sprintf
-* Switch to ESP-IDF
+* Add sd-card support
 
 # Timestamps
 * ISO 8601 format: YYYY-MM-DDThh:mm:ssZ (e.g., 2026-02-02T14:30:00Z)
@@ -44,36 +68,3 @@ Content-Length: 22
 
 {"v":99,"t":34,"h":56}
 ```
-
-# Target Storage
-* Runtime          - 4 bytes
-* Battery Voltage  - 1 byte (90 - 150 in tenths of a volt)
-* Battery Current  - 1 byte (-100 - 100 in tenths of an amp)
-* State of Charge  - 1 byte (0 - 100 %)
-* Inside Temp      - 1 byte (-20 - 100 deg C)
-* Inside Humidity  - 1 byte (0 - 100 %)
-* Outside Temp     - 1 byte (-20 - 100 deg C)
-* Outside Humidity - 1 byte (0 - 100 %)
-* Ice Box Temp     - 1 byte (-20 - 100 deg C)
-* Ice Box Humidity - 1 byte (0 - 100 %)
-* Flags            - 1 byte (0x00 - 0xFF)
-* Total = 14 bytes
-* Log Interval = 1 minute
-* Each day = 14 * 60 * 24 = 20 160 bytes
-
-
-# Target Behaviour
-* Normal Operation
-    * Run BLE scan at target interval
-    * Collect sensor data
-    * Append to log file
-    * Repeat
-* Quick Check
-    * Connect to WIFI access point
-    * Access 192.68.10.2 via HTTP
-    * Observe current values
-* Download Data
-    * Connect to WIFI access point
-    * Access 192.68.10.2 via HTTP
-    * Download stored data file
-    * Clear file, restart logging
