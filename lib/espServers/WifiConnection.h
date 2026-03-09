@@ -33,6 +33,7 @@ private:
   char m_networkPassword[MAX_WIFI_NETWORKS][MAX_WIFI_ENTRY_LEN];
 
   uint32_t m_networkIp;
+  bool m_tryReconnect;
 
 protected:
   uint8_t m_currentAp, m_state;
@@ -57,6 +58,8 @@ public:
 
   void setup(Preferences &pref);
   void save(Preferences &pref);
+
+  void tryReconnect();
 
   const char* getHostName( void) { return m_hostName; }
   const char* getHostPassword( void) { return m_hostPassword; }

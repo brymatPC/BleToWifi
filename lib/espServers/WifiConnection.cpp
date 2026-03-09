@@ -2,7 +2,8 @@
 #include "esp_log_custom.h"
 
 #define BLINK_SPEED_CONNECTING_MS 200
-#define BLINK_SPEED_SCANNING_MS 400
+#define BLINK_SPEED_SCANNING_MS   400
+#define BLINK_SPEED_AP_MS         1000
 
 static const char* TAG = "WifiCon";
 
@@ -31,6 +32,7 @@ typedef enum {
   STATE_TURN_OFF          = 12,
   STATE_WAIT_OFF          = 13,
   STATE_OFF               = 14,
+  STATE_IDLE              = 15,
 
 } wifiStates_t;
 
@@ -86,6 +88,7 @@ WifiConnection::WifiConnection( LedDriver* led, uint32_t connectTimeout) {
   }
 
   m_networkIp = 0;
+  m_tryReconnect = false;
 }
 
 void WifiConnection::setup(Preferences &pref) {
@@ -140,6 +143,11 @@ void WifiConnection::save(Preferences &pref) {
     }
     pref.end();
     ESP_LOGI(TAG, "Preferences updated");
+}
+void WifiConnection::tryReconnect() {
+  if(m_state == STATE_IDLE) {
+    m_tryReconnect = true;
+  }
 }
 const char* WifiConnection::getNetworkIp( void) {
     static char ipStr[MAX_WIFI_ENTRY_LEN];
@@ -219,13 +227,14 @@ void WifiConnection::slice( ) {
       }
       p = getNetworkName( m_currentAp );
       q = getNetworkPassword( m_currentAp );
-      ESP_LOGI(TAG, "Connecting %u, %s, %s", m_currentAp, p, q);
+      ESP_LOGI(TAG, "Configured Network: %u, %s, %s", m_currentAp, p, q);
       if( *p == '\0' || *q == '\0') {
+        ESP_LOGD(TAG, "Network not configured, going to wait state");
         changeState( STATE_WAIT_CONNECT);
       } else {
         WiFi.begin( (char*)p,  q);
         changeState( STATE_WAIT_CONNECT);
-        ESP_LOGI(TAG, "Connecting %s", p);
+        ESP_LOGD(TAG, "Connecting %s", p);
       }
     break;
 
@@ -236,6 +245,7 @@ void WifiConnection::slice( ) {
       } else if(m_requestOff) {
         changeState( STATE_TURN_OFF);
       } else if( m_timer.hasIntervalElapsed()) {
+        WiFi.disconnect(false);
         changeState( STATE_NEXT_NETWORK);
       } 
     break;
@@ -244,8 +254,11 @@ void WifiConnection::slice( ) {
       m_currentAp++;
       if( m_currentAp >= getNumberOfNetworks() ) {
         m_currentAp = 0;
+        ESP_LOGW(TAG, "Failed to connect to WiFi Station, reverting to Access Point: %s", m_hostName);
+        changeState( STATE_CONFIGURE_AP);
+      } else {
+        changeState( STATE_INIT_CONNECT);
       }
-      changeState( STATE_INIT_CONNECT);
     break;
 
     case STATE_CONNECTING:
@@ -311,11 +324,11 @@ void WifiConnection::slice( ) {
           }
         }
         WiFi.scanDelete( );
-        changeState( STATE_CONFIGURE_AP);
+        changeState( STATE_INIT_CONNECT);
       } else if( m_timer.hasIntervalElapsed()) {
         ESP_LOGW(TAG, "Scan timeout");
         WiFi.scanDelete( );
-        changeState( STATE_CONFIGURE_AP);
+        changeState( STATE_INIT_CONNECT);
       }
     break;
 
@@ -342,9 +355,17 @@ void WifiConnection::slice( ) {
     case STATE_AP_READY:
       m_currentAp = m_maxRssiIndex == 0 ? 0 : m_maxRssiIndex;
       ESP_LOGI(TAG, "AP ready: %u, %u, %d", m_enable,  m_currentAp, getNumberOfNetworks());
-      changeState( STATE_INIT_CONNECT);
+      changeState( STATE_IDLE);
       if( m_led) {
-        m_led->off();
+        m_led->blink( BLINK_SPEED_AP_MS);
+      }
+    break;
+    case STATE_IDLE:
+      if(m_tryReconnect) {
+        m_tryReconnect = false;
+        m_currentAp = 0;
+        ESP_LOGI(TAG, "Reconnect requested, retrying configured networks");
+        changeState( STATE_INIT_CONNECT);
       }
     break;
     case STATE_TURN_OFF:

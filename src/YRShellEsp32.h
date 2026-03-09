@@ -44,6 +44,7 @@ typedef enum {
     SE_CC_setSleepTimeMs,
     SE_CC_setSleepEnable,
 
+    SE_CC_attemptReconnect,
     SE_CC_getHostName,
     SE_CC_getHostPassword,
     SE_CC_getHostIp,

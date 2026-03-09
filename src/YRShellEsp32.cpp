@@ -51,6 +51,7 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_setSleepTimeMs,       "setSleepTime"},
     { SE_CC_setSleepEnable,       "setSleepEnable"},
 
+    { SE_CC_attemptReconnect,     "wifiReconnect" },
     { SE_CC_getHostName,          "getHostName" },
     { SE_CC_getHostPassword,      "getHostPassword" },
     { SE_CC_getHostIp,            "getHostIp" },
@@ -480,6 +481,11 @@ void YRShellEsp32::executeFunction( uint16_t n) {
                 m_appMgr->setSleepEnabled(t1);
               }
           break;
+          case SE_CC_attemptReconnect:
+              if( m_wifiConnection) {
+                m_wifiConnection->tryReconnect();
+              }
+            break;
           case SE_CC_getHostName:
               m_textBuffer[ 0] = '\0';
               if( m_wifiConnection) {
