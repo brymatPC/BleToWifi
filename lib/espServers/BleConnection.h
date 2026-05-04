@@ -2,7 +2,7 @@
 #define BleConnection_h
 
 #if defined (ESP32)
-  #include <BleDevice.h>
+  #include <NimBLEDevice.h>
   #include <Preferences.h>
 #else
   #warning "BLE is not supported on the selected target"
@@ -29,7 +29,7 @@ typedef struct {
   BleParserTypes parserType;
 } bleDeviceParser_t;
 
-class BleConnection : public Sliceable, public BLEAdvertisedDeviceCallbacks {
+class BleConnection : public Sliceable, public NimBLEScanCallbacks, public NimBLEClientCallbacks {
 private:
     static const char s_PREF_NAMESPACE[];
     static const uint16_t s_DEFAULT_SCAN_INTERVAL_MS;
@@ -97,9 +97,14 @@ public:
     void setBleEnable(uint8_t index, bool enable);
     void logParsers();
 
-    // BLEAdvertisedDeviceCallbacks
-    virtual void onResult(BLEAdvertisedDevice advertisedDevice);
-    static void scanComplete(BLEScanResults results);
+    // NimBLEScanCallbacks
+    virtual void onResult(const NimBLEAdvertisedDevice* advertisedDevice);
+    void onScanEnd(const NimBLEScanResults& results, int reason);
+
+    // NimBLEClientCallbacks
+    void onConnect(NimBLEClient* pClient);
+    void onDisconnect(NimBLEClient* pClient, int reason);
+
 };
 
 #endif // BleConnection_h

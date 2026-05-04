@@ -144,9 +144,9 @@ void BleConnection::slice( void) {
 
     switch( m_state) {
         case STATE_RESET:
-            BLEDevice::init("ble_esp32");
-            m_pBleScan = BLEDevice::getScan();
-            m_pBleScan->setAdvertisedDeviceCallbacks(this, true);
+            NimBLEDevice::init("ble_esp32");
+            m_pBleScan = NimBLEDevice::getScan();
+            m_pBleScan->setScanCallbacks(this, true);
             if(m_scanStartBoot != 0) {
                 changeState( STATE_BOOT);
             } else {
@@ -179,7 +179,7 @@ void BleConnection::slice( void) {
             m_pBleScan->setInterval(m_scanIntervalMs);
             m_pBleScan->setWindow(m_scanWindowMs);
             m_pBleScan->setActiveScan(m_scanActively);
-            m_pBleScan->start(m_scanDuration, scanComplete);
+            m_pBleScan->start(m_scanDuration);
             changeState( STATE_SCANNING);
         break;
         case STATE_SCANNING:
@@ -207,26 +207,25 @@ void BleConnection::slice( void) {
     }
 }
 
-void BleConnection::onResult(BLEAdvertisedDevice advertisedDevice) {
-    BLEAddress address = advertisedDevice.getAddress();
+void BleConnection::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
+    NimBLEAddress address = advertisedDevice->getAddress();
     for(uint8_t i=0; i < MAX_BLE_DEVICES; i++) {
         if(!m_deviceParsers[i].enabled) continue;
         BleParser* parser = getParser(m_deviceParsers[i].parserType);
-        BLEAddress addrToParse(m_deviceParsers[i].addr);
+        NimBLEAddress addrToParse(m_deviceParsers[i].addr, BLE_ADDR_PUBLIC);
         // BAM - 20260206 - Latest BLEAddress == also compares an addr type, which this code is not tracking or interested in
         //  so need do a direct memcmp on the raw bytes.
-        //if(address == addrToParse) {
-        if(memcmp(address.getNative(), addrToParse.getNative(), ESP_BD_ADDR_LEN) == 0) {
+        if(memcmp(address.getVal(), addrToParse.getVal(), BLE_DEV_ADDR_LEN) == 0) {
             m_devices[0].payloadLen = 0;
             strcpy(m_devices[0].addr, address.toString().c_str());
-            if (advertisedDevice.haveName()) {
-                strncpy(m_devices[0].name, advertisedDevice.getName().c_str(), 32);
+            if (advertisedDevice->haveName()) {
+                strncpy(m_devices[0].name, advertisedDevice->getName().c_str(), 32);
             } else {
                 m_devices[0].name[0] = '\0';
             }
-            if (advertisedDevice.haveManufacturerData()) {
-                int len = advertisedDevice.getManufacturerData().length();
-                const char* data = advertisedDevice.getManufacturerData().c_str();
+            if (advertisedDevice->haveManufacturerData()) {
+                int len = advertisedDevice->getManufacturerData().length();
+                const char* data = advertisedDevice->getManufacturerData().c_str();
                 memcpy(m_devices[0].payload, data, len);
                 m_devices[0].payloadLen = (uint8_t) len;
                 m_devices[0].valid = true;
@@ -243,21 +242,20 @@ void BleConnection::onResult(BLEAdvertisedDevice advertisedDevice) {
 
     if(m_bleLogState != BLE_LOG_NONE) {
         ESP_LOGI(TAG, "BleConnection: type=%u address=%s", (uint32_t) address.getType(), address.toString().c_str());
-        if (advertisedDevice.haveName()) {
-            ESP_LOGI(TAG, "BleConnection: name=%s", advertisedDevice.getName().c_str());
+        if (advertisedDevice->haveName()) {
+            ESP_LOGI(TAG, "BleConnection: name=%s", advertisedDevice->getName().c_str());
         }
 
         if(m_bleLogState == BLE_LOG_ALL) {
-            if (advertisedDevice.haveRSSI()) {
-                int rssi = advertisedDevice.getRSSI();
-                ESP_LOGI(TAG, "BleConnection: RSSI=%d", rssi);
+            int rssi = advertisedDevice->getRSSI();
+            ESP_LOGI(TAG, "BleConnection: RSSI=%d", rssi);
+
+            if (advertisedDevice->haveTXPower()) {
+                ESP_LOGI(TAG, "BleConnection: TxPower=%d", advertisedDevice->getTXPower());
             }
-            if (advertisedDevice.haveTXPower()) {
-                ESP_LOGI(TAG, "BleConnection: TxPower=%d", advertisedDevice.getTXPower());
-            }
-            if (advertisedDevice.haveManufacturerData()) {
-                int len = advertisedDevice.getManufacturerData().length();
-                const char* data = advertisedDevice.getManufacturerData().c_str();
+            if (advertisedDevice->haveManufacturerData()) {
+                int len = advertisedDevice->getManufacturerData().length();
+                const char* data = advertisedDevice->getManufacturerData().c_str();
                 #ifdef LOG_INPUT_DATA
                     char outStr[128];
                     outStr[0] = '0';
@@ -267,17 +265,6 @@ void BleConnection::onResult(BLEAdvertisedDevice advertisedDevice) {
                     }
                     ESP_LOGI(TAG, "BleConnection: mfdata=%s", outStr);
                 #endif
-            }
-            ESP_LOGI(TAG, "BleConnection: payloadLen=%u", advertisedDevice.getPayloadLength());
-
-            if (advertisedDevice.getServiceDataUUIDCount()) {
-                ESP_LOGI(TAG, "ServiceData count: %d", advertisedDevice.getServiceDataUUIDCount());
-                // for (int i = 0; i < advertisedDevice.getServiceDataUUIDCount(); i++) {
-                //     std::string data = advertisedDevice.getServiceData(i);
-                //     Serial.printf("    %s %3d ", advertisedDevice.getServiceDataUUID(i).toString().c_str(), data.length());
-                //     printBuffer((uint8_t*)data.c_str(), data.length());
-                //     Serial.println();
-                // }
             }
         }
     }
@@ -292,9 +279,11 @@ bool BleConnection::isOff() {
     return m_state == STATE_OFF;
 }
 
-void BleConnection::scanComplete(BLEScanResults results) {
+void BleConnection::onScanEnd(const NimBLEScanResults& results, int reason) {
+    ESP_LOGI(TAG, "Scan complete, reason = %d", reason);
     m_results = results;
     m_resultsReceived = true;
+    m_pBleScan->stop();
 }
 
 bleDeviceData_t *BleConnection::deviceData(uint8_t index) {
@@ -302,4 +291,11 @@ bleDeviceData_t *BleConnection::deviceData(uint8_t index) {
         return nullptr;
     }
     return &m_devices[index];
+}
+
+void BleConnection::onConnect(NimBLEClient* pClient) {
+    ESP_LOGI(TAG, "Connected");
+}
+void BleConnection::onDisconnect(NimBLEClient* pClient, int reason) {
+    ESP_LOGI(TAG, "%s Disconnected, reason = %d - Starting scan\n", pClient->getPeerAddress().toString().c_str(), reason);
 }
