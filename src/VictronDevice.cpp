@@ -79,7 +79,7 @@ void VictronDevice::parse() {
     if(m_bleData.payloadLen == 0 || m_bleData.payload == nullptr) return;
 
     if(m_dataFresh && (millis() < (m_lastUpdate + 30000))) {
-        ESP_LOGI(TAG, "Probable duplicate: millis=%u m_lastUpdate=%u", (unsigned)millis(), (unsigned)m_lastUpdate);
+        ESP_LOGD(TAG, "Probable duplicate: millis=%u m_lastUpdate=%u", (unsigned)millis(), (unsigned)m_lastUpdate);
         m_numDuplicates++;
         return;
     }
