@@ -2,6 +2,8 @@
 
 #include <SPI.h>
 #include <SD.h>
+#include <cstring>
+#include <cstdlib>
 
 #include "esp_log_custom.h"
 
@@ -94,4 +96,76 @@ void SdLogger::testFileIO(const char * path) {
   end = millis() - start;
   ESP_LOGI(TAG, "%u bytes written in %u ms", 2048 * 512, end);
   file.close();
+}
+
+void SdLogger::log(const char *filePrefix, const char *record) {
+    char filename[128];
+    File file;
+    long fileNumber = findLargestNumberInFilenames("/", filePrefix);
+    if(fileNumber < 0) {
+        fileNumber = 1;
+        snprintf(filename, 128, "/%s_%ld.json", filePrefix, fileNumber);
+        file = SD.open(filename, FILE_WRITE);
+        if(file) {
+            ESP_LOGI(TAG, "File not found, created a new file; %s", filename);
+        } else {
+            ESP_LOGW(TAG, "Failed to create a new file; %s", filename);
+        }
+    } else {
+        snprintf(filename, 128, "/%s_%ld.json", filePrefix, fileNumber);
+        file = SD.open(filename, FILE_APPEND);
+        if(file) {
+            if(file.size() > SD_FILE_MAX_SIZE) {
+                file.close();
+                fileNumber = 1;
+                snprintf(filename, 128, "/%s_%ld.json", filePrefix, fileNumber);
+                file = SD.open(filename, FILE_WRITE);
+                if(file) {
+                    ESP_LOGI(TAG, "Created a new file; %s", filename);
+                } else {
+                    ESP_LOGW(TAG, "Failed to create a new file; %s", filename);
+                }
+            } else {
+                ESP_LOGI(TAG, "Opened existing file; %s", filename);
+            }
+        } else {
+            ESP_LOGW(TAG, "Failed to open existing file; %s", filename);
+        }
+    }
+
+    if(!file) {
+        return;
+    }
+
+    size_t numWritten = file.write((uint8_t *)record, strlen(record));
+    file.close();
+    ESP_LOGI(TAG, "Wrote %lu bytes", numWritten);
+}
+
+long SdLogger::findLargestNumberInFilenames(const char* dir, const char* prefix) {
+    File root = SD.open(dir);
+    if (!root || !root.isDirectory()) {
+        ESP_LOGI(TAG, "Failed to open directory: %s", dir);
+        return -1;
+    }
+
+    long maxNum = -1;
+    File file = root.openNextFile();
+    while (file) {
+        const char* name = file.name();
+        size_t prefixLen = strlen(prefix);
+        if (strncmp(name, prefix, prefixLen) == 0) {
+            // Find the first sequence of digits after the prefix
+            // +1 to skip the underscore
+            const char* numStart = name + prefixLen + 1;
+            char* endPtr;
+            long num = strtol(numStart, &endPtr, 10);
+            if (endPtr != numStart && num > maxNum) {
+                maxNum = num;
+            }
+        }
+        file = root.openNextFile();
+    }
+    root.close();
+    return maxNum;
 }

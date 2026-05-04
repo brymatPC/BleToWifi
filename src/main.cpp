@@ -264,8 +264,30 @@ void setup(){
   ESP_LOGD(TAG, "Setup complete");
 }
 
+void sdLogTest() {
+    static uint32_t timer = 2000;
+    static char logBuf[128];
+    static char prefix[] = "main";
+
+    if(millis() > (timer + 5000)) {
+        timer = millis();
+        char s[51];
+        struct tm timeinfo;
+        time_t now;
+        time(&now);
+        localtime_r(&now, &timeinfo);
+        strftime(s, 50, "%FT%H:%M:%SZ", &timeinfo);
+
+        snprintf(logBuf, 128, "{\"ts\": \"%s\", \"up\": %lu}", s, millis());
+
+        sdLogger.log(prefix, logBuf);
+    }
+}
+
 void loop() {
   Sliceable::sliceAll( );
+
+  sdLogTest();
 
   bool telnetSpaceAvailable = telnetLogServer.spaceAvailable( 32);
   bool serialSpaceAvailable = (Serial.availableForWrite() > 32);
