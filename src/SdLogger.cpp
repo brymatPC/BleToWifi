@@ -98,7 +98,7 @@ void SdLogger::testFileIO(const char * path) {
   file.close();
 }
 
-void SdLogger::log(const char *filePrefix, const char *record) {
+void SdLogger::log(const char *filePrefix, const char *record, bool createNew) {
     char filename[128];
     File file;
     long fileNumber = findLargestNumberInFilenames("/", filePrefix);
@@ -115,9 +115,9 @@ void SdLogger::log(const char *filePrefix, const char *record) {
         snprintf(filename, 128, "/%s_%ld.json", filePrefix, fileNumber);
         file = SD.open(filename, FILE_APPEND);
         if(file) {
-            if(file.size() > SD_FILE_MAX_SIZE) {
+            if(createNew || file.size() > SD_FILE_MAX_SIZE) {
                 file.close();
-                fileNumber = 1;
+                fileNumber += 1;
                 snprintf(filename, 128, "/%s_%ld.json", filePrefix, fileNumber);
                 file = SD.open(filename, FILE_WRITE);
                 if(file) {

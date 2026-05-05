@@ -1,5 +1,6 @@
 #include "VictronDevice.h"
 #include "UploadDataClient.h"
+#include "SdLogger.h"
 
 #include <aes/esp_aes.h>
 #include "esp_log_custom.h"
@@ -10,6 +11,7 @@ typedef enum {
   STATE_UPLOAD      = 2,
   STATE_UPLOAD_WAIT = 3,
   STATE_SEND_WAIT   = 4,
+  STATE_WRITE_LOG   = 5,
 
 } victronStates_t;
 
@@ -189,6 +191,7 @@ void VictronDevice::scanComplete() {
     m_numDuplicates = 0;
 }
 void VictronDevice::slice( void) {
+    static bool firstRun = true;
     switch(m_state) {
         case STATE_RESET:
             if(m_timer.hasIntervalElapsed()) {
@@ -197,11 +200,15 @@ void VictronDevice::slice( void) {
             }
         break;
         case STATE_IDLE:
-            if((m_timer.hasIntervalElapsed() || m_uploadRequest) && m_uploadClient) {
+            if((m_timer.hasIntervalElapsed() || m_uploadRequest)) {
                 m_timer.setInterval(s_UPLOAD_TIME_MS);
-                ESP_LOGD(TAG, "uploading data");
                 m_uploadRequest = false;
-                m_state = STATE_UPLOAD;
+                if(m_uploadClient) {
+                    ESP_LOGD(TAG, "uploading data");
+                    m_state = STATE_UPLOAD;
+                } else {
+                    m_state = STATE_WRITE_LOG;
+                }
             }
         break;
         case STATE_UPLOAD:
@@ -224,8 +231,17 @@ void VictronDevice::slice( void) {
         case STATE_SEND_WAIT:
             if(!m_uploadClient->busy()) {
                 ESP_LOGD(TAG, "upload complete");
-                m_state = STATE_IDLE;
+                m_state = STATE_WRITE_LOG;
             }
+        break;
+        case STATE_WRITE_LOG:
+            if(m_sdLogger) {
+                snprintf(m_logBuf, MAX_VIC_SEND_BUF_SIZE, "{\"sn\":\"%s\",\"ttg\":%d,\"v\":%d,\"i\":%d,\"soc\":%d}\r\n",
+                    m_data.serial, m_data.timeToGo, m_data.batteryVoltage, m_data.batteryCurrent, m_data.stateOfCharge);
+                m_sdLogger->log(TAG, m_logBuf, firstRun);
+                firstRun = false;
+            }
+            m_state = STATE_IDLE;
         break;
         default:
             m_state = STATE_RESET;

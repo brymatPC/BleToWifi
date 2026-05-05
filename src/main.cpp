@@ -250,6 +250,7 @@ void setup(){
 #endif
   victronParser.setup(pref);
   victronParser.setUploadClient(&uploadClient);
+  victronParser.setSdLogger(&sdLogger);
   tempHumParser.setUploadClient(&uploadClient);
   shell.init();
 
@@ -266,6 +267,7 @@ void setup(){
 
 void sdLogTest() {
     static uint32_t timer = 2000;
+    static bool firstRun = true;
     static char logBuf[128];
     static char prefix[] = "main";
 
@@ -278,9 +280,10 @@ void sdLogTest() {
         localtime_r(&now, &timeinfo);
         strftime(s, 50, "%FT%H:%M:%SZ", &timeinfo);
 
-        snprintf(logBuf, 128, "{\"ts\": \"%s\", \"up\": %lu}", s, millis());
+        snprintf(logBuf, 128, "{\"ts\": \"%s\", \"up\": %lu}\r\n", s, millis());
 
-        sdLogger.log(prefix, logBuf);
+        sdLogger.log(prefix, logBuf, firstRun);
+        firstRun = false;
     }
 }
 

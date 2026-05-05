@@ -12,7 +12,7 @@ public:
     void begin();
     void testSdCard();
 
-    void log(const char *filePrefix, const char *record);
+    void log(const char *filePrefix, const char *record, bool createNew = false);
 
 private:
 

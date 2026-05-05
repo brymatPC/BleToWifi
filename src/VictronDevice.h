@@ -11,6 +11,7 @@
 #define VICTRON_KEY_LEN 16
 
 class UploadDataClient;
+class SdLogger;
 
 typedef struct {
     char serial[32];
@@ -30,6 +31,7 @@ private:
     uint8_t m_key[VICTRON_KEY_LEN];
     IntervalTimer m_timer;
     UploadDataClient* m_uploadClient;
+    SdLogger* m_sdLogger;
     bool m_uploadRequest;
     bleDeviceData_t m_bleData;
     victronData_t m_data;
@@ -38,6 +40,7 @@ private:
     uint8_t m_state;
     uint32_t m_numDuplicates;
     char m_sendBuf[MAX_VIC_SEND_BUF_SIZE];
+    char m_logBuf[MAX_VIC_SEND_BUF_SIZE];
 
     void decrypt();
 public:
@@ -49,6 +52,7 @@ public:
     void save(Preferences &pref);
 
     void setUploadClient(UploadDataClient *client) { m_uploadClient = client; }
+    void setSdLogger(SdLogger *sdLogger) {m_sdLogger = sdLogger; }
     virtual void slice( void);
 
     void setKey(const char *key);
