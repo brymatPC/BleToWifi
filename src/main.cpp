@@ -175,7 +175,7 @@ void setup(){
   esp_log_level_set("Upload ", ESP_LOG_WARN);
   esp_log_level_set("THParse", ESP_LOG_INFO);
   esp_log_level_set("Victron", ESP_LOG_INFO);
-  esp_log_level_set("Sen66  ", ESP_LOG_WARN);
+  esp_log_level_set("Sen66  ", ESP_LOG_INFO);
   esp_log_level_set("SDCard ", ESP_LOG_INFO);
 
   resetReasonStartup = esp_reset_reason();
@@ -206,6 +206,7 @@ void setup(){
   sensor.begin(Wire, SEN66_I2C_ADDR_6B);
   sen66Device.setup(pref);
   sen66Device.setUploadClient(&uploadClient);
+  sen66Device.setSdLogger(&sdLogger);
 
   wifiConnection.setup(pref);
   wifiConnection.enable();
