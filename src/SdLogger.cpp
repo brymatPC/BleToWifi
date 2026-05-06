@@ -101,6 +101,9 @@ void SdLogger::testFileIO(const char * path) {
 void SdLogger::log(const char *filePrefix, const char *record, bool createNew) {
     char filename[128];
     File file;
+
+    if(SD.cardType() == CARD_NONE) return;
+
     long fileNumber = findLargestNumberInFilenames("/", filePrefix);
     if(fileNumber < 0) {
         fileNumber = 1;
