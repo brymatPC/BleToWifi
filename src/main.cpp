@@ -252,6 +252,7 @@ void setup(){
   victronParser.setUploadClient(&uploadClient);
   victronParser.setSdLogger(&sdLogger);
   tempHumParser.setUploadClient(&uploadClient);
+  tempHumParser.setSdLogger(&sdLogger);
   shell.init();
 
   sd_spi.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);

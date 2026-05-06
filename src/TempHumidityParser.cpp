@@ -1,5 +1,6 @@
 #include "TempHumidityParser.h"
 #include "UploadDataClient.h"
+#include "SdLogger.h"
 #include "esp_log_custom.h"
 
 // Credit to: https://github.com/Bluetooth-Devices/thermobeacon-ble/blob/main/src/thermobeacon_ble/parser.py
@@ -10,6 +11,7 @@ typedef enum {
   STATE_UPLOAD      = 2,
   STATE_UPLOAD_WAIT = 3,
   STATE_SEND_WAIT   = 4,
+  STATE_WRITE_LOG   = 5,
 
 } tempHumStates_t;
 
@@ -18,7 +20,10 @@ static const char* TAG = "THParse";
 const unsigned int TempHumidityParser::s_UPLOAD_TIME_MS = 120000;
 char TempHumidityParser::s_ROUTE[] = "/sensor";
 
-TempHumidityParser::TempHumidityParser() {
+TempHumidityParser::TempHumidityParser() :
+    m_uploadClient(nullptr),
+    m_sdLogger(nullptr)
+{
     m_bleData = bleDeviceData_t{};
     for(uint8_t i=0; i < MAX_TEMP_HUM_SENSORS; i++) {
         m_dataFresh[i] = false;
@@ -185,23 +190,29 @@ void TempHumidityParser::scanComplete() {
     m_numDuplicates = 0;
 }
 void TempHumidityParser::slice( void) {
+    static bool firstRun = true;
     switch(m_state) {
         case STATE_RESET:
             m_state = STATE_IDLE;
         break;
         case STATE_IDLE:
-            if((m_timer.hasIntervalElapsed() || m_uploadRequest) && m_uploadClient) {
+            if((m_timer.hasIntervalElapsed() || m_uploadRequest)) {
                 m_timer.setInterval(s_UPLOAD_TIME_MS);
-                ESP_LOGD(TAG, "uploading data");
                 m_uploadRequest = false;
                 m_uploadIndex = 0;
-                m_state = STATE_UPLOAD;
+                if(m_uploadClient) {
+                    ESP_LOGD(TAG, "uploading data");
+                    m_state = STATE_UPLOAD;
+                } else {
+                    m_state = STATE_WRITE_LOG;
+                }
             }
         break;
         case STATE_UPLOAD:
             if(m_uploadIndex >= MAX_TEMP_HUM_SENSORS) {
                 ESP_LOGD(TAG, "upload complete");
-                m_state = STATE_IDLE;
+                m_uploadIndex = 0;
+                m_state = STATE_WRITE_LOG;
             } else if(m_dataFresh[m_uploadIndex]) {
                 m_state = STATE_UPLOAD_WAIT;
             } else {
@@ -215,7 +226,7 @@ void TempHumidityParser::slice( void) {
                     m_data[m_uploadIndex].macAddr[4], m_data[m_uploadIndex].macAddr[5],
                     m_data[m_uploadIndex].batteryVoltage, m_data[m_uploadIndex].temperature, m_data[m_uploadIndex].humidity, m_data[m_uploadIndex].upTime);
                 m_uploadClient->sendFile(s_ROUTE, m_sendBuf, strlen(m_sendBuf));
-                m_dataFresh[m_uploadIndex] = false;
+                //m_dataFresh[m_uploadIndex] = false;
                 m_state = STATE_SEND_WAIT;
             }
         break;
@@ -224,6 +235,20 @@ void TempHumidityParser::slice( void) {
                 m_uploadIndex++;
                 m_state = STATE_UPLOAD;
             }
+        break;
+        case STATE_WRITE_LOG:
+            if(m_uploadIndex >= MAX_TEMP_HUM_SENSORS) {
+                m_state = STATE_IDLE;
+            } else if(m_dataFresh[m_uploadIndex] && m_sdLogger) {
+                snprintf(m_logBuf, MAX_SEND_BUF_SIZE, "{\"sn\":\"%02X%02X%02X%02X%02X%02X\",\"v\":%d,\"t\":%d,\"h\":%d,\"ut\":%d}\r\n",
+                    m_data[m_uploadIndex].macAddr[0], m_data[m_uploadIndex].macAddr[1], m_data[m_uploadIndex].macAddr[2], m_data[m_uploadIndex].macAddr[3],
+                    m_data[m_uploadIndex].macAddr[4], m_data[m_uploadIndex].macAddr[5],
+                    m_data[m_uploadIndex].batteryVoltage, m_data[m_uploadIndex].temperature, m_data[m_uploadIndex].humidity, m_data[m_uploadIndex].upTime);
+                m_sdLogger->log(TAG, m_logBuf, firstRun);
+                m_dataFresh[m_uploadIndex] = false;
+                firstRun = false;
+            }
+            m_uploadIndex++;
         break;
         default:
             m_state = STATE_RESET;

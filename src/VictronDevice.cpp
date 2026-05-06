@@ -34,7 +34,10 @@ static char charToHex( char c) {
     return value;
 }
 
-VictronDevice::VictronDevice() {
+VictronDevice::VictronDevice()  :
+    m_uploadClient(nullptr),
+    m_sdLogger(nullptr)
+{
     memset(m_key, 0, VICTRON_KEY_LEN);
     m_bleData = bleDeviceData_t{};
     m_dataFresh = false;

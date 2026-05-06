@@ -12,6 +12,7 @@
 #define MAX_ROUTE_LEN     32
 
 class UploadDataClient;
+class SdLogger;
 
 typedef struct {
     uint8_t macAddr[TEMP_HUMIDITY_MAC_LEN];
@@ -28,6 +29,7 @@ private:
 
     IntervalTimer m_timer;
     UploadDataClient* m_uploadClient;
+    SdLogger* m_sdLogger;
     bool m_uploadRequest;
     bleDeviceData_t m_bleData;
     uint8_t m_state;
@@ -38,6 +40,7 @@ private:
     bool m_dataFresh[MAX_TEMP_HUM_SENSORS];
     uint32_t m_lastUpdate[MAX_TEMP_HUM_SENSORS];
     char m_sendBuf[MAX_SEND_BUF_SIZE];
+    char m_logBuf[MAX_SEND_BUF_SIZE];
     uint8_t m_uploadIndex;
 
     uint8_t processBatteryVoltage(uint16_t raw);
@@ -51,6 +54,7 @@ public:
     virtual const char* sliceName( ) { return "TempHumidityParser"; }
 
     void setUploadClient(UploadDataClient *client) { m_uploadClient = client; }
+    void setSdLogger(SdLogger *sdLogger) {m_sdLogger = sdLogger; }
     virtual void slice( void);
     void enableAdditionalLogging(bool enable) { m_additionalLogging = enable; }
 
