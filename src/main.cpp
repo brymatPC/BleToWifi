@@ -14,6 +14,7 @@
 #include <SensirionI2cSen66.h>
 #include "Sen66Device.h"
 #include "SdLogger.h"
+#include "Utilities.h"
 
 #include <SPI.h>
 #include <SD.h>
@@ -275,14 +276,8 @@ void sdLogTest() {
     if(millis() > (timer + 5000)) {
         timer = millis();
         char s[51];
-        struct tm timeinfo;
-        time_t now;
-        time(&now);
-        localtime_r(&now, &timeinfo);
-        strftime(s, 50, "%FT%H:%M:%SZ", &timeinfo);
-
+        getRtcTimeStr(s, 51);
         snprintf(logBuf, 128, "{\"ts\": \"%s\", \"up\": %lu}\r\n", s, millis());
-
         sdLogger.log(prefix, logBuf, firstRun);
         firstRun = false;
     }

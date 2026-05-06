@@ -1,6 +1,7 @@
 #include "VictronDevice.h"
 #include "UploadDataClient.h"
 #include "SdLogger.h"
+#include "Utilities.h"
 
 #include <aes/esp_aes.h>
 #include "esp_log_custom.h"
@@ -241,8 +242,10 @@ void VictronDevice::slice( void) {
         case STATE_WRITE_LOG:
             if(m_dataLogReady) {
                 if(m_sdLogger) {
-                    snprintf(m_logBuf, MAX_VIC_SEND_BUF_SIZE, "{\"sn\":\"%s\",\"ttg\":%d,\"v\":%d,\"i\":%d,\"soc\":%d}\r\n",
-                        m_data.serial, m_data.timeToGo, m_data.batteryVoltage, m_data.batteryCurrent, m_data.stateOfCharge);
+                    char ts[51];
+                    getRtcTimeStr(ts, 51);
+                    snprintf(m_logBuf, MAX_VIC_SEND_BUF_SIZE, "{\"ts\":\"%s\",\"sn\":\"%s\",\"ttg\":%d,\"v\":%d,\"i\":%d,\"soc\":%d}\r\n",
+                        ts, m_data.serial, m_data.timeToGo, m_data.batteryVoltage, m_data.batteryCurrent, m_data.stateOfCharge);
                     m_sdLogger->log(TAG, m_logBuf, firstRun);
                     firstRun = false;
                 }

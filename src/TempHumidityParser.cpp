@@ -1,6 +1,7 @@
 #include "TempHumidityParser.h"
 #include "UploadDataClient.h"
 #include "SdLogger.h"
+#include "Utilities.h"
 #include "esp_log_custom.h"
 
 // Credit to: https://github.com/Bluetooth-Devices/thermobeacon-ble/blob/main/src/thermobeacon_ble/parser.py
@@ -252,7 +253,9 @@ void TempHumidityParser::slice( void) {
                 m_state = STATE_IDLE;
             } else if(m_dataLogReady[m_uploadIndex]) {
                 if(m_sdLogger) {
-                    snprintf(m_logBuf, MAX_SEND_BUF_SIZE, "{\"sn\":\"%02X%02X%02X%02X%02X%02X\",\"v\":%d,\"t\":%d,\"h\":%d,\"ut\":%d}\r\n",
+                    char ts[51];
+                    getRtcTimeStr(ts, 51);
+                    snprintf(m_logBuf, MAX_SEND_BUF_SIZE, "{\"ts\":\"%s\",\"sn\":\"%02X%02X%02X%02X%02X%02X\",\"v\":%d,\"t\":%d,\"h\":%d,\"ut\":%d}\r\n", ts,
                         m_data[m_uploadIndex].macAddr[0], m_data[m_uploadIndex].macAddr[1], m_data[m_uploadIndex].macAddr[2], m_data[m_uploadIndex].macAddr[3],
                         m_data[m_uploadIndex].macAddr[4], m_data[m_uploadIndex].macAddr[5],
                         m_data[m_uploadIndex].batteryVoltage, m_data[m_uploadIndex].temperature, m_data[m_uploadIndex].humidity, m_data[m_uploadIndex].upTime);

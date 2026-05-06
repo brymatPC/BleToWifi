@@ -7,6 +7,7 @@
 #include "WifiConnection.h"
 #include "VictronDevice.h"
 #include "UploadDataClient.h"
+#include "Utilities.h"
 
 #ifdef ESP32
 #include <BleConnection.h>
@@ -885,10 +886,6 @@ void YRShellEsp32::outUInt8( int8_t v) {
 
 void YRShellEsp32::logTime() {
     char s[51];
-    struct tm timeinfo;
-    time_t now;
-    time(&now);
-    localtime_r(&now, &timeinfo);
-    strftime(s, 50, "%FT%H:%M:%SZ", &timeinfo);
+    getRtcTimeStr(s, 51);
     ESP_LOGI(TAG, "RTC: %s", s);
 }

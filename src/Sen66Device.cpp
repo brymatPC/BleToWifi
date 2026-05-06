@@ -1,6 +1,7 @@
 #include "Sen66Device.h"
 #include "UploadDataClient.h"
 #include "SdLogger.h"
+#include "Utilities.h"
 #include "esp_log_custom.h"
 
 // Used by Sensirion Library
@@ -87,8 +88,10 @@ void Sen66Device::uploadReadings() {
 void Sen66Device::writeReadings() {
     static bool firstRun = true;
     if(!m_sdLogger) return;
-    snprintf(m_logBuf, MAX_SEN66_SEND_BUF_SIZE, "{\"up\":%u,\"sn\":\"%s\",\"pm1\":%u,\"pm2\":%u,\"pm4\":%u,\"pm10\":%u,\"t\":%d,\"h\":%d, \"voc\":%d,\"nox\":%d,\"co2\":%u}\r\n",
-        (millis()-m_resetTimeMs), m_serialNumber, pm1p0, pm2p5, pm4p0, pm10p0, temperature, humidity, vocIndex, noxIndex, co2);
+    char ts[51];
+    getRtcTimeStr(ts, 51);
+    snprintf(m_logBuf, MAX_SEN66_SEND_BUF_SIZE, "{\"ts\":\"%s\",\"up\":%u,\"sn\":\"%s\",\"pm1\":%u,\"pm2\":%u,\"pm4\":%u,\"pm10\":%u,\"t\":%d,\"h\":%d, \"voc\":%d,\"nox\":%d,\"co2\":%u}\r\n",
+        ts, (millis()-m_resetTimeMs), m_serialNumber, pm1p0, pm2p5, pm4p0, pm10p0, temperature, humidity, vocIndex, noxIndex, co2);
     m_sdLogger->log(TAG, m_logBuf, firstRun);
     firstRun = false;
 }
