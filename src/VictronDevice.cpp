@@ -40,7 +40,8 @@ VictronDevice::VictronDevice()  :
 {
     memset(m_key, 0, VICTRON_KEY_LEN);
     m_bleData = bleDeviceData_t{};
-    m_dataFresh = false;
+    m_dataUploadReady = false;
+    m_dataLogReady = false;
     m_lastUpdate = 0;
     m_state = STATE_RESET;
     m_timer.setInterval(s_STARTUP_OFFSET_MS);
@@ -83,7 +84,7 @@ void VictronDevice::setKey(const char *key) {
 void VictronDevice::parse() {
     if(m_bleData.payloadLen == 0 || m_bleData.payload == nullptr) return;
 
-    if(m_dataFresh && (millis() < (m_lastUpdate + 30000))) {
+    if(m_dataUploadReady && (millis() < (m_lastUpdate + 30000))) {
         ESP_LOGD(TAG, "Probable duplicate: millis=%u m_lastUpdate=%u", (unsigned)millis(), (unsigned)m_lastUpdate);
         m_numDuplicates++;
         return;
@@ -174,7 +175,8 @@ void VictronDevice::decrypt() {
         m_data.batteryVoltage = batteryVoltage;
         m_data.batteryCurrent = batteryCurrent;
         m_data.stateOfCharge = stateOfCharge;
-        m_dataFresh = true;
+        m_dataUploadReady = true;
+        m_dataLogReady = true;
         m_lastUpdate = millis();
 
         #ifdef LOG_OUTPUT_DATA
@@ -206,28 +208,27 @@ void VictronDevice::slice( void) {
             if((m_timer.hasIntervalElapsed() || m_uploadRequest)) {
                 m_timer.setInterval(s_UPLOAD_TIME_MS);
                 m_uploadRequest = false;
-                if(m_uploadClient) {
-                    ESP_LOGD(TAG, "uploading data");
-                    m_state = STATE_UPLOAD;
-                } else {
-                    m_state = STATE_WRITE_LOG;
-                }
+                ESP_LOGD(TAG, "uploading data");
+                m_state = STATE_UPLOAD;
             }
         break;
         case STATE_UPLOAD:
-            if(m_dataFresh) {
+            if(m_dataUploadReady) {
                 m_state = STATE_UPLOAD_WAIT;
             } else {
                 ESP_LOGD(TAG, "No data to upload");
-                m_state = STATE_IDLE;
+                m_state = STATE_WRITE_LOG;
             }
         break;
         case STATE_UPLOAD_WAIT:
-            if(!m_uploadClient->busy()) {
+            if(!m_uploadClient) {
+                m_dataUploadReady = false;
+                m_state = STATE_WRITE_LOG;
+            } else if(!m_uploadClient->busy()) {
                 snprintf(m_sendBuf, MAX_VIC_SEND_BUF_SIZE, "{\"sn\":\"%s\",\"ttg\":%d,\"v\":%d,\"i\":%d,\"soc\":%d}",
                     m_data.serial, m_data.timeToGo, m_data.batteryVoltage, m_data.batteryCurrent, m_data.stateOfCharge);
                 m_uploadClient->sendFile(s_ROUTE, m_sendBuf, strlen(m_sendBuf));
-                m_dataFresh = false;
+                m_dataUploadReady = false;
                 m_state = STATE_SEND_WAIT;
             }
         break;
@@ -238,11 +239,14 @@ void VictronDevice::slice( void) {
             }
         break;
         case STATE_WRITE_LOG:
-            if(m_sdLogger) {
-                snprintf(m_logBuf, MAX_VIC_SEND_BUF_SIZE, "{\"sn\":\"%s\",\"ttg\":%d,\"v\":%d,\"i\":%d,\"soc\":%d}\r\n",
-                    m_data.serial, m_data.timeToGo, m_data.batteryVoltage, m_data.batteryCurrent, m_data.stateOfCharge);
-                m_sdLogger->log(TAG, m_logBuf, firstRun);
-                firstRun = false;
+            if(m_dataLogReady) {
+                if(m_sdLogger) {
+                    snprintf(m_logBuf, MAX_VIC_SEND_BUF_SIZE, "{\"sn\":\"%s\",\"ttg\":%d,\"v\":%d,\"i\":%d,\"soc\":%d}\r\n",
+                        m_data.serial, m_data.timeToGo, m_data.batteryVoltage, m_data.batteryCurrent, m_data.stateOfCharge);
+                    m_sdLogger->log(TAG, m_logBuf, firstRun);
+                    firstRun = false;
+                }
+                m_dataLogReady = false;
             }
             m_state = STATE_IDLE;
         break;

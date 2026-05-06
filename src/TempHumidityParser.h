@@ -37,7 +37,8 @@ private:
     uint32_t m_numDuplicates;
 
     tempHumidityData_t m_data[MAX_TEMP_HUM_SENSORS];
-    bool m_dataFresh[MAX_TEMP_HUM_SENSORS];
+    bool m_dataUploadReady[MAX_TEMP_HUM_SENSORS];
+    bool m_dataLogReady[MAX_TEMP_HUM_SENSORS];
     uint32_t m_lastUpdate[MAX_TEMP_HUM_SENSORS];
     char m_sendBuf[MAX_SEND_BUF_SIZE];
     char m_logBuf[MAX_SEND_BUF_SIZE];
@@ -46,7 +47,8 @@ private:
     uint8_t processBatteryVoltage(uint16_t raw);
     void addData(tempHumidityData_t &data);
     bool compareMacAddr(uint8_t *addr1, uint8_t *addr2);
-    int8_t dataFresh(uint8_t *macAddr);
+    int8_t dataUploadReady(uint8_t *macAddr);
+    int8_t dataLogReady(uint8_t *macAddr);
 
 public:
     TempHumidityParser();

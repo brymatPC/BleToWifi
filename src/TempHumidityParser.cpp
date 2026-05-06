@@ -26,7 +26,8 @@ TempHumidityParser::TempHumidityParser() :
 {
     m_bleData = bleDeviceData_t{};
     for(uint8_t i=0; i < MAX_TEMP_HUM_SENSORS; i++) {
-        m_dataFresh[i] = false;
+        m_dataUploadReady[i] = false;
+        m_dataLogReady[i] = false;
         m_lastUpdate[i] = 0;
         memset(m_data[i].macAddr, 0, TEMP_HUMIDITY_MAC_LEN);
     }
@@ -56,7 +57,7 @@ void TempHumidityParser::parse() {
 
     // Sensor has two advertising packets, one with length 20 and one with length 22
     if(m_bleData.payloadLen == 20) {
-        int8_t index = dataFresh(&m_bleData.payload[4]);
+        int8_t index = dataUploadReady(&m_bleData.payload[4]);
         if(index >= 0 && (millis() < (m_lastUpdate[index] + 30000))) {
             ESP_LOGD(TAG, "Probable duplicate: index=%u millis=%u m_lastUpdate=%u", index, (unsigned)millis(), (unsigned)m_lastUpdate);
             m_numDuplicates++;
@@ -92,7 +93,7 @@ void TempHumidityParser::parse() {
         addData(temp);
 
     } else if(m_bleData.payloadLen == 22) {
-        int8_t index = dataFresh(&m_bleData.payload[4]);
+        int8_t index = dataUploadReady(&m_bleData.payload[4]);
         if(index >= 0) {
             ESP_LOGD(TAG, "Probable duplicate: index=%u millis=%u m_lastUpdate=%u", index, (unsigned)millis(), (unsigned)m_lastUpdate);
             m_numDuplicates++;
@@ -150,10 +151,19 @@ bool TempHumidityParser::compareMacAddr(uint8_t *addr1, uint8_t *addr2) {
     }
     return ret;
 }
-int8_t TempHumidityParser::dataFresh(uint8_t *macAddr) {
+int8_t TempHumidityParser::dataUploadReady(uint8_t *macAddr) {
     int8_t ret = -1;
     for(uint8_t i=0; i < MAX_TEMP_HUM_SENSORS; i++) {
-        if(compareMacAddr(m_data[i].macAddr, macAddr) && m_dataFresh[i]) {
+        if(compareMacAddr(m_data[i].macAddr, macAddr) && m_dataUploadReady[i]) {
+            return (int8_t) i;
+        }
+    }
+    return ret;
+}
+int8_t TempHumidityParser::dataLogReady(uint8_t *macAddr) {
+    int8_t ret = -1;
+    for(uint8_t i=0; i < MAX_TEMP_HUM_SENSORS; i++) {
+        if(compareMacAddr(m_data[i].macAddr, macAddr) && m_dataLogReady[i]) {
             return (int8_t) i;
         }
     }
@@ -166,7 +176,7 @@ void TempHumidityParser::addData(tempHumidityData_t &data) {
         if(compareMacAddr(m_data[i].macAddr, data.macAddr)) {
             index = (int8_t) i;
             break;
-        }else if(emptyIndex == -1 && !m_dataFresh[i]) {
+        }else if(emptyIndex == -1 && !m_dataUploadReady[i]) {
             emptyIndex = (int8_t) i;
             break;
         }
@@ -176,8 +186,9 @@ void TempHumidityParser::addData(tempHumidityData_t &data) {
     }
     if(index >= 0) {
         m_data[index] = data;
-        ESP_LOGI(TAG, "Found index: %u, %u", index, m_dataFresh[index]);
-        m_dataFresh[index] = true;
+        ESP_LOGI(TAG, "Found index: %u, %u", index, m_dataUploadReady[index]);
+        m_dataUploadReady[index] = true;
+        m_dataLogReady[index] = true;
         m_lastUpdate[index] = millis();
     } else {
         ESP_LOGW(TAG, "Failed to find empty index");
@@ -200,12 +211,8 @@ void TempHumidityParser::slice( void) {
                 m_timer.setInterval(s_UPLOAD_TIME_MS);
                 m_uploadRequest = false;
                 m_uploadIndex = 0;
-                if(m_uploadClient) {
-                    ESP_LOGD(TAG, "uploading data");
-                    m_state = STATE_UPLOAD;
-                } else {
-                    m_state = STATE_WRITE_LOG;
-                }
+                ESP_LOGD(TAG, "uploading data");
+                m_state = STATE_UPLOAD;
             }
         break;
         case STATE_UPLOAD:
@@ -213,20 +220,24 @@ void TempHumidityParser::slice( void) {
                 ESP_LOGD(TAG, "upload complete");
                 m_uploadIndex = 0;
                 m_state = STATE_WRITE_LOG;
-            } else if(m_dataFresh[m_uploadIndex]) {
+            } else if(m_dataUploadReady[m_uploadIndex]) {
                 m_state = STATE_UPLOAD_WAIT;
             } else {
                 m_uploadIndex++;
             }
         break;
         case STATE_UPLOAD_WAIT:
-            if(!m_uploadClient->busy()) {
+            if(!m_uploadClient) {
+                m_dataUploadReady[m_uploadIndex] = false;
+                m_uploadIndex++;
+                m_state = STATE_UPLOAD;
+            } else if(!m_uploadClient->busy()) {
                 snprintf(m_sendBuf, MAX_SEND_BUF_SIZE, "{\"sn\":\"%02X%02X%02X%02X%02X%02X\",\"v\":%d,\"t\":%d,\"h\":%d,\"ut\":%d}",
                     m_data[m_uploadIndex].macAddr[0], m_data[m_uploadIndex].macAddr[1], m_data[m_uploadIndex].macAddr[2], m_data[m_uploadIndex].macAddr[3],
                     m_data[m_uploadIndex].macAddr[4], m_data[m_uploadIndex].macAddr[5],
                     m_data[m_uploadIndex].batteryVoltage, m_data[m_uploadIndex].temperature, m_data[m_uploadIndex].humidity, m_data[m_uploadIndex].upTime);
                 m_uploadClient->sendFile(s_ROUTE, m_sendBuf, strlen(m_sendBuf));
-                //m_dataFresh[m_uploadIndex] = false;
+                m_dataUploadReady[m_uploadIndex] = false;
                 m_state = STATE_SEND_WAIT;
             }
         break;
@@ -239,14 +250,16 @@ void TempHumidityParser::slice( void) {
         case STATE_WRITE_LOG:
             if(m_uploadIndex >= MAX_TEMP_HUM_SENSORS) {
                 m_state = STATE_IDLE;
-            } else if(m_dataFresh[m_uploadIndex] && m_sdLogger) {
-                snprintf(m_logBuf, MAX_SEND_BUF_SIZE, "{\"sn\":\"%02X%02X%02X%02X%02X%02X\",\"v\":%d,\"t\":%d,\"h\":%d,\"ut\":%d}\r\n",
-                    m_data[m_uploadIndex].macAddr[0], m_data[m_uploadIndex].macAddr[1], m_data[m_uploadIndex].macAddr[2], m_data[m_uploadIndex].macAddr[3],
-                    m_data[m_uploadIndex].macAddr[4], m_data[m_uploadIndex].macAddr[5],
-                    m_data[m_uploadIndex].batteryVoltage, m_data[m_uploadIndex].temperature, m_data[m_uploadIndex].humidity, m_data[m_uploadIndex].upTime);
-                m_sdLogger->log(TAG, m_logBuf, firstRun);
-                m_dataFresh[m_uploadIndex] = false;
-                firstRun = false;
+            } else if(m_dataLogReady[m_uploadIndex]) {
+                if(m_sdLogger) {
+                    snprintf(m_logBuf, MAX_SEND_BUF_SIZE, "{\"sn\":\"%02X%02X%02X%02X%02X%02X\",\"v\":%d,\"t\":%d,\"h\":%d,\"ut\":%d}\r\n",
+                        m_data[m_uploadIndex].macAddr[0], m_data[m_uploadIndex].macAddr[1], m_data[m_uploadIndex].macAddr[2], m_data[m_uploadIndex].macAddr[3],
+                        m_data[m_uploadIndex].macAddr[4], m_data[m_uploadIndex].macAddr[5],
+                        m_data[m_uploadIndex].batteryVoltage, m_data[m_uploadIndex].temperature, m_data[m_uploadIndex].humidity, m_data[m_uploadIndex].upTime);
+                    m_sdLogger->log(TAG, m_logBuf, firstRun);
+                    firstRun = false;
+                }
+                m_dataLogReady[m_uploadIndex] = false;
             }
             m_uploadIndex++;
         break;

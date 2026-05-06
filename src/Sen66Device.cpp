@@ -155,12 +155,8 @@ void Sen66Device::slice( void) {
             } else if(m_uploadTimer.hasIntervalElapsed() || m_uploadRequest) {
                 m_uploadTimer.setInterval(s_UPLOAD_TIME_MS);
                 m_uploadRequest = false;
-                if(m_uploadClient) {
-                    ESP_LOGD(TAG, "uploading data");
-                    m_state = STATE_UPLOAD;
-                } else {
-                    m_state = STATE_WRITE_LOG;
-                }
+                ESP_LOGD(TAG, "uploading data");
+                m_state = STATE_UPLOAD;
             } else if(!m_enabled) {
                 m_state = STATE_OFF;
             }
@@ -187,7 +183,10 @@ void Sen66Device::slice( void) {
             }
         break;
         case STATE_UPLOAD_WAIT:
-            if(!m_uploadClient->busy()) {
+            if(!m_uploadClient) {
+                m_dataUploadReady = false;
+                m_state = STATE_WRITE_LOG;
+            } else if(!m_uploadClient->busy()) {
                 uploadReadings();
                 m_dataUploadReady = false;
                 m_state = STATE_SEND_WAIT;

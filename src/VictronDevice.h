@@ -35,7 +35,8 @@ private:
     bool m_uploadRequest;
     bleDeviceData_t m_bleData;
     victronData_t m_data;
-    bool m_dataFresh;
+    bool m_dataUploadReady;
+    bool m_dataLogReady;
     uint32_t m_lastUpdate;
     uint8_t m_state;
     uint32_t m_numDuplicates;
