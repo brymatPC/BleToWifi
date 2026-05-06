@@ -177,6 +177,7 @@ void setup(){
   esp_log_level_set("Victron", ESP_LOG_INFO);
   esp_log_level_set("Sen66  ", ESP_LOG_INFO);
   esp_log_level_set("SDCard ", ESP_LOG_INFO);
+  esp_log_level_set("Perf   ", ESP_LOG_INFO);
 
   resetReasonStartup = esp_reset_reason();
 
@@ -257,6 +258,10 @@ void setup(){
   sdLogger.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
 
   startSntp();
+
+  //Create and start stats task
+  xTaskCreatePinnedToCore(runCpuPerfTask, "cpuPerf", 4096, NULL, 3, NULL, tskNO_AFFINITY);
+
   ESP_LOGD(TAG, "Setup complete");
 }
 
