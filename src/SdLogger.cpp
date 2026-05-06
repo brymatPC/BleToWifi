@@ -9,13 +9,59 @@
 
 static const char* TAG = "SDCard ";
 
+// For SD Card access
+SPIClass sd_spi(HSPI);
 
-SdLogger::SdLogger() {
-
+SdLogger::SdLogger() :
+    m_cs(0)
+{
+    m_timer.setInterval(SD_CONN_CHECK_MS);
 }
 
-void SdLogger::begin() {
+void SdLogger::begin(uint8_t sck, uint8_t miso, uint8_t mosi, uint8_t cs) {
+    m_cs = cs;
+    sd_spi.begin(sck, miso, mosi, cs);
+    if(!SD.begin(cs, sd_spi)) {
+        ESP_LOGW(TAG, "SD Card begin failed");
+    } else {
+        logSdCardStatus();
+    }
+}
 
+void SdLogger::loop() {
+    if(m_timer.isNextInterval()) {
+        ESP_LOGI(TAG, "SD Connection check");
+        if(SD.cardType() == CARD_NONE) {
+            ESP_LOGI(TAG, "SD card not connected, retrying...");
+            if(!SD.begin(m_cs, sd_spi)) {
+                ESP_LOGW(TAG, "SD card not found");
+            } else {
+                logSdCardStatus();
+            }
+        }
+    }
+}
+
+void SdLogger::logSdCardStatus() {
+    uint8_t cardType = SD.cardType();
+    if(cardType == CARD_NONE){
+        ESP_LOGI(TAG, "No SD card attached");
+        return;
+    }
+
+    if(cardType == CARD_MMC){
+        ESP_LOGI(TAG, "SD Card Type: MMC");
+    } else if(cardType == CARD_SD){
+        ESP_LOGI(TAG, "SD Card Type: SDSC");
+    } else if(cardType == CARD_SDHC){
+        ESP_LOGI(TAG, "SD Card Type: SDHC");
+    } else {
+        ESP_LOGI(TAG, "SD Card Type: UNKNOWN");
+    }
+
+    ESP_LOGI(TAG, "SD Card Size: %llu kB", SD.cardSize() / (1024));
+    ESP_LOGI(TAG, "Total space: %llu kB", SD.totalBytes() / (1024));
+    ESP_LOGI(TAG, "Used space: %llu kB", SD.usedBytes() / (1024));
 }
 
 void SdLogger::testSdCard() {
@@ -106,6 +152,9 @@ void SdLogger::log(const char *filePrefix, const char *record, bool createNew) {
 
     long fileNumber = findLargestNumberInFilenames("/", filePrefix);
     if(fileNumber < 0) {
+        // Failed to access SD card, unmount it and try again later
+        SD.end();
+    } else if(fileNumber == 0) {
         fileNumber = 1;
         snprintf(filename, 128, "/%s_%ld.json", filePrefix, fileNumber);
         file = SD.open(filename, FILE_WRITE);
@@ -152,7 +201,7 @@ long SdLogger::findLargestNumberInFilenames(const char* dir, const char* prefix)
         return -1;
     }
 
-    long maxNum = -1;
+    long maxNum = 0;
     File file = root.openNextFile();
     while (file) {
         const char* name = file.name();

@@ -92,9 +92,6 @@ TempHumidityParser tempHumParser;
 SensirionI2cSen66 sensor;
 Sen66Device sen66Device(sensor);
 
-// For SD Card access
-SPIClass sd_spi(HSPI);
-
 esp_reset_reason_t resetReasonStartup;
 
 void timeSyncNotification(struct timeval *tv) {
@@ -256,12 +253,7 @@ void setup(){
   tempHumParser.setSdLogger(&sdLogger);
   shell.init();
 
-  sd_spi.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
-  if(!SD.begin(SD_CS, sd_spi)) {
-    ESP_LOGW(TAG, "SD Card begin failed");
-  } else {
-    sdLogger.testSdCard();
-  }
+  sdLogger.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
 
   startSntp();
   ESP_LOGD(TAG, "Setup complete");
@@ -286,6 +278,7 @@ void sdLogTest() {
 void loop() {
   Sliceable::sliceAll( );
 
+  sdLogger.loop();
   sdLogTest();
 
   bool telnetSpaceAvailable = telnetLogServer.spaceAvailable( 32);
