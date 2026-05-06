@@ -1,5 +1,6 @@
 #include "Sen66Device.h"
 #include "UploadDataClient.h"
+#include "SdLogger.h"
 #include "esp_log_custom.h"
 
 // Used by Sensirion Library
@@ -22,6 +23,7 @@ typedef enum {
     STATE_READ_STATE  = 11,
     STATE_ERROR       = 12,
     STATE_ERROR_WAIT  = 13,
+    STATE_WRITE_LOG   = 14,
 } sen66States_t;
 
 static const char* TAG = "Sen66  ";
@@ -34,10 +36,13 @@ const unsigned int Sen66Device::s_STARTUP_OFFSET_MS = 0;
 char Sen66Device::s_ROUTE[] = "/sen66";
 
 Sen66Device::Sen66Device(SensirionI2cSen66 &sensor) :
-    m_sensor(sensor)
+    m_sensor(sensor),
+    m_uploadClient(nullptr),
+    m_sdLogger(nullptr)
 {
     m_enabled = false;
-    m_dataFresh = false;
+    m_dataUploadReady = false;
+    m_dataLogReady = false;
     m_lastUpdate = 0;
     m_state = STATE_OFF;
     m_uploadTimer.setInterval(s_STARTUP_OFFSET_MS);
@@ -64,7 +69,8 @@ void Sen66Device::read() {
         ESP_LOGW(TAG, "error executing read_measured_values_as_integers(): %i", error);
     } else {
         logReadings();
-        m_dataFresh = true;
+        m_dataUploadReady = true;
+        m_dataLogReady = true;
     }
 }
 void Sen66Device::logReadings() {
@@ -77,6 +83,14 @@ void Sen66Device::uploadReadings() {
     snprintf(m_sendBuf, MAX_SEN66_SEND_BUF_SIZE, "{\"up\":%u,\"sn\":\"%s\",\"pm1\":%u,\"pm2\":%u,\"pm4\":%u,\"pm10\":%u,\"t\":%d,\"h\":%d, \"voc\":%d,\"nox\":%d,\"co2\":%u}",
         (millis()-m_resetTimeMs), m_serialNumber, pm1p0, pm2p5, pm4p0, pm10p0, temperature, humidity, vocIndex, noxIndex, co2);
     m_uploadClient->sendFile(s_ROUTE, m_sendBuf, strlen(m_sendBuf));
+}
+void Sen66Device::writeReadings() {
+    static bool firstRun = true;
+    if(!m_sdLogger) return;
+    snprintf(m_logBuf, MAX_SEN66_SEND_BUF_SIZE, "{\"up\":%u,\"sn\":\"%s\",\"pm1\":%u,\"pm2\":%u,\"pm4\":%u,\"pm10\":%u,\"t\":%d,\"h\":%d, \"voc\":%d,\"nox\":%d,\"co2\":%u}\r\n",
+        (millis()-m_resetTimeMs), m_serialNumber, pm1p0, pm2p5, pm4p0, pm10p0, temperature, humidity, vocIndex, noxIndex, co2);
+    m_sdLogger->log(TAG, m_logBuf, firstRun);
+    firstRun = false;
 }
 void Sen66Device::slice( void) {
     int16_t error;
@@ -138,11 +152,15 @@ void Sen66Device::slice( void) {
         case STATE_IDLE:
             if(m_timer.isNextInterval()) {
                 m_state = STATE_READ;
-            } else if((m_uploadTimer.hasIntervalElapsed()) && m_uploadClient) {
+            } else if(m_uploadTimer.hasIntervalElapsed() || m_uploadRequest) {
                 m_uploadTimer.setInterval(s_UPLOAD_TIME_MS);
-                ESP_LOGD(TAG, "uploading data");
                 m_uploadRequest = false;
-                m_state = STATE_UPLOAD;
+                if(m_uploadClient) {
+                    ESP_LOGD(TAG, "uploading data");
+                    m_state = STATE_UPLOAD;
+                } else {
+                    m_state = STATE_WRITE_LOG;
+                }
             } else if(!m_enabled) {
                 m_state = STATE_OFF;
             }
@@ -161,24 +179,24 @@ void Sen66Device::slice( void) {
             m_state = STATE_IDLE;
         break;
         case STATE_UPLOAD:
-            if(m_dataFresh) {
+            if(m_dataUploadReady) {
                 m_state = STATE_UPLOAD_WAIT;
             } else {
                 ESP_LOGD(TAG, "No data to upload");
-                m_state = STATE_IDLE;
+                m_state = STATE_WRITE_LOG;
             }
         break;
         case STATE_UPLOAD_WAIT:
             if(!m_uploadClient->busy()) {
                 uploadReadings();
-                m_dataFresh = false;
+                m_dataUploadReady = false;
                 m_state = STATE_SEND_WAIT;
             }
         break;
         case STATE_SEND_WAIT:
             if(!m_uploadClient->busy()) {
                 ESP_LOGD(TAG, "upload complete");
-                m_state = STATE_IDLE;
+                m_state = STATE_WRITE_LOG;
             }
         break;
         case STATE_ERROR:
@@ -194,6 +212,13 @@ void Sen66Device::slice( void) {
                     m_state = STATE_OFF;
                 }
             }
+        break;
+        case STATE_WRITE_LOG:
+            if(m_dataLogReady) {
+                writeReadings();
+                m_dataLogReady = false;
+            }
+            m_state = STATE_IDLE;
         break;
         default:
             m_state = STATE_OFF;

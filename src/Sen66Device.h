@@ -12,6 +12,7 @@
 #define MAX_SEN66_SEND_BUF_SIZE 164
 
 class UploadDataClient;
+class SdLogger;
 
 class Sen66Device : public Sliceable {
 private:
@@ -26,8 +27,10 @@ private:
     IntervalTimer m_timer;
     IntervalTimer m_uploadTimer;
     UploadDataClient* m_uploadClient;
+    SdLogger* m_sdLogger;
     bool m_uploadRequest;
-    bool m_dataFresh;
+    bool m_dataUploadReady;
+    bool m_dataLogReady;
     uint32_t m_lastUpdate;
     uint8_t m_state;
     uint32_t m_numDuplicates;
@@ -48,10 +51,12 @@ private:
     uint32_t m_resetTimeMs = 0;
 
     char m_sendBuf[MAX_SEN66_SEND_BUF_SIZE];
+    char m_logBuf[MAX_SEN66_SEND_BUF_SIZE];
 
     void read();
     void logReadings();
     void uploadReadings();
+    void writeReadings();
 
 public:
     Sen66Device(SensirionI2cSen66 &sensor);
@@ -62,6 +67,7 @@ public:
     void save(Preferences &pref);
 
     void setUploadClient(UploadDataClient *client) { m_uploadClient = client; }
+    void setSdLogger(SdLogger *sdLogger) {m_sdLogger = sdLogger; }
     virtual void slice( void);
 
     void setEnabled(bool enable) { m_enabled = enable; }
