@@ -15,6 +15,7 @@
 #include "Sen66Device.h"
 #include "SdLogger.h"
 #include "Utilities.h"
+#include "SystemStatus.h"
 
 #include <SPI.h>
 #include <SD.h>
@@ -91,6 +92,8 @@ TempHumidityParser tempHumParser;
 
 SensirionI2cSen66 sensor;
 Sen66Device sen66Device(sensor);
+
+SystemStatus systemStatus;
 
 esp_reset_reason_t resetReasonStartup;
 
@@ -178,6 +181,7 @@ void setup(){
   esp_log_level_set("Sen66  ", ESP_LOG_INFO);
   esp_log_level_set("SDCard ", ESP_LOG_INFO);
   esp_log_level_set("Perf   ", ESP_LOG_INFO);
+  esp_log_level_set("SysStat", ESP_LOG_INFO);
 
   resetReasonStartup = esp_reset_reason();
 
@@ -257,6 +261,9 @@ void setup(){
 
   sdLogger.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
 
+  systemStatus.setUploadClient(&uploadClient);
+  systemStatus.setSdLogger(&sdLogger);
+
   startSntp();
 
   //Create and start stats task
@@ -265,27 +272,10 @@ void setup(){
   ESP_LOGD(TAG, "Setup complete");
 }
 
-void sdLogTest() {
-    static uint32_t timer = 2000;
-    static bool firstRun = true;
-    static char logBuf[128];
-    static char prefix[] = "main";
-
-    if(millis() > (timer + 5000)) {
-        timer = millis();
-        char s[51];
-        getRtcTimeStr(s, 51);
-        snprintf(logBuf, 128, "{\"ts\": \"%s\", \"up\": %lu}\r\n", s, millis());
-        sdLogger.log(prefix, logBuf, firstRun);
-        firstRun = false;
-    }
-}
-
 void loop() {
   Sliceable::sliceAll( );
 
   sdLogger.loop();
-  sdLogTest();
 
   bool telnetSpaceAvailable = telnetLogServer.spaceAvailable( 32);
   bool serialSpaceAvailable = (Serial.availableForWrite() > 32);

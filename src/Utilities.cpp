@@ -3,6 +3,7 @@
 #include <esp32-hal.h>
 #include <esp_chip_info.h>
 #include <esp_partition.h>
+#include <esp_mac.h>
 #include <time.h>
 
 void getRtcTimeStr(char *ts, size_t maxLen) {
@@ -130,4 +131,9 @@ void printFlashSizes(void) {
         ESP_LOGI(TAG, "Partition %s - size: %lu bytes, type 0x%02X, subtype 0x%02X", part->label, part->size, part->type, part->subtype);
         iter = esp_partition_next(iter);
     }
+}
+void getEspMac(char *mac) {
+    uint8_t macRaw[8];
+    esp_efuse_mac_get_default(macRaw);
+    sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", macRaw[0], macRaw[1], macRaw[2], macRaw[3], macRaw[4], macRaw[5]);
 }

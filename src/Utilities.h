@@ -12,5 +12,6 @@ void printHeapStats(void);
 void printChipInfo(void);
 void printSdkVersion(void);
 void printFlashSizes(void);
+void getEspMac(char *mac);
 
 #endif // UTILITIES_H_
