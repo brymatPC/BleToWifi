@@ -116,7 +116,9 @@ void printHeapStats(void) {
 void printChipInfo(void) {
     esp_chip_info_t chipInfo;
     esp_chip_info(&chipInfo);
-    ESP_LOGI(TAG, "Chip: model=%u revision=%u cores=%u", (unsigned)chipInfo.model, (unsigned)chipInfo.revision, (unsigned)chipInfo.cores);
+    uint8_t major = (uint8_t) (chipInfo.revision >> 8);
+    uint8_t minor = (uint8_t) (chipInfo.revision & 0x00FF);
+    ESP_LOGI(TAG, "Chip: model=%u revision=%u.%u cores=%u", chipInfo.model, major, minor, chipInfo.cores);
 }
 void printSdkVersion(void) {
     ESP_LOGI(TAG, "SDK: version=%s", esp_get_idf_version());
