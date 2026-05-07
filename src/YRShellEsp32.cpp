@@ -114,6 +114,7 @@ static const FunctionEntry yr8266ShellExtensionFunctions[] = {
     { SE_CC_setUploadPort,          "setUploadPort"},
 
     { SE_CC_flashSize,            "flashSize"},
+    { SE_CC_flashInfo,            "flashInfo"},
     { SE_CC_chipInfo,             "chipInfo"},
     { SE_CC_sdkVersion,           "sdkVersion"},
     { SE_CC_numTasks,             "numTasks"},
@@ -694,6 +695,9 @@ void YRShellEsp32::executeFunction( uint16_t n) {
               t2 = LittleFS.usedBytes();
               pushParameterStack( t1);
               pushParameterStack( t2);
+            break;
+          case SE_CC_flashInfo:
+            printFlashSizes();
             break;
           case SE_CC_chipInfo:
             printChipInfo();

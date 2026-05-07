@@ -2,6 +2,7 @@
 
 #include <esp32-hal.h>
 #include <esp_chip_info.h>
+#include <esp_partition.h>
 #include <time.h>
 
 void getRtcTimeStr(char *ts, size_t maxLen) {
@@ -119,4 +120,12 @@ void printChipInfo(void) {
 }
 void printSdkVersion(void) {
     ESP_LOGI(TAG, "SDK: version=%s", esp_get_idf_version());
+}
+void printFlashSizes(void) {
+    esp_partition_iterator_t iter = esp_partition_find(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL);
+    while(iter != NULL) {
+        const esp_partition_t *part = esp_partition_get(iter);
+        ESP_LOGI(TAG, "Partition %s - size: %lu bytes, type 0x%02X, subtype 0x%02X", part->label, part->size, part->type, part->subtype);
+        iter = esp_partition_next(iter);
+    }
 }

@@ -11,5 +11,6 @@ void runCpuPerfTask(void *arg);
 void printHeapStats(void);
 void printChipInfo(void);
 void printSdkVersion(void);
+void printFlashSizes(void);
 
 #endif // UTILITIES_H_
